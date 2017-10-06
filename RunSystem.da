@@ -65,7 +65,8 @@ def main():
 
 	start(clients)
 	start(olympus)
-	start(self.replicas[0])
+	for rep in replicas:
+		start(rep)
 
 	
 	

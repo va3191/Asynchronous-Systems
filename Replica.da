@@ -11,26 +11,53 @@ class Replica(process):
 
 	def main(): pass
 
-	def receive(msg=('PERFORM_OPERATION',flag,),from_=self.client):
-		output("currentReplica: ",self.currentReplica,", prevReplica: ",prevReplica,", nextReplica: ",nextReplica,", client: ",self.client,", flag : ",flag)
-		if flag=="FORWARD":
-			output("PERFORM Forward shuttle operation")
-			if self.nextReplica != None:
-				start(self.nextReplica)
-				send(('PERFORM_OPERATION',flag,), to=self.nextReplica)
+	# def receive(msg=('PERFORM_OPERATION',flag,),from_=self.client):
+	# 	output("currentReplica: ",self.currentReplica,", prevReplica: ",prevReplica,", nextReplica: ",nextReplica,", client: ",self.client,", flag : ",flag)
+	# 	if flag=="FORWARD":
+	# 		output("PERFORM Forward shuttle operation")
+	# 		if self.nextReplica != None:
+	# 			start(self.nextReplica)
+	# 			send(('PERFORM_OPERATION',flag,), to=self.nextReplica)
 			
-			if self.nextReplica == None:
-				flag = "REVERSE"
-				output("reached the tail node bro!",flag,'reversing the shuttle')
-				# send(('PERFORM_OPERATION',flag,), to=self.client)
-				send(('PERFORM_OPERATION',flag,), to=self.prevReplica)
+	# 		if self.nextReplica == None:
+	# 			flag = "REVERSE"
+	# 			output("reached the tail node bro!",flag,'reversing the shuttle')
+	# 			# send(('PERFORM_OPERATION',flag,), to=self.client)
+	# 			send(('PERFORM_OPERATION',flag,), to=self.prevReplica)
 
-		if flag == "REVERSE":
-			if self.prevReplica != None:
-				send(('REVERSE_SHUTTLE',flag,), to=self.prevReplica)
+	# 	if flag == "REVERSE":
+	# 		if self.prevReplica != None:
+	# 			send(('REVERSE_SHUTTLE',flag,), to=self.prevReplica)
 
-			if self.prevReplica == None:
-				output("reached the head node!",flag)
+	# 		if self.prevReplica == None:
+	# 			output("reached the head node!",flag)
+
+	def receive(msg=('PERFORM_OPERATION',), from_=self.client):
+		output("Reaching the head node! shuttle initiated:")
+		send(('SHUTTLE','FORWARD'), to=self.nextReplica)
+
+
+	 #message to replca from previous 
+	def receive(msg=('SHUTTLE','REVERSE',), from_=self.prevReplica):
+		output("currentReplica: ",self.currentReplica,", prevReplica: ",prevReplica,", nextReplica: ",nextReplica,", client: ",self.client,", flag : REVERSE")
+		if(self.prevReplica == None):
+			output('***************YEAH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+		else:
+			send(('SHUTTLE','REVERSE',), to=self.prevReplica)
+
+	 #reverse shuttle
+	def receive(msg=('SHUTTLE','FORWARD',), from_=self.prevReplica):
+		output("currentReplica: ",self.currentReplica,", prevReplica: ",prevReplica,", nextReplica: ",nextReplica,", client: ",self.client,", flag : FORWARD")
+		if(self.nextReplica == None):
+			output('recieved at tail, sending back ')
+			send(('SHUTTLE',), to=self.client)
+			send(('SHUTTLE','REVERSE',), to=self.prevReplica)
+			output('sent to previous replca from tail')
+		else:
+			# output('value',self.role)
+			send(('SHUTTLE','FORWARD'), to=self.nextReplica)
+			output('sent from replica', self.currentReplica)
+
 
 	def run():
 		output("********RUN : Received Message from Client. Replica Name : ",self.currentReplica," ********")

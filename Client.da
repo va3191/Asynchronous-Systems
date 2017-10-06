@@ -14,7 +14,6 @@ class Client(process):
 		received(('SET_UP',), from_=self.olympus)
 		output("*********received SET_UP FROM Client***********")
 		flag = 'FORWARD'
-		send(('PERFORM_OPERATION',flag,), to=self.replicas[0])
-		
-		await(received(('REVERSE_SHUTTLE',), from_=self.replicas[len(replicas)-1]))
-		output("*********REVERSE_SHUTTLE Reached***********")
+		send(('PERFORM_OPERATION',), to=self.replicas[0])
+		await(received(('SHUTTLE',), from_=self.replicas[len(replicas)-1]))
+		output("*********SHUTTLE Reached***********")
