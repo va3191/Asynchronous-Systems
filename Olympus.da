@@ -1,11 +1,12 @@
 class Olympus(process):
-	def setup(clientList, replicaList):
-		self.clientList = clientList
-		self.replicaList = replicaList
-		print("olympusId:", str(self.id))
+	def setup(clients, replicas):
+		output("************Setting Up Olympus***********")
+		self.clients = clients
+		self.replicas = replicas
+	
 
 	def run():
-		output('before pinged')
-		await(some(received(('Ping',), from_=clients)))
-		output("Pinged.")
-		send(('Pong',), to=clients)
+		output("*********RUN : Olympus***********")
+		received(('SET_UP',), from_=self.clients)
+		output("*********Received SET_UP from Client***********")
+		send(('SET_UP',), to=self.clients)

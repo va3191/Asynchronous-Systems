@@ -1,19 +1,40 @@
 class Replica(process):
-	def setup(currentReplica,prevReplica,nextReplica):
+	def setup(client,olympus,currentReplica,prevReplica,nextReplica):
 		print("****************setting up replica start*******************")
-		self.role=role
-		self.prev=prev
-		self.next=next
-		print("str(self.id) : ",str(self.id)," self.role : ",self.role,", self.prev : ",self.prev,", self.next : ",self.next)
+		self.client=client
+		self.olympus = olympus
+		self.currentReplica=currentReplica
+		self.prevReplica=prevReplica
+		self.nextReplica=nextReplica
 		print("****************setting up replica finished****************")
 		
 
 	def main(): pass
 
+	def receive(msg=('PERFORM_OPERATION',flag,),from_=self.client):
+		output("currentReplica: ",self.currentReplica,", prevReplica: ",prevReplica,", nextReplica: ",nextReplica,", client: ",self.client,", flag : ",flag)
+		if flag=="FORWARD":
+			output("PERFORM Forward shuttle operation")
+			if self.nextReplica != None:
+				start(self.nextReplica)
+				send(('PERFORM_OPERATION',flag,), to=self.nextReplica)
+			
+			if self.nextReplica == None:
+				flag = "REVERSE"
+				output("reached the tail node bro!",flag,'reversing the shuttle')
+				# send(('PERFORM_OPERATION',flag,), to=self.client)
+				send(('PERFORM_OPERATION',flag,), to=self.prevReplica)
+
+		if flag == "REVERSE":
+			if self.prevReplica != None:
+				send(('REVERSE_SHUTTLE',flag,), to=self.prevReplica)
+
+			if self.prevReplica == None:
+				output("reached the head node!",flag)
+
 	def run():
-		output(" before Ponged in replica.")
-		print("REPLICA RUN str(self.id) : ",str(self.id)," self.role : ",self.role,", self.prev : ",self.prev,", self.next : ",self.next)
-		await(some(received(('replicas',), from_=clients)))
-		# send(('Ping',), to=clients)
-		# await(received(('Pong',)))
-		output("Ponged in replica.")
+		output("********RUN : Received Message from Client. Replica Name : ",self.currentReplica," ********")
+		await(received('',))
+
+		# flag=None
+		# 

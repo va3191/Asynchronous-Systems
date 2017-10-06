@@ -1,18 +1,20 @@
 class Client(process):
-	def setup(head,reqList,olympus,replicas): 
-		self.head=head
+	def setup(reqList,olympus,replicas):
+		output("**********Setting up Client *************"); 
 		self.reqList=reqList
 		self.olympus=olympus
 		self.replicas=replicas
-		print("clientid:",str(self.id))
 
  
 	def main(): pass
 
 	def run():
-		output(" before Ponged.")
-		send(('Ping',), to=olympus)
-		await(some(received(('Pong',), from_=olympus)))
-		output("Ponged.")
-		send(('replicas',), to=replicas)
-		output('finally done')
+		output("*********RUN : Starting Client***********")
+		send(('SET_UP',), to=self.olympus)
+		received(('SET_UP',), from_=self.olympus)
+		output("*********received SET_UP FROM Client***********")
+		flag = 'FORWARD'
+		send(('PERFORM_OPERATION',flag,), to=self.replicas[0])
+		
+		await(received(('REVERSE_SHUTTLE',), from_=self.replicas[len(replicas)-1]))
+		output("*********REVERSE_SHUTTLE Reached***********")
