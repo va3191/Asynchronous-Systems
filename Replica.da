@@ -1,0 +1,19 @@
+class Replica(process):
+	def setup(currentReplica,prevReplica,nextReplica):
+		print("****************setting up replica start*******************")
+		self.role=role
+		self.prev=prev
+		self.next=next
+		print("str(self.id) : ",str(self.id)," self.role : ",self.role,", self.prev : ",self.prev,", self.next : ",self.next)
+		print("****************setting up replica finished****************")
+		
+
+	def main(): pass
+
+	def run():
+		output(" before Ponged in replica.")
+		print("REPLICA RUN str(self.id) : ",str(self.id)," self.role : ",self.role,", self.prev : ",self.prev,", self.next : ",self.next)
+		await(some(received(('replicas',), from_=clients)))
+		# send(('Ping',), to=clients)
+		# await(received(('Pong',)))
+		output("Ponged in replica.")

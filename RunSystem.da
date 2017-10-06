@@ -1,0 +1,57 @@
+import config
+
+olympuss = import_da('Olympus')
+client = import_da('Client')
+replica = import_da('Replica')
+
+clients = []
+replicas = []
+olympus = None
+
+def setup_main():
+	config.main();	# initialize configuration file
+	
+	
+
+
+def main():
+	setup_main();
+	totalReplica = config.readProperty("num_replica")
+	totalClients = config.readProperty("num_client")
+	replicaHosts = config.readProperty("replica_hosts")
+	clientHosts = config.readProperty("client_hosts")
+	for i in range(0,totalClients):
+		nodeName = "client_"+str(i)#+"@"+clientHosts[i];
+		clients = (new(replica.Replica,num=totalClients, at=nodeName))
+
+
+	for i in range(0,totalReplica):
+		nodeName = "replica_"+str(i)#+"@"+replicaHosts[i];
+		replicas = (new(replica.Replica,num=totalReplica, at=nodeName))
+
+	olympus = new(olympuss.Olympus,num=1, at='onode')
+
+	for rnum in range(len(totalReplica)):
+		rep = totalReplica[rnum];
+		if rnum == 0:
+			setup(rep,['replica'+str(rnum),None,replicas[rnum+1]])
+		if rnum == len(totalReplica)-1:
+			setup(rep,['replica'+str(rnum),replicas[rnum-1],None])
+		else:
+			setup(rep,['replica'+str(rnum),replicas[rnum-1],replicas[rnum+1]])
+	# for rnum, client in enumerate(clients):
+	# 	setup(client,[totalReplica[0],config.readProperty("workload[1]"),olympus,totalReplica])
+
+	# setup(olympus,[totalClientList, totalReplicaList])
+
+	print("clients => ",clients);
+	print("replicas => ",replicas);
+	print("olympus => ",replicas);
+
+	# start(clients)
+	# start(olympus)
+	# start(replica0)
+	# start(replica1)
+	# start(replica2)
+	
+  

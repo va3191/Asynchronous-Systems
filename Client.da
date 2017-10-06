@@ -1,0 +1,18 @@
+class Client(process):
+	def setup(head,reqList,olympus,replicas): 
+		self.head=head
+		self.reqList=reqList
+		self.olympus=olympus
+		self.replicas=replicas
+		print("clientid:",str(self.id))
+
+ 
+	def main(): pass
+
+	def run():
+		output(" before Ponged.")
+		send(('Ping',), to=olympus)
+		await(some(received(('Pong',), from_=olympus)))
+		output("Ponged.")
+		send(('replicas',), to=replicas)
+		output('finally done')
