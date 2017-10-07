@@ -21,10 +21,10 @@ def main():
 def returnValueListAfterStrippingSpaces(val):
 	values = []
 	returnValues = []
-	if(";" in val):
+	if(";" in str(val)):
 		values = val.split(";")
 	else:
-		return;
+		return val;
 	for value in values:
 		returnValues.append(value.strip())
 	return returnValues
@@ -39,7 +39,7 @@ def readProperty(key):
 		for client in clientHostNumbers:
 			host.append(hostsIps[int(client)])
 		return host
-	return config[key];
+	return returnValueListAfterStrippingSpaces(config[key]);
 
 
 if __name__ == '__main__':

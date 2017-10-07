@@ -1,4 +1,20 @@
+
 class Replica(process):
+	
+	dictionary_data;
+
+	history;
+
+	order_cache;
+
+	operation_result;
+
+	slot_number;
+
+	order_proof;
+
+	result_proof;
+
 	def setup(client,olympus,currentReplica,prevReplica,nextReplica):
 		print("****************setting up replica start*******************")
 		self.client=client
@@ -6,6 +22,14 @@ class Replica(process):
 		self.currentReplica=currentReplica
 		self.prevReplica=prevReplica
 		self.nextReplica=nextReplica
+		self.dictionary_data={'jedi':'luke skywalker','actor':'irfan','criket':'sachin','chupa':'aditya'}
+		self.history=[]
+		self.order_cache={}
+		self.operation_result={}
+		self.order_proof=[]
+		self.result_proof=[]
+		if(prevReplica == None):
+			self.slot_number = 0
 		print("****************setting up replica finished****************")
 		
 
@@ -32,36 +56,120 @@ class Replica(process):
 	# 		if self.prevReplica == None:
 	# 			output("reached the head node!",flag)
 
-	def receive(msg=('PERFORM_OPERATION',), from_=self.client):
-		output("Reaching the head node! shuttle initiated:")
-		send(('SHUTTLE','FORWARD'), to=self.nextReplica)
+	def receive(msg=('PERFORM_OPERATION', request_id,operation,), from_=self.client):
+		output("Reaching the head node! shuttle initiated:", request_id, operation)
+		shuttle=None
+		self.slot_number+=1
+		self.operation_result[request_id] = self.executeOperation(request_id, operation)
+		shuttle = self.updateHistoryAndShuttle(shuttle,request_id,operation,self.slot_number)
+		output("shutttttttllllllllleeeeeee*************", shuttle)
+		send(('SHUTTLE','FORWARD', request_id,shuttle,operation,), to=self.nextReplica)
 
 
 	 #message to replca from previous 
-	def receive(msg=('SHUTTLE','REVERSE',), from_=self.prevReplica):
-		output("currentReplica: ",self.currentReplica,", prevReplica: ",prevReplica,", nextReplica: ",nextReplica,", client: ",self.client,", flag : REVERSE")
+	def receive(msg=('SHUTTLE','REVERSE',request_id,result_proof,), from_=self.prevReplica):
+		self.cacheResult(request_id)
 		if(self.prevReplica == None):
 			output('***************YEAH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 		else:
-			send(('SHUTTLE','REVERSE',), to=self.prevReplica)
+			send(('SHUTTLE','REVERSE',request_id,result_proof,), to=self.prevReplica)
 
 	 #reverse shuttle
-	def receive(msg=('SHUTTLE','FORWARD',), from_=self.prevReplica):
-		output("currentReplica: ",self.currentReplica,", prevReplica: ",prevReplica,", nextReplica: ",nextReplica,", client: ",self.client,", flag : FORWARD")
+	def receive(msg=('SHUTTLE','FORWARD',request_id,shuttle,operation,), from_=self.prevReplica):
+		#validate order proof
+		self.operation_result[request_id] = self.executeOperation(request_id, operation)
+		slot_number = shuttle[0][0][0]
+		shuttle = self.updateHistoryAndShuttle(shuttle,request_id,operation,slot_number)
 		if(self.nextReplica == None):
+			self.cacheResult(request_id)
 			output('recieved at tail, sending back ')
-			send(('SHUTTLE',), to=self.client)
-			send(('SHUTTLE','REVERSE',), to=self.prevReplica)
+			order_proof,result_proof =shuttle
+			send(('SHUTTLE', result_proof ,), to=self.client)
+			send(('SHUTTLE','REVERSE', request_id, result_proof,), to=self.prevReplica)
 			output('sent to previous replca from tail')
 		else:
-			# output('value',self.role)
-			send(('SHUTTLE','FORWARD'), to=self.nextReplica)
+			send(('SHUTTLE','FORWARD',request_id,shuttle,operation,), to=self.nextReplica)
 			output('sent from replica', self.currentReplica)
 
 
 	def run():
-		output("********RUN : Received Message from Client. Replica Name : ",self.currentReplica," ********")
 		await(received('',))
+
+	def executeOperation(request_id,operation):
+		output(self.dictionary_data)
+		temp=operation.split('(')
+		print(temp)
+		if(temp[0]=="put"):
+			tempsplit=operation.split('\'')
+			dictionary_data[tempsplit[1]]=tempsplit[3]
+			output('put is executeed@@@@@@@@')
+			output(dictionary_data)
+			return 'ok'
+
+		elif(temp[0] == "append"):
+			tempsplit=operation.split('\'')
+			if(self.dictionary_data[tempsplit[1]]):
+				self.dictionary_data[tempsplit[1]] = self.dictionary_data[tempsplit[1]] + ' ' + tempsplit[3]
+				output('append is executeed@@@@@@@@')
+				return 'ok'
+			else:
+				return 'fail'
+
+		elif(temp[0] == "get"):
+			tempsplit=operation.split('\'')
+			if(self.dictionary_data[tempsplit[1]]):
+				value = self.dictionary_data[tempsplit[1]];
+				output('get is executeed@@@@@@@@')	
+			else:
+				return 'fail'
+
+		elif(temp[0] == "slice"):
+			tempsplit=operation.split('\'')
+			if(dictionary_data[tempsplit[1]]):
+				if (len(dictionary_data[tempsplit[1]])) > int(temp[3]):
+					dictionary_data[tempsplit[1]].slice[:int(temp[3])]
+					return 'ok'
+				else:
+					return 'fail'
+			else:
+				return 'fail'
+
+
+	def cacheResult(request_id):
+		self.order_cache[request_id] = self.operation_result[request_id]
+
+	def updateHistoryAndShuttle(shuttle,request_id,operation,slot_number):
+		order_proof=[]
+		result_proof=[]
+		self.order_proof.append((slot_number,operation))
+		order_proof.append((slot_number,operation))
+		result_proof.append((self.operation_result,operation[request_id],'encrypted'))
+		self.result_proof.append((self.operation_result,operation[request_id],'encrypted'))
+
+		if(shuttle==None):
+			shuttle=(order_proof,result_proof)
+		shuttle[0].append((slot_number,operation))
+		shuttle[1].append((self.operation_result[request_id],operation,'encrypted'))
+		output('shuttle 99999999999', shuttle)
+		return shuttle
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 		# flag=None
 		# 
