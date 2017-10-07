@@ -143,8 +143,8 @@ class Replica(process):
 		result_proof=[]
 		self.order_proof.append((slot_number,operation))
 		order_proof.append((slot_number,operation))
-		result_proof.append((self.operation_result,operation[request_id],'encrypted'))
-		self.result_proof.append((self.operation_result,operation[request_id],'encrypted'))
+		result_proof.append((self.operation_result[request_id],operation,'encrypted'))
+		self.result_proof.append((self.operation_result,operation,'encrypted'))
 
 		if(shuttle==None):
 			shuttle=(order_proof,result_proof)
