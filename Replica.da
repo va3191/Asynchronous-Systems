@@ -65,9 +65,10 @@ class Replica(process):
 		self.operation_result[request_id] = self.executeOperation(request_id, operation)
 		output("orderr p[rooof  beforeeeeeeeeee****************@@@@@@@@@@@@@##########", self.order_proof)
 		
-
-		self.updateOrder_Result_Proof(shuttle,request_id,operation,self.slot_number)
-		shuttle = self.updateShuttle(shuttle,request_id,operation,self.slot_number)
+		tupl = self.getResult_Order_Proof(request_id,operation,self.slot_number)
+		shuttle = self.updateShuttle(shuttle,tupl)
+		self.updateOrder_Result_Proof(shuttle)
+		
 
 
 		# output("shutttttttllllllllleeeeeee*************", shuttle)
@@ -88,14 +89,19 @@ class Replica(process):
 	 #reverse shuttle
 	def receive(msg=('SHUTTLE','FORWARD',request_id,shuttle,operation,), from_=self.prevReplica):
 		#validate order proof
+		output('just before executing')
 		self.operation_result[request_id] = self.executeOperation(request_id, operation)
+		output('just after executing')
+		output("shutttttttll@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", shuttle)
 		slot_number = shuttle[0][0][0]
+		output(slot_number)
 		output("orderr p[rooof  beforeeeeeeeeee****************@@@@@@@@@@@@@##########", self.order_proof)
 
-		self.updateOrder_Result_Proof(shuttle,request_id,operation,slot_number)
+		tupl = self.getResult_Order_Proof(request_id,operation,slot_number)
+		shuttle = self.updateShuttle(shuttle,tupl)
+		self.updateOrder_Result_Proof(shuttle)
 		output("orderr p[rooof ****************@@@@@@@@@@@@@##########", self.result_proof)
 		output("orderr p[rooof ****************@@@@@@@@@@@@@##########", self.order_proof)
-		shuttle = self.updateShuttle(shuttle,request_id,operation,slot_number)
 
 		
 		if(self.nextReplica == None):
@@ -156,19 +162,22 @@ class Replica(process):
 	def cacheResult(request_id):
 		self.order_cache[request_id] = self.operation_result[request_id]
 
-	def updateShuttle(shuttle,request_id,operation,slot_number):
-		orderproof=[]
-		resultproof=[]
+	def updateShuttle(shuttle,tupl):
+		output('wwwwwwwwwww',tupl)
+		order=[]
+		result=[]
+		orderproof, resultproof=tupl
+
 		# self.order_proof.append((slot_number,operation))
-		orderproof.append((slot_number,operation))
-		resultproof.append((self.operation_result[request_id],operation,'encrypted'))
 		# self.result_proof.append((self.operation_result[request_id],operation,'encrypted'))
 
 		if(shuttle==None):
-			shuttle=(orderproof,resultproof)
+			order.append(orderproof)
+			result.append(resultproof)
+			shuttle=(order,result)
 		else:
-			shuttle[0].append((slot_number,operation))
-			shuttle[1].append((self.operation_result[request_id],operation,encryptedMessage))
+			shuttle[0].append(orderproof)
+			shuttle[1].append(resultproof)
 
 		output('shuttle 99999999999', shuttle)
 		return shuttle
@@ -187,8 +196,14 @@ class Replica(process):
 
 		return encryptedMsg
 
+	def getResult_Order_Proof(request_id,operation,slot_number):
+		output("inside function for creating the current tuple")
+		order = (slot_number,operation)
+		result = (self.operation_result[request_id],operation,'encrypted')
+		tupl = (order,result)
+		return tupl
 
-	def updateOrder_Result_Proof(shuttle,request_id,operation,slot_number):
+	def updateOrder_Result_Proof(shuttle):
 		if(shuttle==None):
 			output('updating head')
 		else:
@@ -197,8 +212,6 @@ class Replica(process):
 				self.order_proof.append(i)
 			for j in rProof:
 				self.result_proof.append(j)
-		self.result_proof.append((self.operation_result[request_id],operation,'encrypted'))
-		self.order_proof.append((slot_number,operation))
 
 
 
