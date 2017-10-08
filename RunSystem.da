@@ -1,5 +1,7 @@
 import config
 import os
+import nacl.utils
+from nacl.public import PrivateKey, Box
 
 olympuss = import_da('Olympus')
 client = import_da('Client')
@@ -11,62 +13,96 @@ olympus = None
 
 def setup_main():
 	config.main();	# initialize configuration file
-	
-	
 
+def setup_keys(totalReplica,replicas):
+	replicaToPubPrivKey = {}
+	replicaToPubKeys = {}
+	for rep in replicas:
+		sk = PrivateKey.generate()
+		pk = sk.public_key
+		
+		replicaToPubPrivKey[str(rep)] = sk;
+		replicaToPubKeys[str(rep)] = pk;
+	rv = []
+	rv.append(replicaToPubPrivKey)
+	rv.append(replicaToPubKeys)
+	
+	return tuple(rv)
 
 def main():
+	# Setup function for main class.
 	setup_main();
-	totalReplica = config.readProperty("num_replica")
+	
+	#############creating client############################
+	num_replica = config.readProperty("num_replica")
 	totalClients = config.readProperty("num_client")
-	replicaHosts = config.readProperty("replica_hosts")
 	clientHosts = config.readProperty("client_hosts")
-	operationList = config.readProperty("workload[1]")
-	replicaBaseName = "replica_";
 	clientBaseName = "client_"
-
+	
 	for i in range(0,totalClients):
 		nodeName = clientBaseName+str(i)#+"@"+clientHosts[i];
-		clListTemp = list(new(client.Client,num=1, at=nodeName))
-		clients.append(clListTemp[0])
-
-
-	for i in range(0,totalReplica):
-		nodeName = replicaBaseName+str(i)#+"@"+replicaHosts[i];
-		reListTemp = list(new(replica.Replica,num=1, at=nodeName))
-		replicas.append(reListTemp[0])
-
-	olympus = new(olympuss.Olympus,num=1, at='onode')
+		clListTemp = new(client.Client,num=1, at=nodeName)
+		clients.extend(clListTemp)
 	print("clients => ",clients);
-	print("replicas => ",replicas);
-	print("olympus => ",olympus);
+	#########################################################
 
 
+	###########Creating and setting up Olympus###############
+	olympus = new(olympuss.Olympus,num=1, at='onode')
+	setup(olympus,[clients])
+	#########################################################
+	
+	
+	############Creating Replicas in Olympus#################
+	##Creating
+	
+	replica_hosts = config.readProperty("replica_hosts")
+	replicaBaseName = "replica_";
+	for i in range(0,num_replica):
+		nodeName = replicaBaseName+str(i)#+"@"+replicaHosts[i];
+		reListTemp = new(replica.Replica,num=1, at=nodeName)
+		replicas.extend(reListTemp)
+	print("replicas => ",self.replicas,", replica_hosts : ",replica_hosts);
+	
+	(replicaToPubPrivKey,replicaToPubKeys) = setup_keys(num_replica,replicas);
+	# print("replicaToPubPrivKey : ",replicaToPubPrivKey, " , replicaToPubKeys : ",replicaToPubKeys)
+	##Setting up Replica
+	replicaBaseName = "replica_"
 	for rnum,rep in enumerate(replicas):
 		replicaName = replicaBaseName+str(rnum)
 		print("replicaName is : ",replicaName)
 		if rnum == 0:
 			prevReplica = None
 			nextReplica = replicas[rnum+1]
-		elif rnum == totalReplica-1:
+		elif rnum == num_replica-1:
 			prevReplica = replicas[rnum-1]
 			nextReplica = None
 		else:
 			nextReplica = replicas[rnum+1]
 			prevReplica = replicas[rnum-1]
-		print("*********replicaName : ",replicaName," prevReplica : ",prevReplica,", nextReplica : ",nextReplica);
-		setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica])
+		print("*********replicaName : ",replicaName," prevReplica : ",prevReplica,", nextReplica : ",nextReplica)#,", pubPrivKeys[rnum] : ",replicaToPubPrivKey[rep],", replicaToPubKeys: ",replicaToPubKeys);
+		# setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica])
+		# print("replica : ",rep,", replicaToPubPrivKey: ",replicaToPubPrivKey[str(rep)])
+		# setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica,None,None])
+		setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica,replicaToPubPrivKey[str(rep)],replicaToPubKeys])
 
-
-	for cli in clients:
-		setup(cli,[operationList,olympus,replicas])
-
-	setup(olympus,[clients,replicas])
-
-	start(clients)
-	start(olympus)
+	##Starting Replica
 	for rep in replicas:
 		start(rep)
+	#########################################################
+	
+
+
+	############Creating Setting up client#################
+	operationList = config.readProperty("workload[1]");
+	for cli in clients:
+		setup(cli,[operationList,olympus,replicas])
+		start(cli)
+	#########################################################
+
+	start(olympus)
+	send(('SET_UP',), to=olympus)
+
 
 	
 	

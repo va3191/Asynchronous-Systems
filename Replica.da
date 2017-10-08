@@ -1,38 +1,39 @@
+import json
+import nacl.utils
+from nacl.public import PrivateKey, Box
 
 class Replica(process):
-	
 	dictionary_data;
-
-	history;
-
+	
 	order_cache;
-
 	operation_result;
-
 	slot_number;
-
 	order_proof;
-
 	result_proof;
 
-	def setup(client,olympus,currentReplica,prevReplica,nextReplica):
+	def setup(client,olympus,currentReplica,prevReplica,nextReplica,currentReplicaKeys,allReplicaToPublicKeyMap):
 		print("****************setting up replica start*******************")
+		# output("currentReplicaKeys : ",currentReplicaKeys,", allReplicaToPublicKeyMap : ",allReplicaToPublicKeyMap)
 		self.client=client
 		self.olympus = olympus
+
 		self.currentReplica=currentReplica
 		self.prevReplica=prevReplica
 		self.nextReplica=nextReplica
-		self.dictionary_data={'jedi':'luke skywalker','actor':'irfan','criket':'sachin','chupa':'aditya'}
-		self.history=[]
+		self.currentReplicaKeys = currentReplicaKeys
+		self.allReplicaToPublicKeyMap = allReplicaToPublicKeyMap
+
+		self.dictionary_data={}#{'jedi':'luke skywalker','actor':'irfan','criket':'sachin','chupa':'aditya'}	
 		self.order_cache={}
 		self.operation_result={}
+
 		self.order_proof=[]
 		self.result_proof=[]
+
 		if(prevReplica == None):
 			self.slot_number = 0
 		print("****************setting up replica finished****************")
 		
-
 	def main(): pass
 
 	# def receive(msg=('PERFORM_OPERATION',flag,),from_=self.client):
@@ -56,12 +57,15 @@ class Replica(process):
 	# 		if self.prevReplica == None:
 	# 			output("reached the head node!",flag)
 
+	
 	def receive(msg=('PERFORM_OPERATION', request_id,operation,), from_=self.client):
 		output("Reaching the head node! shuttle initiated:", request_id, operation)
 		shuttle=None
 		self.slot_number+=1
 		self.operation_result[request_id] = self.executeOperation(request_id, operation)
 		output("orderr p[rooof  beforeeeeeeeeee****************@@@@@@@@@@@@@##########", self.order_proof)
+		
+
 		self.updateOrder_Result_Proof(shuttle,request_id,operation,self.slot_number)
 		shuttle = self.updateShuttle(shuttle,request_id,operation,self.slot_number)
 
@@ -74,7 +78,7 @@ class Replica(process):
 
 
 	 #message to replca from previous 
-	def receive(msg=('SHUTTLE','REVERSE',request_id,result_proof,), from_=self.prevReplica):
+	def receive(msg=('SHUTTLE','REVERSE',request_id,result_proof,), from_=self.nextReplica):
 		self.cacheResult(request_id)
 		if(self.prevReplica == None):
 			output('***************YEAH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
@@ -110,9 +114,9 @@ class Replica(process):
 		await(received('',))
 
 	def executeOperation(request_id,operation):
-		output(self.dictionary_data)
+		output("Dictionary data before performing operation ",self.dictionary_data)
 		temp=operation.split('(')
-		print(temp)
+		# print(temp)
 		if(temp[0]=="put"):
 			tempsplit=operation.split('\'')
 			dictionary_data[tempsplit[1]]=tempsplit[3]
@@ -164,10 +168,25 @@ class Replica(process):
 			shuttle=(orderproof,resultproof)
 		else:
 			shuttle[0].append((slot_number,operation))
-			shuttle[1].append((self.operation_result[request_id],operation,'encrypted'))
+			shuttle[1].append((self.operation_result[request_id],operation,encryptedMessage))
 
 		output('shuttle 99999999999', shuttle)
 		return shuttle
+
+	def encryptMsg(msg,nextReplicaPublicKey, currentReplicaPrivateKey):
+		box = Box(currentReplicaPrivateKey,nextReplicaPublicKey)
+		encryptedMsg = box.encrypt(str.encode(msg))
+
+		#####################
+		encryptedMessage = order_proof
+		if self.nextReplica!=None:
+			self.currentReplicaKeys = currentReplicaKeys
+			self.allReplicaToPublicKeyMap = allReplicaToPublicKeyMap
+			encryptedMessage = encryptMsg(str(order_proof),self.allReplicaToPublicKeyMap[str(self.nextReplica)],self.currentReplicaKeys)
+			print("orignal message : ",str(order_proof))#,", encryptedMessage is : ",encryptedMessage)
+
+		return encryptedMsg
+
 
 	def updateOrder_Result_Proof(shuttle,request_id,operation,slot_number):
 		if(shuttle==None):

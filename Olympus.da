@@ -1,12 +1,101 @@
+import config
+
+client = import_da('Client')
+
+clients = []
+replicas = []
+
+
+
+
+
 class Olympus(process):
-	def setup(clients, replicas):
+	replicas = []
+	totalReplica = None;
+	def setup(clients):
 		output("************Setting Up Olympus***********")
 		self.clients = clients
-		self.replicas = replicas
-	
 
 	def run():
 		output("*********RUN : Olympus***********")
 		received(('SET_UP',), from_=self.clients)
 		output("*********Received SET_UP from Client***********")
 		send(('SET_UP',), to=self.clients)
+
+	def main():
+		pass
+
+	# def replica_():
+	# 	replica = import_da('Replica')
+	# 	# replicas = []
+	# 	num_replica = config.readProperty("num_replica")
+	# 	replica_hosts = config.readProperty("replica_hosts")
+	# 	replicaBaseName = "replica_";
+	# 	for i in range(0,num_replica):
+	# 		nodeName = replicaBaseName+str(i)#+"@"+replicaHosts[i];
+	# 		reListTemp = new(replica.Replica,num=1, at=nodeName)
+	# 		replicas.extend(reListTemp)
+	# 	# print("replicas => ",self.replicas,", replicaHosts : ",replicaHosts);
+	# 	return replicas
+
+
+
+# config.main();	# initialize configuration file
+
+# #############creating client############################
+# totalClients = config.readProperty("num_client")
+# clientHosts = config.readProperty("client_hosts")
+# clientBaseName = "client_"
+# clListTemp=[]
+# for i in range(0,totalClients):
+# 	nodeName = clientBaseName+str(i)#+"@"+clientHosts[i];
+# 	clListTemp = list(new(client.Client,num=1, at=nodeName))
+# 	clients.append(clListTemp[0])
+# print("clients => ",clients);
+# #########################################################
+# olympus = new(Olympus,num=1)
+# setup(olympus,[clients])
+
+# num_replica = config.readProperty("num_replica")
+# replica_hosts = config.readProperty("replica_hosts")
+# replicaBaseName = "replica_";
+# reListTemp=[]
+# for i in range(0,num_replica):
+# 	nodeName = replicaBaseName+str(i)#+"@"+replicaHosts[i];
+# 	reListTemp = list(new(replica.Replica,num=1, at=nodeName))
+# 	replicas.append(reListTemp[0])
+# print("replicas => ",self.replicas,", replicaHosts : ",replicaHosts);
+
+# ##Setting up Replica
+# replicaBaseName = "replica_"
+# for rnum,rep in enumerate(replicas):
+# 	replicaName = replicaBaseName+str(rnum)
+# 	print("replicaName is : ",replicaName)
+# 	if rnum == 0:
+# 		prevReplica = None
+# 		nextReplica = replicas[rnum+1]
+# 	elif rnum == num_replica-1:
+# 		prevReplica = replicas[rnum-1]
+# 		nextReplica = None
+# 	else:
+# 		nextReplica = replicas[rnum+1]
+# 		prevReplica = replicas[rnum-1]
+# 	print("*********replicaName : ",replicaName," prevReplica : ",prevReplica,", nextReplica : ",nextReplica);
+# 	setup(rep,[self.clients[0],self,replicaName,prevReplica,nextReplica])
+
+# ##Starting Replica
+# for rep in replicas:
+# 	start(rep)
+# #########################################################
+
+
+
+# ############Creating Setting up client#################
+# operationList = config.readProperty("workload[1]");
+# for cli in clients:
+# 	setup(cli,[operationList,olympus,replicas])
+# 	start(cli)
+# #########################################################
+
+# start(olympus)
+# send(('SET_UP',), to=olympus)
