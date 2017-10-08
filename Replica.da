@@ -61,8 +61,15 @@ class Replica(process):
 		shuttle=None
 		self.slot_number+=1
 		self.operation_result[request_id] = self.executeOperation(request_id, operation)
-		shuttle = self.updateHistoryAndShuttle(shuttle,request_id,operation,self.slot_number)
-		output("shutttttttllllllllleeeeeee*************", shuttle)
+		output("orderr p[rooof  beforeeeeeeeeee****************@@@@@@@@@@@@@##########", self.order_proof)
+		self.updateOrder_Result_Proof(shuttle,request_id,operation,self.slot_number)
+		shuttle = self.updateShuttle(shuttle,request_id,operation,self.slot_number)
+
+
+		# output("shutttttttllllllllleeeeeee*************", shuttle)
+
+		output("orderr p[rooof ****************@@@@@@@@@@@@@##########", self.result_proof)
+		output("orderr p[rooof ****************@@@@@@@@@@@@@##########", self.order_proof)
 		send(('SHUTTLE','FORWARD', request_id,shuttle,operation,), to=self.nextReplica)
 
 
@@ -79,13 +86,20 @@ class Replica(process):
 		#validate order proof
 		self.operation_result[request_id] = self.executeOperation(request_id, operation)
 		slot_number = shuttle[0][0][0]
-		shuttle = self.updateHistoryAndShuttle(shuttle,request_id,operation,slot_number)
+		output("orderr p[rooof  beforeeeeeeeeee****************@@@@@@@@@@@@@##########", self.order_proof)
+
+		self.updateOrder_Result_Proof(shuttle,request_id,operation,slot_number)
+		output("orderr p[rooof ****************@@@@@@@@@@@@@##########", self.result_proof)
+		output("orderr p[rooof ****************@@@@@@@@@@@@@##########", self.order_proof)
+		shuttle = self.updateShuttle(shuttle,request_id,operation,slot_number)
+
+		
 		if(self.nextReplica == None):
 			self.cacheResult(request_id)
 			output('recieved at tail, sending back ')
-			order_proof,result_proof =shuttle
-			send(('SHUTTLE', result_proof ,), to=self.client)
-			send(('SHUTTLE','REVERSE', request_id, result_proof,), to=self.prevReplica)
+			orderproof,resultproof =shuttle
+			send(('SHUTTLE', resultproof ,), to=self.client)
+			send(('SHUTTLE','REVERSE', request_id, resultproof,), to=self.prevReplica)
 			output('sent to previous replca from tail')
 		else:
 			send(('SHUTTLE','FORWARD',request_id,shuttle,operation,), to=self.nextReplica)
@@ -108,7 +122,7 @@ class Replica(process):
 
 		elif(temp[0] == "append"):
 			tempsplit=operation.split('\'')
-			if(self.dictionary_data[tempsplit[1]]):
+			if(self.dictionary_data[tempsplit[1]]):	
 				self.dictionary_data[tempsplit[1]] = self.dictionary_data[tempsplit[1]] + ' ' + tempsplit[3]
 				output('append is executeed@@@@@@@@')
 				return 'ok'
@@ -138,38 +152,36 @@ class Replica(process):
 	def cacheResult(request_id):
 		self.order_cache[request_id] = self.operation_result[request_id]
 
-	def updateHistoryAndShuttle(shuttle,request_id,operation,slot_number):
-		order_proof=[]
-		result_proof=[]
-		self.order_proof.append((slot_number,operation))
-		order_proof.append((slot_number,operation))
-		result_proof.append((self.operation_result[request_id],operation,'encrypted'))
-		self.result_proof.append((self.operation_result,operation,'encrypted'))
+	def updateShuttle(shuttle,request_id,operation,slot_number):
+		orderproof=[]
+		resultproof=[]
+		# self.order_proof.append((slot_number,operation))
+		orderproof.append((slot_number,operation))
+		resultproof.append((self.operation_result[request_id],operation,'encrypted'))
+		# self.result_proof.append((self.operation_result[request_id],operation,'encrypted'))
 
 		if(shuttle==None):
-			shuttle=(order_proof,result_proof)
-		shuttle[0].append((slot_number,operation))
-		shuttle[1].append((self.operation_result[request_id],operation,'encrypted'))
+			shuttle=(orderproof,resultproof)
+		else:
+			shuttle[0].append((slot_number,operation))
+			shuttle[1].append((self.operation_result[request_id],operation,'encrypted'))
+
 		output('shuttle 99999999999', shuttle)
 		return shuttle
 
+	def updateOrder_Result_Proof(shuttle,request_id,operation,slot_number):
+		if(shuttle==None):
+			output('updating head')
+		else:
+			oProof, rProof = shuttle
+			for i in oProof:
+				self.order_proof.append(i)
+			for j in rProof:
+				self.result_proof.append(j)
+		self.result_proof.append((self.operation_result[request_id],operation,'encrypted'))
+		self.order_proof.append((slot_number,operation))
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-		# flag=None
-		# 
