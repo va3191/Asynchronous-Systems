@@ -84,6 +84,7 @@ def main():
 	replicaBaseName = "replica_"
 	for rnum,rep in enumerate(replicas):
 		replicaName = replicaBaseName+str(rnum)
+		replica_state = "ACTIVE"
 		print("replicaName is : ",replicaName)
 		if rnum == 0:
 			prevReplica = None
@@ -99,6 +100,7 @@ def main():
 		# print("replica : ",rep,", replicaToPubPrivKey: ",replicaToPubPrivKey[str(rep)])
 		# setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica,None,None])
 		setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica,replicaSigningKeys[rnum],replicaVerifyKeys])
+		setup(rep,[clients[0],olympus,rep,prevReplica,nextReplica,replicas[0],replica_state,replicaSigningKeys[rnum],replicaVerifyKeys])
 
 	##Starting Replica
 	for rep in replicas:

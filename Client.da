@@ -2,6 +2,7 @@ import config
 import uuid
 import logging as logger
 import sys
+import time
 
 class Client(process):
 	
@@ -11,10 +12,10 @@ class Client(process):
 
 	order_cache;
 
+	request_sequence
 
 	def setup(reqList,olympus,replicas, currentClient):
 		config.main()
-		
 		logger.basicConfig(
 		format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
 		handlers=[
@@ -26,7 +27,7 @@ class Client(process):
 		self.reqList=reqList
 		self.olympus=olympus
 		self.replicas=replicas
-		self.slot_number = 0
+		self.request_sequence={}
 
 		# logger.info("logging for the first time ")
 		# logger.info("************Setting Up Client***********",config.readProperty("logfile_path"))
@@ -47,8 +48,13 @@ class Client(process):
 		# output("*********SHUTTLE Reached***********")
 		# logger.info("starting operations shuttle")
 		self.executeOperations()
-
+		output("\n****************************\n****************************\n****************************")
+		time.sleep(5)
+		self.executeRetransmissionTest();
+		output("\n****************************\n****************************\n****************************")
 		await(received('',))
+		
+
 
 	def receive(msg=('SHUTTLE',result_proof,), from_=self.replicas[len(replicas)-1]): 
 		logger.info("******** Result proof:" + str(result_proof) +" received from :"+str(self.replicas[len(replicas)-1]))
@@ -60,13 +66,45 @@ class Client(process):
 		dictionary = [('movie','star'),('jedi','luke skywalker'),('actor','irfan'),('criket','sachin'),('chupa','aditya')]
 		return dictionary
 
+	def sendOperationToReplicaNode(msg,requestId,operation,replicaId):
+		send((msg,requestId, operation,), to=replicaId)	
+		output("sendOperationToReplicaNode send at replicaId ",replicaId)
+
+	def executeRetransmissionTest():
+		output("executeRetransmissionTest", self.reqList)
+		for requestId,operation in self.request_sequence.items():
+			output("executeRetransmissionTest requestId : ",requestId, ', operation', operation)
+			self.retransmission(requestId,operation)
+			break;
+
+
+	#Receive output for retransmission request from replica.
+	def receive(msg=("RETRANSMISSION",message,replicaId,),):
+		output("RETRANSMISSION Result received from replica : ",replicaId," message : ",message);
+
+	def retransmission(request_id,operation):
+		for rnum,rep in enumerate(replicas):
+			sendOperationToReplicaNode('RETRANSMISSION',request_id,operation,rep)
+
 	def executeOperations():
 		logger.info("The Client:%s.    workload to be performed : %s" %(currentClient, self.reqList))
 		for operation in self.reqList:
 			request_id = uuid.uuid4()
-			logger.debug("Some message: %s %s" % ("operation",operation))
-			
+			logger.debug("Some message: %s %s" % ("operation",operation))	
 			# logger.info("CLIENTCLIENTCLIENT logging for the first time "+"var"+str(var )+" "+str(dic))
 			# output("CLIENTCLIENTCLIENT logging for the first time "+"var"+str(var )+" "+str(dic))
-			send(('PERFORM_OPERATION',request_id, operation), to=self.replicas[0])	
+			self.request_sequence[request_id]=operation
+			output('operation', operation)
+			self.sendOperationToReplicaNode('PERFORM_OPERATION',request_id,operation,self.replicas[0])
+
+
+
+
+
+
+
+
+
+
+
 

@@ -9,13 +9,14 @@ import sys
 class Replica(process):
 	dictionary_data;
 	
-	order_cache;
+	result_cache;
 	operation_result;
 	slot_number;
 	order_proof;
 	result_proof;
+	replica_state;
 
-	def setup(client,olympus,currentReplica,prevReplica,nextReplica,currentReplicaSigningKey,allReplicaVerifyKeysMap):
+	def setup(client,olympus,currentReplica,prevReplica,nextReplica,headReplica,replica_state,currentReplicaSigningKey,allReplicaVerifyKeysMap):
 		print("****************setting up replica start*******************")
 		config.main()
 		# output("currentReplicaKeys : ",currentReplicaKeys,", allReplicaToPublicKeyMap : ",allReplicaToPublicKeyMap)
@@ -36,14 +37,13 @@ class Replica(process):
 		self.nextReplica=nextReplica
 		self.currentReplicaSigningKey = currentReplicaSigningKey
 		self.allReplicaVerifyKeysMap = allReplicaVerifyKeysMap
-
+		self.headReplica=headReplica
+		self.replica_state=replica_state
 		self.dictionary_data={}#{'jedi':'luke skywalker','actor':'irfan','criket':'sachin','chupa':'aditya'}	
-		self.order_cache={}
+		self.result_cache={}
 		self.operation_result={}
-
 		self.order_proof=[]
 		self.result_proof=[]
-
 		if(prevReplica == None):
 			self.slot_number = 0
 
@@ -71,8 +71,10 @@ class Replica(process):
 
 	# 		if self.prevReplica == None:
 	# 			output("reached the head node!",flag)
-
 	
+	# def performForwardShuttleOperations(request_id,operation):
+		
+
 	def receive(msg=('PERFORM_OPERATION', request_id,operation,), from_=self.client):
 		output("Reaching the head node! shuttle initiated:", request_id, operation)
 		shuttle=None
@@ -83,9 +85,6 @@ class Replica(process):
 		tupl = self.getResult_Order_Proof(request_id,operation,self.slot_number)
 		shuttle = self.updateShuttle(shuttle,tupl)
 		self.updateOrder_Result_Proof(shuttle)
-		
-
-
 		# output("shutttttttllllllllleeeeeee*************", shuttle)
 
 		output("orderr proof ****************@@@@@@@@@@@@@##########", self.result_proof)
@@ -134,6 +133,52 @@ class Replica(process):
 			# NOTE: replica turns itself immutable and sends wedge statement to client with proof od misbehaviour
 			output("************************Validating order proof failed at one of the replicas********************")
 
+	#from other replicas to HEAD Replica
+	def receive(msg=('RETRANSMISSION_HEAD',requestId,operation,fromReplica,),):
+		output("RETRANSMISSION_HEAD request received at HEAD replica : ",currentReplica," from replica : ",fromReplica)
+		#NOTE: change it
+		if(requestId not in self.result_cache):	
+			output("inside requestId in self.result_cache")
+			send(("RETRANSMISSION",self.result_cache[requestId],self.currentReplica), to=self.client)
+			return;
+
+		timeout = 10
+		send(("PERFORM_OPERATION",requestId,operation), to=self.currentReplica)
+		if await(some(received(('SHUTTLE','REVERSE',requestId,result_proof,),from_=self.nextReplica))):
+			# await(received(('done',)))
+			# time.sleep(6)
+			output("****************************REACHED HEAD FROM SHUTTLE***************************")
+			cacheResult(requestId)
+			# send(("PERFORM_OPERATION",requestId,operation), to=self.currentReplica)
+			
+		elif(timeout(timeout)):
+			output("TIMEOUT at Replica : ",self.currentReplica," sending RECONFIGURATION request to Olympus!!!!")
+
+	#from other replicas to HEAD Replica
+	def receive(msg=('RETRANSMISSION',requestId,operation,), from_=self.client):
+		output("RETRANSMISSION received at ",self.currentReplica,", requestId : ",requestId,", operation : ",operation, ", from client : ",self.client)
+		
+		if(self.replica_state == 'IMMUTABLE'):
+			# if("replica_2" in self.currentReplica):
+			msg = "ERROR"
+			send(("RETRANSMISSION",msg,self.currentReplica), to=self.client)
+		elif(requestId not in self.result_cache):	
+			send(("RETRANSMISSION",self.result_cache[requestId],self.currentReplica), to=self.client)
+
+		elif(self.currentReplica != self.headReplica):
+			#send request to head
+			#self.headReplica
+			output("self.currentReplica  : ",self.currentReplica ,", self.headReplica : ",self.headReplica)
+			send(("RETRANSMISSION_HEAD",requestId,operation,self.currentReplica),to=self.headReplica)
+			timeout=10
+			if await(some(received(('SHUTTLE','REVERSE',requestId,result_proof,),from_=self.nextReplica))):
+				output("shuttle coming from next replica result_proof : ",result_proof)
+				send(("PERFORM_OPERATION",requestId,operation), to=self.currentReplica)
+			elif(timeout(timeout)):
+				output("timer expired")
+		
+		#(msg,requestId,operation,replicaId):
+
 	def run():
 		await(received('',))
 
@@ -178,7 +223,7 @@ class Replica(process):
 
 
 	def cacheResult(request_id):
-		self.order_cache[request_id] = self.operation_result[request_id]
+		self.result_cache[request_id] = self.operation_result[request_id]
 
 	def validateOrderProof(shuttle,operation,slot):
 		orderproof,resultproof = shuttle
