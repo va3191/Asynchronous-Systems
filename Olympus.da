@@ -1,4 +1,7 @@
 import config
+import logging as logger
+import sys
+
 
 client = import_da('Client')
 
@@ -13,13 +16,24 @@ class Olympus(process):
 	replicas = []
 	totalReplica = None;
 	def setup(clients):
-		output("************Setting Up Olympus***********")
+		config.main()
+		logger.basicConfig(
+		format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
+		handlers=[
+		logger.FileHandler("{0}/{1}.log".format(config.readProperty("logfile_path"), config.readProperty("logfile_name"))),
+		logger.StreamHandler()
+		],
+		level=logger.DEBUG)
+		logger.info("logging for the first time ")
+	    # logger.info('logging for the first time')
+	    # logger.info("************Setting Up Olympus***********")
+
 		self.clients = clients
 
 	def run():
-		output("*********RUN : Olympus***********")
+		logger.debug("*********RUN : Olympus***********")
 		received(('SET_UP',), from_=self.clients)
-		output("*********Received SET_UP from Client***********")
+		logger.debug("*********Received SET_UP from Client***********")
 		send(('SET_UP',), to=self.clients)
 
 	def main():

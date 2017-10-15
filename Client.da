@@ -1,5 +1,7 @@
+import config
 import uuid
-
+import logging as logger
+import sys
 
 class Client(process):
 	
@@ -10,33 +12,48 @@ class Client(process):
 	order_cache;
 
 
-	def setup(reqList,olympus,replicas):
-		output("**********Setting up Client *************"); 
+	def setup(reqList,olympus,replicas, currentClient):
+		config.main()
+		
+		logger.basicConfig(
+		format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
+		handlers=[
+		logger.FileHandler("{0}/{1}.log".format(config.readProperty("logfile_path"), config.readProperty("logfile_name"))),
+		logger.StreamHandler()
+		],
+		level=logger.DEBUG)
+		logger.info("**********Setting up Client *************"+str(config.readProperty("logfile_path"))); 
 		self.reqList=reqList
 		self.olympus=olympus
 		self.replicas=replicas
 		self.slot_number = 0
 
+		# logger.info("logging for the first time ")
+		# logger.info("************Setting Up Client***********",config.readProperty("logfile_path"))
+
  
 	def main(): pass
 
 	def run():
-		output("*********RUN : Starting Client***********")
+		logger.debug("*********RUN : Starting Client***********")
 		send(('SET_UP',), to=self.olympus)
 		received(('SET_UP',), from_=self.olympus)
-		output("*********received SET_UP FROM Client***********")
+		logger.debug('Recieved Setup')
+		logger.debug("*********received SET_UP FROM Client***********")
 		# flag = 'FORWARD'
 		# send(('PERFORM_OPERATION',request_id, self.reqList[0]), to=self.replicas[0])
 		# # send(('PERFORM_OPERATION',), to=self.replicas[0])
 		# await(received(('SHUTTLE',), from_=self.replicas[len(replicas)-1]))
 		# output("*********SHUTTLE Reached***********")
-		output("starting operations shuttle")
+		# logger.info("starting operations shuttle")
 		self.executeOperations()
+
 		await(received('',))
 
 	def receive(msg=('SHUTTLE',result_proof,), from_=self.replicas[len(replicas)-1]): 
-		output("*********SHUTTLE Reached***********")
-		output(result_proof)
+		logger.info("******** Result proof:" + str(result_proof) +" received from :"+str(self.replicas[len(replicas)-1]))
+		logger.debug("*********SHUTTLE Reached***********")
+		# output(result_proof)
 
 
 	def dictionary():
@@ -44,9 +61,12 @@ class Client(process):
 		return dictionary
 
 	def executeOperations():
-		output(self.reqList)
+		logger.info("The Client:%s.    workload to be performed : %s" %(currentClient, self.reqList))
 		for operation in self.reqList:
 			request_id = uuid.uuid4()
-			output('operation', operation)
+			logger.debug("Some message: %s %s" % ("operation",operation))
+			
+			# logger.info("CLIENTCLIENTCLIENT logging for the first time "+"var"+str(var )+" "+str(dic))
+			# output("CLIENTCLIENTCLIENT logging for the first time "+"var"+str(var )+" "+str(dic))
 			send(('PERFORM_OPERATION',request_id, operation), to=self.replicas[0])	
 

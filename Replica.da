@@ -1,6 +1,10 @@
+import config
 import json
 import nacl.utils
+import nacl.signing
 from nacl.public import PrivateKey, Box
+import logging as logger
+import sys
 
 class Replica(process):
 	dictionary_data;
@@ -11,17 +15,27 @@ class Replica(process):
 	order_proof;
 	result_proof;
 
-	def setup(client,olympus,currentReplica,prevReplica,nextReplica,currentReplicaKeys,allReplicaToPublicKeyMap):
+	def setup(client,olympus,currentReplica,prevReplica,nextReplica,currentReplicaSigningKey,allReplicaVerifyKeysMap):
 		print("****************setting up replica start*******************")
+		config.main()
 		# output("currentReplicaKeys : ",currentReplicaKeys,", allReplicaToPublicKeyMap : ",allReplicaToPublicKeyMap)
+		logger.basicConfig(
+		format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
+		handlers=[
+		logger.FileHandler("{0}/{1}.log".format(config.readProperty("logfile_path"), config.readProperty("logfile_name"))),
+		logger.StreamHandler()
+		],
+		level=logger.DEBUG)
+		logger.info("logging for the first time ")
+	    # logger.info("*	***********Setting Up replica***********")
 		self.client=client
 		self.olympus = olympus
 
 		self.currentReplica=currentReplica
 		self.prevReplica=prevReplica
 		self.nextReplica=nextReplica
-		self.currentReplicaKeys = currentReplicaKeys
-		self.allReplicaToPublicKeyMap = allReplicaToPublicKeyMap
+		self.currentReplicaSigningKey = currentReplicaSigningKey
+		self.allReplicaVerifyKeysMap = allReplicaVerifyKeysMap
 
 		self.dictionary_data={}#{'jedi':'luke skywalker','actor':'irfan','criket':'sachin','chupa':'aditya'}	
 		self.order_cache={}
@@ -32,6 +46,7 @@ class Replica(process):
 
 		if(prevReplica == None):
 			self.slot_number = 0
+
 		print("****************setting up replica finished****************")
 		
 	def main(): pass
@@ -73,9 +88,9 @@ class Replica(process):
 
 		# output("shutttttttllllllllleeeeeee*************", shuttle)
 
-		output("orderr p[rooof ****************@@@@@@@@@@@@@##########", self.result_proof)
-		output("orderr p[rooof ****************@@@@@@@@@@@@@##########", self.order_proof)
-		send(('SHUTTLE','FORWARD', request_id,shuttle,operation,), to=self.nextReplica)
+		output("orderr proof ****************@@@@@@@@@@@@@##########", self.result_proof)
+		output("orderr proof ****************@@@@@@@@@@@@@##########", self.order_proof)
+		send(('SHUTTLE','FORWARD', request_id,shuttle,operation,self.slot_number,), to=self.nextReplica)
 
 
 	 #message to replca from previous 
@@ -87,34 +102,37 @@ class Replica(process):
 			send(('SHUTTLE','REVERSE',request_id,result_proof,), to=self.prevReplica)
 
 	 #reverse shuttle
-	def receive(msg=('SHUTTLE','FORWARD',request_id,shuttle,operation,), from_=self.prevReplica):
+	def receive(msg=('SHUTTLE','FORWARD',request_id,shuttle,operation,slot), from_=self.prevReplica):
 		#validate order proof
-		output('just before executing')
-		self.operation_result[request_id] = self.executeOperation(request_id, operation)
-		output('just after executing')
-		output("shutttttttll@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", shuttle)
-		slot_number = shuttle[0][0][0]
-		output(slot_number)
-		output("orderr p[rooof  beforeeeeeeeeee****************@@@@@@@@@@@@@##########", self.order_proof)
+		if(validateOrderProof(shuttle,operation,slot)):
+			output('just before executing')
+			self.operation_result[request_id] = self.executeOperation(request_id, operation)
+			output('just after executing')
+			output("shutttttttll@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", shuttle)
+			slot_number = slot
+			output(slot_number)
+			output("orderr prooof  beforeeeeeeeeee****************@@@@@@@@@@@@@##########", self.order_proof)
 
-		tupl = self.getResult_Order_Proof(request_id,operation,slot_number)
-		shuttle = self.updateShuttle(shuttle,tupl)
-		self.updateOrder_Result_Proof(shuttle)
-		output("orderr p[rooof ****************@@@@@@@@@@@@@##########", self.result_proof)
-		output("orderr p[rooof ****************@@@@@@@@@@@@@##########", self.order_proof)
+			tupl = self.getResult_Order_Proof(request_id,operation,slot_number)
+			shuttle = self.updateShuttle(shuttle,tupl)
+			self.updateOrder_Result_Proof(shuttle)
+			output("orderr prooof ****************@@@@@@@@@@@@@##########", self.result_proof)
+			output("orderr prooof ****************@@@@@@@@@@@@@##########", self.order_proof)
 
-		
-		if(self.nextReplica == None):
-			self.cacheResult(request_id)
-			output('recieved at tail, sending back ')
-			orderproof,resultproof =shuttle
-			send(('SHUTTLE', resultproof ,), to=self.client)
-			send(('SHUTTLE','REVERSE', request_id, resultproof,), to=self.prevReplica)
-			output('sent to previous replca from tail')
+			#validation successful now sending the shuttle forward
+			if(self.nextReplica == None):
+				self.cacheResult(request_id)
+				output('recieved at tail, sending back ')
+				orderproof,resultproof =shuttle
+				send(('SHUTTLE', resultproof ,), to=self.client)
+				send(('SHUTTLE','REVERSE', request_id, resultproof,), to=self.prevReplica)
+				output('sent to previous replca from tail')
+			else:
+				send(('SHUTTLE','FORWARD',request_id,shuttle,operation,slot,), to=self.nextReplica)
+				output('sent from replica', self.currentReplica)
 		else:
-			send(('SHUTTLE','FORWARD',request_id,shuttle,operation,), to=self.nextReplica)
-			output('sent from replica', self.currentReplica)
-
+			# NOTE: replica turns itself immutable and sends wedge statement to client with proof od misbehaviour
+			output("************************Validating order proof failed at one of the replicas********************")
 
 	def run():
 		await(received('',))
@@ -162,8 +180,31 @@ class Replica(process):
 	def cacheResult(request_id):
 		self.order_cache[request_id] = self.operation_result[request_id]
 
+	def validateOrderProof(shuttle,operation,slot):
+		orderproof,resultproof = shuttle
+		output("this is the order proof ___________________________________",orderproof, "length", len(orderproof))
+		output("this is the result proof ___________________________________",resultproof, "length", len(resultproof))
+		for i in range(0,len(orderproof)):
+			try:
+				output("verifying the signature for replica ",i)
+				# Create a VerifyKey object from a hex serialized public key
+				verify_key = nacl.signing.VerifyKey(self.allReplicaVerifyKeysMap[i], encoder=nacl.encoding.HexEncoder)
+				order,result = shuttle
+				output("order number",i+1, "from shttle", order[i])
+				message = order[i]
+				# Check the validity of a message's signature
+				# Will raise nacl.exceptions.BadSignatureError if the signature check fails
+				verify_key.verify(message)
+				output("verified")
+			except nacl.exceptions.BadSignatureError:
+				output("exception thrown ..................;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;'''''''''''''''''''''''''''''''''''")
+				output("key mismatch failed for ", orderproof[i] )
+				return False
+		output('verification succesffull...................___________________________+++++++++++++++++++++')
+		return True
+
 	def updateShuttle(shuttle,tupl):
-		output('wwwwwwwwwww',tupl)
+		output('indide update shuttle:updating it with latest replicas order proof and result proof',tupl)
 		order=[]
 		result=[]
 		orderproof, resultproof=tupl
@@ -182,25 +223,30 @@ class Replica(process):
 		output('shuttle 99999999999', shuttle)
 		return shuttle
 
-	def encryptMsg(msg,nextReplicaPublicKey, currentReplicaPrivateKey):
-		box = Box(currentReplicaPrivateKey,nextReplicaPublicKey)
-		encryptedMsg = box.encrypt(str.encode(msg))
+	def signMessage(msg):
+		# box = Box(currentReplicaPrivateKey,nextReplicaPublicKey)
+
+		# encryptedMsg = box.encrypt(str.encode(msg))
+		signedMsg = currentReplicaSigningKey.sign(str.encode(msg))
 
 		#####################
-		encryptedMessage = order_proof
-		if self.nextReplica!=None:
-			self.currentReplicaKeys = currentReplicaKeys
-			self.allReplicaToPublicKeyMap = allReplicaToPublicKeyMap
-			encryptedMessage = encryptMsg(str(order_proof),self.allReplicaToPublicKeyMap[str(self.nextReplica)],self.currentReplicaKeys)
-			print("orignal message : ",str(order_proof))#,", encryptedMessage is : ",encryptedMessage)
+		# encryptedMessage = order_proof
+		# if self.nextReplica!=None:
+		# 	self.currentReplicaKeys = currentReplicaKeys
+		# 	self.allReplicaToPublicKeyMap = allReplicaToPublicKeyMap
+		# 	encryptedMessage = encryptMsg(str(order_proof),self.allReplicaToPublicKeyMap[str(self.nextReplica)],self.currentReplicaKeys)
+		print("orignal message : ",str(msg),", signedMsg is : ",signedMsg)
 
-		return encryptedMsg
+		return signedMsg
 
 	def getResult_Order_Proof(request_id,operation,slot_number):
 		output("inside function for creating the current tuple")
 		order = (slot_number,operation)
+		signedOrderProof= signMessage(str(order))
+
 		result = (self.operation_result[request_id],operation,'encrypted')
-		tupl = (order,result)
+		signedResultProof = signMessage(str(result))
+		tupl = (signedOrderProof,signedResultProof)
 		return tupl
 
 	def updateOrder_Result_Proof(shuttle):

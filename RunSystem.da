@@ -1,7 +1,11 @@
 import config
 import os
 import nacl.utils
+import nacl.encoding
+import nacl.signing
 from nacl.public import PrivateKey, Box
+import logging as logger
+import sys
 
 olympuss = import_da('Olympus')
 client = import_da('Client')
@@ -12,22 +16,32 @@ replicas = []
 olympus = None
 
 def setup_main():
+
 	config.main();	# initialize configuration file
+	logger.basicConfig(
+	    format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
+	    handlers=[
+	        logger.FileHandler("{0}/{1}.log".format(config.readProperty("logfile_path"), config.readProperty("logfile_name"))),
+	        logger.StreamHandler()
+	    ],
+	    level=logger.DEBUG)
+	os.remove((config.readProperty("logfile_path")+config.readProperty("logfile_name")+".log"))
 
 def setup_keys(totalReplica,replicas):
-	replicaToPubPrivKey = {}
-	replicaToPubKeys = {}
-	for rep in replicas:
-		sk = PrivateKey.generate()
-		pk = sk.public_key
-		
-		replicaToPubPrivKey[str(rep)] = sk;
-		replicaToPubKeys[str(rep)] = pk;
-	rv = []
-	rv.append(replicaToPubPrivKey)
-	rv.append(replicaToPubKeys)
+
+	replicaSigningKeys = {}
+	replicaVerifyKeys = {}
+	for i,rep in enumerate(replicas):
+		signing_key = nacl.signing.SigningKey.generate()
+		verify_key = signing_key.verify_key
+		verify_key_hex = verify_key.encode(encoder=nacl.encoding.HexEncoder)
+		replicaSigningKeys[i] = signing_key;
+		replicaVerifyKeys[i] = verify_key_hex;
+	keys = []
+	keys.append(replicaSigningKeys)
+	keys.append(replicaVerifyKeys)
 	
-	return tuple(rv)
+	return tuple(keys)
 
 def main():
 	# Setup function for main class.
@@ -64,7 +78,7 @@ def main():
 		replicas.extend(reListTemp)
 	print("replicas => ",self.replicas,", replica_hosts : ",replica_hosts);
 	
-	(replicaToPubPrivKey,replicaToPubKeys) = setup_keys(num_replica,replicas);
+	(replicaSigningKeys,replicaVerifyKeys) = setup_keys(num_replica,replicas);
 	# print("replicaToPubPrivKey : ",replicaToPubPrivKey, " , replicaToPubKeys : ",replicaToPubKeys)
 	##Setting up Replica
 	replicaBaseName = "replica_"
@@ -84,7 +98,7 @@ def main():
 		# setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica])
 		# print("replica : ",rep,", replicaToPubPrivKey: ",replicaToPubPrivKey[str(rep)])
 		# setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica,None,None])
-		setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica,replicaToPubPrivKey[str(rep)],replicaToPubKeys])
+		setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica,replicaSigningKeys[rnum],replicaVerifyKeys])
 
 	##Starting Replica
 	for rep in replicas:
@@ -96,7 +110,7 @@ def main():
 	############Creating Setting up client#################
 	operationList = config.readProperty("workload[1]");
 	for cli in clients:
-		setup(cli,[operationList,olympus,replicas])
+		setup(cli,[operationList,olympus,replicas,cli])
 		start(cli)
 	#########################################################
 
