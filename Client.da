@@ -23,7 +23,7 @@ class Client(process):
 		logger.StreamHandler()
 		],
 		level=logger.DEBUG)
-		logger.info("**********Setting up Client *************"+str(config.readProperty("logfile_path"))); 
+		logger.info("**********Setting up Client *************"); 
 		self.reqList=reqList
 		self.olympus=olympus
 		self.replicas=replicas
@@ -50,7 +50,7 @@ class Client(process):
 		self.executeOperations()
 		output("\n****************************\n****************************\n****************************")
 		# resultproof
-		await(received('SHUTTLE',))
+		# await(received('SHUTTLE',))
 		time.sleep(10)
 		self.executeRetransmissionTest();
 		output("\n****************************\n****************************\n****************************")

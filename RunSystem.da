@@ -11,7 +11,7 @@ olympuss = import_da('Olympus')
 client = import_da('Client')
 replica = import_da('Replica')
 
-clients = []
+clients = set()
 replicas = []
 olympus = None
 
@@ -52,11 +52,12 @@ def main():
 	totalClients = config.readProperty("num_client")
 	clientHosts = config.readProperty("client_hosts")
 	clientBaseName = "client_"
-	
+	clientList=[]
 	for i in range(0,totalClients):
 		nodeName = clientBaseName+str(i)#+"@"+clientHosts[i];
 		clListTemp = new(client.Client,num=1, at=nodeName)
-		clients.extend(clListTemp)
+		clientList.extend(clListTemp)
+	clients = set(clientList)
 	print("clients => ",clients);
 	#########################################################
 
@@ -99,7 +100,7 @@ def main():
 		# setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica])
 		# print("replica : ",rep,", replicaToPubPrivKey: ",replicaToPubPrivKey[str(rep)])
 		# setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica,None,None])
-		setup(rep,[clients[0],olympus,rep,prevReplica,nextReplica,replicas[0],replica_state,replicaSigningKeys[rnum],replicaVerifyKeys])
+		setup(rep,[clients,olympus,rep,prevReplica,nextReplica,replicas[0],replica_state,replicaSigningKeys[rnum],replicaVerifyKeys])
 
 	##Starting Replica
 	for rep in replicas:
