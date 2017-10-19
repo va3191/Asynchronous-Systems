@@ -49,7 +49,9 @@ class Client(process):
 		# logger.info("starting operations shuttle")
 		self.executeOperations()
 		output("\n****************************\n****************************\n****************************")
-		time.sleep(5)
+		# resultproof
+		await(received('SHUTTLE',))
+		time.sleep(10)
 		self.executeRetransmissionTest();
 		output("\n****************************\n****************************\n****************************")
 		await(received('',))
@@ -83,8 +85,19 @@ class Client(process):
 		output("RETRANSMISSION Result received from replica : ",replicaId," message : ",message);
 
 	def retransmission(request_id,operation):
+		awaitResultQueue=set()
+		resultproof=str()
 		for rnum,rep in enumerate(replicas):
 			sendOperationToReplicaNode('RETRANSMISSION',request_id,operation,rep)
+			awaitResultQueue.add(('SHUTTLE', resultproof ,))
+			
+        
+		time.sleep(10)
+		logger.debug("BEFORE: IN CLIENT FINISHED!!")
+		await(each(p in awaitResultQueue, has=received(('RETRANSMISSION', resultproof))))
+		logger.debug("AFTER: IN CLIENT FINISHED!!")
+
+
 
 	def executeOperations():
 		logger.info("The Client:%s.    workload to be performed : %s" %(currentClient, self.reqList))
@@ -96,6 +109,7 @@ class Client(process):
 			self.request_sequence[request_id]=operation
 			output('operation', operation)
 			self.sendOperationToReplicaNode('PERFORM_OPERATION',request_id,operation,self.replicas[0])
+			# await(some(received('PERFORM_OPERATION',)))
 
 
 
