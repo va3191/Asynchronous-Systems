@@ -43,22 +43,8 @@ class Client(process):
 		logger.debug('Recieved Setup')
 		logger.debug("*********received SET_UP FROM Client***********")
 		
-		# self.executeOperations()
-		# # output("\n****************************\n****************************\n****************************")
-		# # resultproof
-		# await(received('SHUTTLE',))
-		# time.sleep(10)
-		# self.executeRetransmissionTest();
-		# await(received('SHUTTLE',))
-		# output("\n****************************\n****************************\n****************************")
-		
 		self.executeOperations()
-		# await(received('',)) 
-		output("************************************************************************************")
-		output("************************************************************************************")
-		output("************************************************************************************")
-		# resultproof
-		# await(received('SHUTTLE',))
+		
 		if("client_1" in currentClient):
 			time.sleep(10)
 			self.executeRetransmissionTest();
@@ -100,7 +86,7 @@ class Client(process):
 	def receive(msg=("RETRANSMISSION",result_proof,replicaId,),):
 		logger.info("RETRANSMISSION Result received from replica : "+str(replicaId)+", result_proof : "+str(result_proof));
 		validation, result = config.validateResultProof(result_proof, allReplicaVerifyKeysMap)
-		logger.info("validation %s, result %s",%(validation, result))
+		logger.info("validation : "+str(validation)+", result : "+str(result))
 		if(validation):
 			logger.info("Result proof correctly validated! SUCCESS !!")
 		else:
