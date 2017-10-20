@@ -7,15 +7,8 @@ import logging as logger
 import sys
 
 class Replica(process):
-	dictionary_data;
-	result_cache;
-	operation_result;
-	slot_number;
-	order_proof;
-	result_proof;
-	replica_state;
-
-	def setup(client,olympus,currentReplica,prevReplica,nextReplica,headReplica,replica_state,currentReplicaSigningKey,allReplicaVerifyKeysMap):
+	
+	def setup(clients,olympus,currentReplica,prevReplica,nextReplica,headReplica,tailReplica,replica_state,currentReplicaSigningKey,allReplicaVerifyKeysMap):
 		config.main()
 		logger.basicConfig(
 		format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
@@ -25,41 +18,56 @@ class Replica(process):
 		],
 		level=logger.INFO)
 
-		logger.info("Replica SETUP. currentReplica : "+str(currentReplica)+", client : "+str(client)+", olympus : "+str(olympus)+", replica_state : "+str(replica_state))
+		logger.info("Replica SETUP. currentReplica : "+str(currentReplica)+", clients : "+str(clients)+", olympus : "+str(olympus)+", replica_state : "+str(replica_state))
 
 	    # logger.info("*	***********Setting Up replica***********")
-		self.client=client
+		self.clients=clients
 		self.olympus = olympus
-
 		self.currentReplica=currentReplica
 		self.prevReplica=prevReplica
 		self.nextReplica=nextReplica
 		self.currentReplicaSigningKey = currentReplicaSigningKey
 		self.allReplicaVerifyKeysMap = allReplicaVerifyKeysMap
 		self.headReplica=headReplica
+		self.tailReplica=tailReplica
 		self.replica_state=replica_state
-		self.dictionary_data={}#{'jedi':'luke skywalker','actor':'irfan','criket':'sachin','chupa':'aditya'}	
+		#Main Dict object
+		self.dictionary_data={}#{'jedi':'luke skywalker','actor':'irfan','criket':'sachin','chupa':'aditya'}
+		#Result (key=requestId, value = (order_proof,result_proof)	
 		self.result_cache={}
+		#REMOVING THIS
 		self.operation_result={}
+
 		self.order_proof=[]
 		self.result_proof=[]
+		#Object to store requestId to (Slot,Operation) pair
+		self.requestIdToSoPair = {}
+
 		if(prevReplica == None):
 			self.slot_number = 0
 
 		logger.debug("REPLICA SETUP DONE!!")
 		
-	def main(): pass		
+	def main(): pass	
+
+	def updateSlotOperation(request_id,slot,operation):	
+		tempSOPair = []
+		tempSOPair.append(slot)
+		tempSOPair.append(operation)
+		self.requestIdToSoPair[request_id] = tuple(tempSOPair)
 
 	#CONTROL FLOW: From (Client to HeadReplica)
-	def receive(msg=('PERFORM_OPERATION', request_id,operation,), from_=self.client):
-		logger.info("PERFORM_OPERATION Called from client : "+str(self.client)+", request_id: "+str(request_id)+", operation: "+str(operation)+" at replica : "+str(self.currentReplica))
+	def receive(msg=('PERFORM_OPERATION', request_id,operation,), from_=self.clients):
+		logger.info("PERFORM_OPERATION Called from clients : "+str(self.clients)+", request_id: "+str(request_id)+", operation: "+str(operation)+" at replica : "+str(self.currentReplica))
 
 		shuttle=None
 		self.slot_number+=1
 		self.operation_result[request_id] = self.executeOperation(request_id, operation)
+		updateSlotOperation(request_id,self.slot_number,operation)
 		logger.debug("After execute Operation, result proof: "+ str(self.order_proof))
 		tupl = self.getResult_Order_Proof(request_id,operation,self.slot_number)
 		shuttle = self.updateShuttle(shuttle,tupl)
+		logger.debug("shuttle after update: "+str(shuttle))
 		self.updateOrder_Result_Proof(shuttle)
 		logger.debug("ResultProof: "+str(self.result_proof)+"\n"+"OrderProof: "+str(self.order_proof));
 		logger.info("PERFORM_OPERATION done at HeadReplica, transfering SHUTTLE to nextReplica : "+str(self.nextReplica))
@@ -71,9 +79,11 @@ class Replica(process):
 		logger.debug("SHUTTLE : "+str(shuttle));
 		if(validateOrderProof(shuttle,operation,slot)):
 			self.operation_result[request_id] = self.executeOperation(request_id, operation)
+			updateSlotOperation(request_id,slot,operation)
 			slot_number = slot
 			tupl = self.getResult_Order_Proof(request_id,operation,slot_number)
 			shuttle = self.updateShuttle(shuttle,tupl)
+			logger.debug("shuttle after update: "+str(shuttle))
 			self.updateOrder_Result_Proof(shuttle)
 
 			#validation successful now sending the shuttle forward
@@ -82,8 +92,8 @@ class Replica(process):
 				
 				orderproof,resultproof =shuttle
 				#SENDING result to client
-				logger.info('SHUTTLE reached at Tail : '+str(self.currentReplica)+", sending result to client : "+str(self.client))
-				send(('SHUTTLE', resultproof ,), to=self.client)
+				logger.info('SHUTTLE reached at Tail : '+str(self.currentReplica)+", sending result to clients : "+str(self.clients))
+				send(('SHUTTLE', resultproof ,), to=self.clients)
 				#Starting Reverse SHUTTLE
 				logger.info('Reverse SHUTTLE starting. Forwarding to prevReplica : '+str(self.prevReplica))
 				send(('SHUTTLE','REVERSE', request_id, resultproof,), to=self.prevReplica)
@@ -107,37 +117,41 @@ class Replica(process):
 	#FROM NON-HEAD Replicas to HEAD Replica for Retransmission case
 	def receive(msg=('RETRANSMISSION_HEAD',requestId,operation,fromReplica,),):
 		logger.info("RETRANSMISSION_HEAD request received at HEAD replica : "+str(self.currentReplica)+" from replica : "+str(fromReplica))
-		#NOTE: change it to  : if(requestId in self.result_cache):	
-		if(requestId not in self.result_cache):	
-			logger.info("RequestId found inside the cache. Returning response to Client requestId : "+str(requestId))
-			send(("RETRANSMISSION",self.result_cache[requestId],self.currentReplica), to=self.client)
-			return;
-
 		timeout = config.readProperty("head_timeout")
-		#PERFORM Operation for forward shuttle only once and stop for all other Replicas
-		send(("PERFORM_OPERATION",requestId,operation), to=self.headReplica)
-		if await(some(received(('SHUTTLE','REVERSE',requestId,result_proof,),from_=self.nextReplica))):
-			# await(received(('done',)))
-			# time.sleep(6)
-			logger.info("****************************REACHED HEAD FROM SHUTTLE***************************")
-			cacheResult(requestId)
-			# send(("PERFORM_OPERATION",requestId,operation), to=self.currentReplica)
+		#NOTE: change it to  : if(requestId in self.result_cache):	
+		if(requestId in self.result_cache):	
+			logger.info("RequestId found inside the cache. Returning response to clients requestId : "+str(requestId))
+			send(("RETRANSMISSION",self.result_cache[requestId],self.currentReplica), to=self.clients)
+			return;
+		#HEAD has already started operation for the first request sent by other 
+		#replicas(including head) in case it does not recognize the operation
+		if((requestId in self.requestIdToSoPair) and (requestId not in self.result_cache)):
+			logger.info("Result shuttle is yet to receive at the head, waiting for it!! fromReplica : "+str(fromReplica))
+			if await(some(received(('SHUTTLE','REVERSE',requestId,result_proof,),from_=self.nextReplica),has= (requestId in self.result_cache))):
+				logger.info("REACHED HEAD FROM SHUTTLE & RETRANSMISSION COMPLETE")
+			elif(timeout(timeout)):
+				logger.info("TIMEOUT at Replica : "+str(self.currentReplica)+" sending RECONFIGURATION request to Olympus!!!!")		
+		else:
+			#PERFORM Operation for forward shuttle only once and stop for all other Replicas
+			logger.info("Operation is not recognized at HeadReplica. requestId : "+str(requestId)+", operation : "+str(operation))
+			send(("PERFORM_OPERATION",requestId,operation), to=self.headReplica)
+			if(timeout(timeout)):
+				logger.info("TIMEOUT at Replica : "+str(self.currentReplica)+" sending RECONFIGURATION request to Olympus!!!!")		
 			
-		elif(timeout(timeout)):
-			logger.info("TIMEOUT at Replica : ",self.currentReplica," sending RECONFIGURATION request to Olympus!!!!")
 
 	#FROM Clients To Replicas
-	def receive(msg=('RETRANSMISSION',requestId,operation,), from_=self.client):
-		logger.info("RETRANSMISSION received at "+str(self.currentReplica)+", requestId : "+str(requestId)+", operation : "+str(operation)+ ", from client : "+str(self.client))
+	def receive(msg=('RETRANSMISSION',requestId,operation,), from_=self.clients):
+		logger.info("RETRANSMISSION received at "+str(self.currentReplica)+", requestId : "+str(requestId)+", operation : "+str(operation)+ ", from client : "+str(self.clients))
 		
 		if(self.replica_state == 'IMMUTABLE'):
 			# if("replica_2" in self.currentReplica):
-			logger.info("Replica is in IMMUTABLE state. Returning ERROR to client")
-			send(("RETRANSMISSION","ERROR",self.currentReplica), to=self.client)
+			logger.info("Replica is in IMMUTABLE state. Returning ERROR to clients")
+			send(("RETRANSMISSION","ERROR",self.currentReplica), to=self.clients)
 		#TEMPORARILY MADE NOT HERE, TO ALLOW NEXT CASE. REVERT IT TO : elif(requestId in self.result_cache):	
-		elif(requestId not in self.result_cache):	
-			logger.info("RequestId found in replica cache. Returning to client : "+str(self.client))
-			send(("RETRANSMISSION",self.result_cache[requestId],self.currentReplica), to=self.client)
+		elif(requestId in self.result_cache):	
+			logger.info("RequestId found in replica cache. Returning to clients : "+str(self.clients))
+			#TODO NOTE Handle Shuttle 
+			send(("RETRANSMISSION",self.result_cache[requestId],self.currentReplica), to=self.clients)
 
 		else:#(self.currentReplica != self.headReplica):
 			#send request to head
@@ -146,11 +160,26 @@ class Replica(process):
 			send(("RETRANSMISSION_HEAD",requestId,operation,self.currentReplica),to=self.headReplica)
 			
 			timeout=config.readProperty("nonhead_timeout")
-			if await(some(received(('SHUTTLE','REVERSE',requestId,result_proof,),from_=self.nextReplica))):
-				logger.info("shuttle coming from next replica result_proof : "+str(result_proof)+", sending to Client : "+str(self.client))
-				send(('RETRANSMISSION', resultproof ,), to=self.client)
-			elif(timeout(timeout)):
-				logger.info("timer expired at non head replica : "+str(self.currentReplica))
+			#check if the current replica is a tailReplica, if yes, it will get result shuttle from prevReplica else
+			#all other shuttle will receive results from nextReplica
+			logger.info("self.currentReplica : "+str(self.currentReplica)+", self.tailReplica : "+str(self.tailReplica))
+			slot=int()
+			shuttle=[]
+			# if ((self.currentReplica==self.tailReplica) and await(some(received(('SHUTTLE','FORWARD',request_id,shuttle,operation,slot),from_=self.prevReplica)))) or await(some(received(('SHUTTLE','REVERSE',requestId,result_proof,),from_=self.nextReplica),has=requestId in self.result_cache)):
+			
+			if (self.currentReplica==self.tailReplica):
+				if(await(some(received(('SHUTTLE','FORWARD',request_id,shuttle,operation,slot),from_=self.prevReplica)))):
+					logger.info("in retransmission unrecognised request. Shuttle reached to tail node : "+str(result_proof)+", sending to clients : "+str(self.clients))
+					send(('RETRANSMISSION', self.result_cache[requestId] ,), to=self.clients)
+				elif(timeout(timeout)):
+					logger.info("timer expired at tail replica : "+str(self.currentReplica))
+			else:
+				if await(some(received(('SHUTTLE','REVERSE',requestId,result_proof,),from_=self.nextReplica),has=requestId in self.result_cache)):
+					logger.info("shuttle coming from next replica result_proof : "+str(result_proof)+", sending to clients : "+str(self.clients))
+					send(('RETRANSMISSION', self.result_cache[requestId] ,), to=self.clients)
+				elif(timeout(timeout)):
+					logger.info("timer expired at non head replica : "+str(self.currentReplica))
+					#TODO RECONFIGURATION
 		
 		#(msg,requestId,operation,replicaId):
 
@@ -207,7 +236,7 @@ class Replica(process):
 				# Create a VerifyKey object from a hex serialized public key
 				verify_key = nacl.signing.VerifyKey(self.allReplicaVerifyKeysMap[i], encoder=nacl.encoding.HexEncoder)
 				order,result = shuttle
-				logger.debug("order number",i+1, "from shttle", order[i])
+				logger.debug("order number"+str(i+1)+ "from shttle : "+ str(order[i]))
 				message = order[i]
 				# Check the validity of a message's signature
 				# Will raise nacl.exceptions.BadSignatureError if the signature check fails
@@ -251,6 +280,7 @@ class Replica(process):
 		result = (self.operation_result[request_id],operation,'encrypted')
 		signedResultProof = signMessage(str(result))
 		tupl = (signedOrderProof,signedResultProof)
+		# tupl = (str(order),str(result))
 		return tupl
 
 	def updateOrder_Result_Proof(shuttle):

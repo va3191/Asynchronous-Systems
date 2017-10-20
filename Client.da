@@ -41,12 +41,16 @@ class Client(process):
 		received(('SET_UP',), from_=self.olympus)
 		logger.debug('Recieved Setup')
 		logger.debug("*********received SET_UP FROM Client***********")
-		# flag = 'FORWARD'
-		# send(('PERFORM_OPERATION',request_id, self.reqList[0]), to=self.replicas[0])
-		# # send(('PERFORM_OPERATION',), to=self.replicas[0])
-		# await(received(('SHUTTLE',), from_=self.replicas[len(replicas)-1]))
-		# output("*********SHUTTLE Reached***********")
-		# logger.info("starting operations shuttle")
+		
+		# self.executeOperations()
+		# # output("\n****************************\n****************************\n****************************")
+		# # resultproof
+		# await(received('SHUTTLE',))
+		# time.sleep(10)
+		# self.executeRetransmissionTest();
+		# await(received('SHUTTLE',))
+		# output("\n****************************\n****************************\n****************************")
+		
 		self.executeOperations()
 		output("\n****************************\n****************************\n****************************")
 		# resultproof
@@ -73,7 +77,10 @@ class Client(process):
 		output("sendOperationToReplicaNode send at replicaId ",replicaId)
 
 	def executeRetransmissionTest():
-		output("executeRetransmissionTest", self.reqList)
+		# for operation in self.reqList:
+		# 	request_id = uuid.uuid4()
+		# 	self.request_sequence[request_id]=operation
+
 		for requestId,operation in self.request_sequence.items():
 			output("executeRetransmissionTest requestId : ",requestId, ', operation', operation)
 			self.retransmission(requestId,operation)
