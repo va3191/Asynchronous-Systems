@@ -27,6 +27,7 @@ class Client(process):
 		self.reqList=reqList
 		self.olympus=olympus
 		self.replicas=replicas
+		self.currentClient=currentClient
 		self.request_sequence={}
 
 		# logger.info("logging for the first time ")
@@ -55,10 +56,11 @@ class Client(process):
 		output("\n****************************\n****************************\n****************************")
 		# resultproof
 		# await(received('SHUTTLE',))
-		time.sleep(10)
-		self.executeRetransmissionTest();
-		output("\n****************************\n****************************\n****************************")
-		await(received('',))
+		if("client_1" in currentClient):
+			time.sleep(10)
+			self.executeRetransmissionTest();
+			output("\n****************************\n****************************\n****************************")
+			await(received('',))
 		
 
 
@@ -73,7 +75,7 @@ class Client(process):
 		return dictionary
 
 	def sendOperationToReplicaNode(msg,requestId,operation,replicaId):
-		send((msg,requestId, operation,), to=replicaId)	
+		send((msg,requestId, operation,self.currentClient,), to=replicaId)	
 		output("sendOperationToReplicaNode send at replicaId ",replicaId)
 
 	def executeRetransmissionTest():

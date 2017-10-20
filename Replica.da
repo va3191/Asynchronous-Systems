@@ -57,8 +57,8 @@ class Replica(process):
 		self.requestIdToSoPair[request_id] = tuple(tempSOPair)
 
 	#CONTROL FLOW: From (Client to HeadReplica)
-	def receive(msg=('PERFORM_OPERATION', request_id,operation,), from_=self.clients):
-		logger.info("PERFORM_OPERATION Called from clients : "+str(self.clients)+", request_id: "+str(request_id)+", operation: "+str(operation)+" at replica : "+str(self.currentReplica))
+	def receive(msg=('PERFORM_OPERATION', request_id,operation,client), from_=self.clients):
+		logger.info("PERFORM_OPERATION Called from client : "+str(client)+", request_id: "+str(request_id)+", operation: "+str(operation)+" at replica : "+str(self.currentReplica))
 
 		shuttle=None
 		self.slot_number+=1
@@ -71,10 +71,10 @@ class Replica(process):
 		self.updateOrder_Result_Proof(shuttle)
 		logger.debug("ResultProof: "+str(self.result_proof)+"\n"+"OrderProof: "+str(self.order_proof));
 		logger.info("PERFORM_OPERATION done at HeadReplica, transfering SHUTTLE to nextReplica : "+str(self.nextReplica))
-		send(('SHUTTLE','FORWARD', request_id,shuttle,operation,self.slot_number,), to=self.nextReplica)
+		send(('SHUTTLE','FORWARD', request_id,shuttle,operation,self.slot_number,client), to=self.nextReplica)
 
 	 #CONTROL FLOW: From (one Replica to another)
-	def receive(msg=('SHUTTLE','FORWARD',request_id,shuttle,operation,slot), from_=self.prevReplica):
+	def receive(msg=('SHUTTLE','FORWARD',request_id,shuttle,operation,slot,client), from_=self.prevReplica):
 		logger.info("PERFORM_OPERATION SHUTTLE FORWARD. at "+str(self.currentReplica)+", from prevReplica : "+str(self.prevReplica)+", request_id: "+str(request_id)+", slot : "+str(slot)+", operation : "+str(operation))
 		logger.debug("SHUTTLE : "+str(shuttle));
 		if(validateOrderProof(shuttle,operation,slot)):
@@ -92,13 +92,13 @@ class Replica(process):
 				
 				orderproof,resultproof =shuttle
 				#SENDING result to client
-				logger.info('SHUTTLE reached at Tail : '+str(self.currentReplica)+", sending result to clients : "+str(self.clients))
-				send(('SHUTTLE', resultproof ,), to=self.clients)
+				logger.info('SHUTTLE reached at Tail : '+str(self.currentReplica)+", sending result to client : "+str(client))
+				send(('SHUTTLE', resultproof ,), to=client)
 				#Starting Reverse SHUTTLE
 				logger.info('Reverse SHUTTLE starting. Forwarding to prevReplica : '+str(self.prevReplica))
 				send(('SHUTTLE','REVERSE', request_id, resultproof,), to=self.prevReplica)
 			else:
-				send(('SHUTTLE','FORWARD',request_id,shuttle,operation,slot,), to=self.nextReplica)
+				send(('SHUTTLE','FORWARD',request_id,shuttle,operation,slot,client), to=self.nextReplica)
 		else:
 			# NOTE: replica turns itself immutable and sends wedge statement to client with proof od misbehaviour
 			logger.error("************************Validating order proof failed at one of the replicas********************")
@@ -115,13 +115,13 @@ class Replica(process):
 
 
 	#FROM NON-HEAD Replicas to HEAD Replica for Retransmission case
-	def receive(msg=('RETRANSMISSION_HEAD',requestId,operation,fromReplica,),):
+	def receive(msg=('RETRANSMISSION_HEAD',requestId,operation,fromReplica,client),):
 		logger.info("RETRANSMISSION_HEAD request received at HEAD replica : "+str(self.currentReplica)+" from replica : "+str(fromReplica))
 		timeout = config.readProperty("head_timeout")
 		#NOTE: change it to  : if(requestId in self.result_cache):	
 		if(requestId in self.result_cache):	
-			logger.info("RequestId found inside the cache. Returning response to clients requestId : "+str(requestId))
-			send(("RETRANSMISSION",self.result_cache[requestId],self.currentReplica), to=self.clients)
+			logger.info("RequestId found inside the cache. Returning response to client : "+client+", requestId : "+str(requestId))
+			send(("RETRANSMISSION",self.result_cache[requestId],self.currentReplica), to=client)
 			return;
 		#HEAD has already started operation for the first request sent by other 
 		#replicas(including head) in case it does not recognize the operation
@@ -140,18 +140,18 @@ class Replica(process):
 			
 
 	#FROM Clients To Replicas
-	def receive(msg=('RETRANSMISSION',requestId,operation,), from_=self.clients):
-		logger.info("RETRANSMISSION received at "+str(self.currentReplica)+", requestId : "+str(requestId)+", operation : "+str(operation)+ ", from client : "+str(self.clients))
+	def receive(msg=('RETRANSMISSION',requestId,operation,client,), from_=self.clients):
+		logger.info("RETRANSMISSION received at "+str(self.currentReplica)+", requestId : "+str(requestId)+", operation : "+str(operation)+ ", from client : "+str(client))
 		
 		if(self.replica_state == 'IMMUTABLE'):
 			# if("replica_2" in self.currentReplica):
 			logger.info("Replica is in IMMUTABLE state. Returning ERROR to clients")
-			send(("RETRANSMISSION","ERROR",self.currentReplica), to=self.clients)
+			send(("RETRANSMISSION","ERROR",self.currentReplica), to=client)
 		#TEMPORARILY MADE NOT HERE, TO ALLOW NEXT CASE. REVERT IT TO : elif(requestId in self.result_cache):	
 		elif(requestId in self.result_cache):	
-			logger.info("RequestId found in replica cache. Returning to clients : "+str(self.clients))
+			logger.info("RequestId found in replica cache. Returning to client : "+str(client))
 			#TODO NOTE Handle Shuttle 
-			send(("RETRANSMISSION",self.result_cache[requestId],self.currentReplica), to=self.clients)
+			send(("RETRANSMISSION",self.result_cache[requestId],self.currentReplica), to=client)
 
 		else:#(self.currentReplica != self.headReplica):
 			#send request to head
@@ -169,14 +169,14 @@ class Replica(process):
 			
 			if (self.currentReplica==self.tailReplica):
 				if(await(some(received(('SHUTTLE','FORWARD',request_id,shuttle,operation,slot),from_=self.prevReplica)))):
-					logger.info("in retransmission unrecognised request. Shuttle reached to tail node : "+str(result_proof)+", sending to clients : "+str(self.clients))
-					send(('RETRANSMISSION', self.result_cache[requestId] ,), to=self.clients)
+					logger.info("in retransmission unrecognised request. Shuttle reached to tail node : "+str(result_proof)+", sending to client : "+str(client))
+					send(('RETRANSMISSION', self.result_cache[requestId] ,), to=client)
 				elif(timeout(timeout)):
 					logger.info("timer expired at tail replica : "+str(self.currentReplica))
 			else:
 				if await(some(received(('SHUTTLE','REVERSE',requestId,result_proof,),from_=self.nextReplica),has=requestId in self.result_cache)):
-					logger.info("shuttle coming from next replica result_proof : "+str(result_proof)+", sending to clients : "+str(self.clients))
-					send(('RETRANSMISSION', self.result_cache[requestId] ,), to=self.clients)
+					logger.info("shuttle coming from next replica result_proof : "+str(result_proof)+", sending to client : "+str(client))
+					send(('RETRANSMISSION', self.result_cache[requestId] ,), to=client)
 				elif(timeout(timeout)):
 					logger.info("timer expired at non head replica : "+str(self.currentReplica))
 					#TODO RECONFIGURATION
