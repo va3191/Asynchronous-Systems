@@ -112,7 +112,7 @@ def main():
 	############Creating Setting up client#################
 	operationList = config.readProperty("workload[1]");
 	for cli in clients:
-		setup(cli,[operationList,olympus,replicas,cli])
+		setup(cli,[operationList,olympus,replicas,cli,replicaVerifyKeys])
 		start(cli)
 	#########################################################
 

@@ -14,7 +14,7 @@ class Client(process):
 
 	request_sequence
 
-	def setup(reqList,olympus,replicas, currentClient):
+	def setup(reqList,olympus,replicas, currentClient,allReplicaVerifyKeysMap):
 		config.main()
 		logger.basicConfig(
 		format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
@@ -64,9 +64,14 @@ class Client(process):
 		
 
 
-	def receive(msg=('SHUTTLE',result_proof,), from_=self.replicas[len(replicas)-1]): 
+	def receive(msg=('RESULT FROM TAIL',result_proof,), from_=self.replicas[len(replicas)-1]): 
 		logger.info("******** Result proof:" + str(result_proof) +" received from :"+str(self.replicas[len(replicas)-1]))
 		logger.debug("*********SHUTTLE Reached***********")
+		validation, result = config.validateResultProof(result_proof, allReplicaVerifyKeysMap)
+		if(validation):
+			logger.info("******** Result proof validated: Checking consistency of result")
+		else:
+			logger.error("************************Validating order proof failed at Client********************")
 		# output(result_proof)
 
 
@@ -98,10 +103,10 @@ class Client(process):
 		resultproof=str()
 		for rnum,rep in enumerate(replicas):
 			sendOperationToReplicaNode('RETRANSMISSION',request_id,operation,rep)
-			awaitResultQueue.add(('SHUTTLE', resultproof ,))
+			awaitResultQueue.add(('FORWARD_SHUTTLE', resultproof ,))
 			
         
-		time.sleep(10)
+		time.sleep(1)
 		logger.debug("BEFORE: IN CLIENT FINISHED!!")
 		await(each(p in awaitResultQueue, has=received(('RETRANSMISSION', resultproof))))
 		logger.debug("AFTER: IN CLIENT FINISHED!!")

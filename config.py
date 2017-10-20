@@ -1,3 +1,6 @@
+import nacl.hash
+
+
 config={}
 
 def readConfigFile():
@@ -40,6 +43,41 @@ def readProperty(key):
 			host.append(hostsIps[int(client)])
 		return host
 	return returnValueListAfterStrippingSpaces(config[key]);
+
+def calculateHash(message):
+	HASHER = nacl.hash.sha256
+	# could be nacl.hash.sha512 or nacl.hash.blake2b instead
+	message ="varun os trying to do something"
+	msg =str.encode(message)
+	# define a 1024 bytes log message
+	msg = 16*msg
+	digest = HASHER(msg, encoder=nacl.encoding.HexEncoder)
+
+	# now send msg and digest to the user
+	print(nacl.encoding.HexEncoder.encode(msg))
+	print(digest)
+	return digest
+
+def validateResultProof(resultproof, allReplicaVerifyKeysMap):
+		for i in range(0,len(resultproof)):
+			try:
+				length = len(resultproof)
+
+				# Create a VerifyKey object from a hex serialized public key
+				verify_key = nacl.signing.VerifyKey(allReplicaVerifyKeysMap[length-i-1], encoder=nacl.encoding.HexEncoder)
+				# logger.debug("result number",i+1, "from result proof", resultproof[length-i-1])
+				message = resultproof[length-i-1]
+				# Check the validity of a message's signature
+				# Will raise nacl.exceptions.BadSignatureError if the signature check fails
+				result = verify_key.verify(message)
+
+				# logger.debug("verified")
+				actualResult = result.decode("utf-8")
+			except nacl.exceptions.BadSignatureError:
+				# logger.error("key mismatch failed for ", resultproof[length-i-1])
+				return (False,None)
+		# logger.info("validateResultProof. SUCCESSFULL!! ")
+		return (True,actualResult)
 
 
 if __name__ == '__main__':
