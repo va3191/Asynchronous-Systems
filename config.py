@@ -1,8 +1,6 @@
 import nacl.hash
-
-
+import logging as logger
 config={}
-
 def readConfigFile():
 	with open('system.config','r') as f:
 	    for line in f:
@@ -20,6 +18,14 @@ def readConfigFile():
 
 def main():
 	readConfigFile();
+	logger.basicConfig(
+		format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
+		handlers=[
+		logger.FileHandler("{0}/{1}.log".format(readProperty("logfile_path"), readProperty("logfile_name"))),
+		logger.StreamHandler()
+		],
+		level=logger.DEBUG)
+
 
 def returnValueListAfterStrippingSpaces(val):
 	values = []
@@ -59,30 +65,31 @@ def calculateHash(message):
 	return digest
 
 def validateResultProof(resultproof, allReplicaVerifyKeysMap):
-		for i in range(0,len(resultproof)):
-			try:
-				length = len(resultproof)
+	logger.debug("ValidateResultProof : "+str(resultproof))
+	for i in range(0,len(resultproof)):
+		try:
+			length = len(resultproof)
 
-				# Create a VerifyKey object from a hex serialized public key
-				verify_key = nacl.signing.VerifyKey(allReplicaVerifyKeysMap[length-i-1], encoder=nacl.encoding.HexEncoder)
-				# logger.debug("result number",i+1, "from result proof", resultproof[length-i-1])
-				message = resultproof[length-i-1]
-				# Check the validity of a message's signature
-				# Will raise nacl.exceptions.BadSignatureError if the signature check fails
-				result = verify_key.verify(message)
+			# Create a VerifyKey object from a hex serialized public key
+			verify_key = nacl.signing.VerifyKey(allReplicaVerifyKeysMap[length-i-1], encoder=nacl.encoding.HexEncoder)
+			# logger.debug("result number",i+1, "from result proof", resultproof[length-i-1])
+			message = resultproof[length-i-1]
+			# Check the validity of a message's signature
+			# Will raise nacl.exceptions.BadSignatureError if the signature check fails
+			result = verify_key.verify(message)
 
-				# logger.debug("verified")
-				actualResult = result.decode("utf-8")
-			except nacl.exceptions.BadSignatureError:
-				# logger.error("key mismatch failed for ", resultproof[length-i-1])
-				return (False,None)
-		# logger.info("validateResultProof. SUCCESSFULL!! ")
-		return (True,actualResult)
+			# logger.debug("verified")
+			actualResult = result.decode("utf-8")
+		except nacl.exceptions.BadSignatureError:
+			# logger.error("key mismatch failed for ", resultproof[length-i-1])
+			return (False,None)
+	# logger.info("validateResultProof. SUCCESSFULL!! ")
+	return (True,actualResult)
 
 
 if __name__ == '__main__':
 	main()
-
+	
 
 
 

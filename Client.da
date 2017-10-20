@@ -53,26 +53,28 @@ class Client(process):
 		# output("\n****************************\n****************************\n****************************")
 		
 		self.executeOperations()
-		output("\n****************************\n****************************\n****************************")
+		# await(received('',)) 
+		output("************************************************************************************")
+		output("************************************************************************************")
+		output("************************************************************************************")
 		# resultproof
 		# await(received('SHUTTLE',))
 		if("client_1" in currentClient):
 			time.sleep(10)
 			self.executeRetransmissionTest();
 			output("\n****************************\n****************************\n****************************")
-			await(received('',))
+			# await(received('',))
 		
 
-
-	def receive(msg=('RESULT FROM TAIL',result_proof,), from_=self.replicas[len(replicas)-1]): 
-		logger.info("******** Result proof:" + str(result_proof) +" received from :"+str(self.replicas[len(replicas)-1]))
-		logger.debug("*********SHUTTLE Reached***********")
-		validation, result = config.validateResultProof(result_proof, allReplicaVerifyKeysMap)
-		if(validation):
-			logger.info("******** Result proof validated: Checking consistency of result")
-		else:
-			logger.error("************************Validating order proof failed at Client********************")
-		# output(result_proof)
+	# def receive(msg=('RESULT_FROM_TAIL',result_proof,), from_=self.replicas[len(self.replicas)-1]): 
+	# 	logger.info("******** Result proof:" + str(result_proof) +" received from :"+str(self.replicas[len(self.replicas)-1]))
+	# 	logger.debug("*********SHUTTLE Reached***********")
+	# 	validation, result = config.validateResultProof(result_proof, allReplicaVerifyKeysMap)
+	# 	if(validation):
+	# 		logger.info("******** Result proof validated: Checking consistency of result")
+	# 	else:
+	# 		logger.error("************************Validating order proof failed at Client********************")
+	# 	# output(result_proof)
 
 
 	def dictionary():
@@ -87,7 +89,7 @@ class Client(process):
 		# for operation in self.reqList:
 		# 	request_id = uuid.uuid4()
 		# 	self.request_sequence[request_id]=operation
-
+		logger.info("in executeRetransmissionTest at client : "+str(self.currentClient))
 		for requestId,operation in self.request_sequence.items():
 			output("executeRetransmissionTest requestId : ",requestId, ', operation', operation)
 			self.retransmission(requestId,operation)
@@ -95,8 +97,14 @@ class Client(process):
 
 
 	#Receive output for retransmission request from replica.
-	def receive(msg=("RETRANSMISSION",message,replicaId,),):
-		output("RETRANSMISSION Result received from replica : ",replicaId," message : ",message);
+	def receive(msg=("RETRANSMISSION",result_proof,replicaId,),):
+		logger.info("RETRANSMISSION Result received from replica : "+str(replicaId)+", result_proof : "+str(result_proof));
+		validation, result = config.validateResultProof(result_proof, allReplicaVerifyKeysMap)
+		logger.info("validation %s, result %s",%(validation, result))
+		if(validation):
+			logger.info("Result proof correctly validated! SUCCESS !!")
+		else:
+			logger.error("Result proof incorrect! FAILED !!")
 
 	def retransmission(request_id,operation):
 		awaitResultQueue=set()
@@ -115,16 +123,20 @@ class Client(process):
 
 	def executeOperations():
 		logger.info("The Client:%s.    workload to be performed : %s" %(currentClient, self.reqList))
+		result_proof=[]
 		for operation in self.reqList:
 			request_id = uuid.uuid4()
-			logger.debug("Some message: %s %s" % ("operation",operation))	
-			# logger.info("CLIENTCLIENTCLIENT logging for the first time "+"var"+str(var )+" "+str(dic))
-			# output("CLIENTCLIENTCLIENT logging for the first time "+"var"+str(var )+" "+str(dic))
 			self.request_sequence[request_id]=operation
-			output('operation', operation)
 			self.sendOperationToReplicaNode('PERFORM_OPERATION',request_id,operation,self.replicas[0])
-			# await(some(received('PERFORM_OPERATION',)))
-
+			logger.info("send operation to client "+str(self.currentClient))
+			if await(some(received(('RESULT_FROM_TAIL',result_proof,)))):
+				logger.debug("Result SHUTTLE reached from tail Replica : ")
+				validation, result = config.validateResultProof(result_proof, allReplicaVerifyKeysMap)
+				if(validation):
+					logger.info("Result proof correctly validated! SUCCESS !!")
+				else:
+					logger.error("Result proof incorrect! FAILED !!")
+		logger.info("executeOperations finished")
 
 
 

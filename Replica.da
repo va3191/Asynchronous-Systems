@@ -94,11 +94,11 @@ class Replica(process):
 			if(self.nextReplica == None):
 				
 				orderproof,resultproof = shuttle
-				logger.info("justfortest", len(resultproof))
+				logger.info("justfortest"+str(len(resultproof)))
 				self.cacheResult(request_id, resultproof)
 				#SENDING result to client
 				logger.info('SHUTTLE reached at Tail : '+str(self.currentReplica)+", sending result to client : "+str(client))
-				send(('RESULT FROM TAIL', resultproof ,), to=client)
+				send(('RESULT_FROM_TAIL', resultproof ,), to=client)
 				#Starting REVERSE_SHUTTLE
 				logger.info('REVERSE_SHUTTLE starting. Forwarding to prevReplica : '+str(self.prevReplica))
 				send(('REVERSE_SHUTTLE', request_id, resultproof,), to=self.prevReplica)
@@ -183,13 +183,13 @@ class Replica(process):
 			if (self.currentReplica==self.tailReplica):
 				if(await(some(received(('FORWARD_SHUTTLE',request_id,shuttle,operation,slot),from_=self.prevReplica)))):
 					logger.info("in retransmission unrecognised request. Shuttle reached to tail node : "+str(result_proof)+", sending to client : "+str(client))
-					send(('RETRANSMISSION', self.result_cache[requestId] ,), to=client)
+					send(('RETRANSMISSION', self.result_cache[requestId] ,self.currentReplica), to=client)
 				elif(timeout(timeout)):
 					logger.info("timer expired at tail replica : "+str(self.currentReplica))
 			else:
 				if await(some(received(('REVERSE_SHUTTLE',requestId,result_proof,),from_=self.nextReplica),has=requestId in self.result_cache)):
 					logger.info("shuttle coming from next replica result_proof : "+str(result_proof)+", sending to client : "+str(client))
-					send(('RETRANSMISSION', self.result_cache[requestId] ,), to=client)
+					send(('RETRANSMISSION', self.result_cache[requestId] ,self.currentReplica), to=client)
 				elif(timeout(timeout)):
 					logger.info("timer expired at non head replica : "+str(self.currentReplica))
 					#TODO RECONFIGURATION
