@@ -1,3 +1,4 @@
+import nacl.encoding
 import nacl.hash
 import ast
 import logging as logger
@@ -33,7 +34,7 @@ def config_main(filePath):
 		logger.StreamHandler()
 		],
 		level=logger.INFO)
-	readFailures()
+	# readFailures()
 
 def returnValueListAfterStrippingSpaces(val):
 	values = []
@@ -121,7 +122,6 @@ def readFailures():
 def calculateHash(message):
 	HASHER = nacl.hash.sha256
 	# could be nacl.hash.sha512 or nacl.hash.blake2b instead
-	message ="varun os trying to do something"
 	msg =str.encode(message)
 	# define a 1024 bytes log message
 	msg = 16*msg
@@ -132,6 +132,8 @@ def calculateHash(message):
 
 def checkForResultConsistency(resultproof,res, allReplicaVerifyKeysMap):
 		delta= calculateHash(res)
+
+		# print("the delta value of res:" + str(res) + " :delta:"+str(delta))
 		flag = True	
 		validation, hashMaps = validateResultProof(resultproof,allReplicaVerifyKeysMap)
 		# print("between this"+str(resultTuple[0])+"this the lenth od the returned tuple")
@@ -147,6 +149,8 @@ def checkForResultConsistency(resultproof,res, allReplicaVerifyKeysMap):
 def validateResultProof(resultproof, allReplicaVerifyKeysMap):
 	logger.debug("ValidateResultProof function called  with resultProof : "+str(resultproof))
 	hashValues=[]
+	if(resultproof==None):
+		return False,None
 	for i in range(0,len(resultproof)):
 		try:
 			length = len(resultproof)

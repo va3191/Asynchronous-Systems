@@ -74,6 +74,9 @@ class Replica(process):
 		self.updateOrder_Result_Proof(shuttle)
 		logger.debug("ResultProof: "+str(self.result_proof)+"\n"+"OrderProof: "+str(self.order_proof));
 		logger.info("PERFORM_OPERATION done at HeadReplica, transfering SHUTTLE to nextReplica : "+str(self.nextReplica))
+
+		# logger.info("checking for failure injection")
+		# shuttle = change_operation(shuttle, request_id, self.slot_number, operation)
 		send(('FORWARD_SHUTTLE', request_id,shuttle,operation,self.slot_number,client), to=self.nextReplica)
 
 	 #CONTROL FLOW: From (one Replica to another)
@@ -106,9 +109,12 @@ class Replica(process):
 					#SENDING result to client
 					logger.info('SHUTTLE reached at Tail : '+str(self.currentReplica)+", sending result to client : "+str(client))
 					handleRetransmissionCase()
+					# resultproof 	=change_result(resultproof, request_id, operation)
 					send(('RESULT_FROM_TAIL', resultproof ,self.operation_result_internal[request_id],), to=client)
+
 					#Starting REVERSE_SHUTTLE
 					logger.info('REVERSE_SHUTTLE starting. Forwarding to prevReplica : '+str(self.prevReplica))
+
 					send(('REVERSE_SHUTTLE', request_id, resultproof, self.operation_result_internal[request_id],), to=self.prevReplica)
 				else:
 					send(('FORWARD_SHUTTLE',request_id,shuttle,operation,slot,client), to=self.nextReplica)
@@ -131,6 +137,7 @@ class Replica(process):
 			if(self.prevReplica == None):
 				logger.info("SHUTTLE reached at HEAD")
 			else:
+				# result_proof = drop_result_stmt(result_proof)
 				logger.info("After caching result, forwarding to prevReplica : "+str(self.prevReplica))
 				send(('REVERSE_SHUTTLE',request_id,result_proof, res), to=self.prevReplica)
 		else:
@@ -267,7 +274,8 @@ class Replica(process):
 				# Will raise nacl.exceptions.BadSignatureError if the signature check fails
 				Tuple = verify_key.verify(message)
 				orderTuple = ast.literal_eval(Tuple.decode("utf-8"))
-				print("orderTuple as of now "+str(orderTuple)+str(slot)+str(operation))
+				# print("orderTuple as of now "+str(orderTuple)+" "+str(slot)+str(operation))
+				logger.debug("validating this slot pair of orderproodf "+str())
 				if(orderTuple != (slot,operation)):
 					flag=False
 					break
@@ -371,6 +379,56 @@ class Replica(process):
 		if(retransmission_case_replica_sleep_time > 0):
 			logger.info("sleeping for "+str(retransmission_case_replica_sleep_time)+", to mock retransmission case.")
 			time.sleep(retransmission_case_replica_sleep_time)
+
+	def change_operation(shuttle, requestId, slot, operation ):
+		#just before tsending the shuttle
+		logger.info("Change operation called with shuttle" + "  requestId: "+ str(requestId) +"operation : "+ str(operation))
+		order, result = shuttle
+		lorder = len(order)
+		lresult = len(result)
+		print("length of oreder"+str(len(order)))
+		order = order[0:lorder-1]
+		print("length of oreder"+str(len(order)))
+		result =  result[0:lresult-1]
+		orderStmt = (slot, "get('x')")
+		resultStmt = (operation_result_internal[requestId], operation, config.calculateHash(operation_result_internal[requestId]))
+		signedOrderProof= signMessage(str(orderStmt))
+		signedResultProof = signMessage(str(resultStmt))
+		order.append(signedOrderProof)
+		print("length of oreder"+str(len(order)))
+		result.append(signedResultProof)
+		shuttle = (order,result)
+		logger.debug("change shuttle"+ str(shuttle))
+
+		return shuttle
+
+	def change_result(resultproof, requestId, operation):
+		logger.info("Change result called with resultproof" + "  requestId: "+ str(requestId) +"operation : "+ str(operation))
+		# order, result = shuttle
+		# lorder = len(order)
+		lresult = len(resultproof)
+		print("length of resultproof"+str(len(resultproof)))
+		# orderStmt = (slot, "get('x')")
+		resultStmt = (operation_result_internal[requestId], operation, config.calculateHash('OKayy'))
+		print("this is the bugged statement : ",resultStmt)
+		# signedOrderProof= signMessage(str(orderStmt)
+		signedResultProof = signMessage(str(resultStmt))
+		resultproof =  resultproof[0:lresult-1]
+		# order[lorder] = signedOrderProof
+		resultproof.append(signedResultProof)
+		return resultproof
+		# shuttle = (order,signedResultProof)
+		# for i in Res
+
+		return resultproof
+
+	def drop_result_stmt(resultproof):
+		# order, result = shuttle
+		print("length of resultproof before operation" +str(len(resultproof)))
+		resultproof = resultproof[1:]
+		print("length of resultproof before operation" +str(len(resultproof)))
+		# shuttle = (order, result)
+
 
 
 
