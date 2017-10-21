@@ -100,7 +100,7 @@ def main():
 		# setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica])
 		# print("replica : ",rep,", replicaToPubPrivKey: ",replicaToPubPrivKey[str(rep)])
 		# setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica,None,None])
-		setup(rep,[clients,olympus,rep,prevReplica,nextReplica,replicas[0],replicas[len(replicas)-1],replica_state,replicaSigningKeys[rnum],replicaVerifyKeys])
+		setup(rep,[replicas,clients,olympus,rep,prevReplica,nextReplica,replicas[0],replicas[len(replicas)-1],replica_state,replicaSigningKeys[rnum],replicaVerifyKeys])
 
 	##Starting Replica
 	for rep in replicas:

@@ -115,14 +115,29 @@ class Client(process):
 			self.request_sequence[request_id]=operation
 			self.sendOperationToReplicaNode('PERFORM_OPERATION',request_id,operation,self.replicas[0])
 			logger.info("send operation to client "+str(self.currentClient))
-			if await(some(received(('RESULT_FROM_TAIL',result_proof,)))):
+			if await(some(received(('RESULT_FROM_TAIL',result_proof,result)))):
 				logger.debug("Result SHUTTLE reached from tail Replica : ")
-				validation, result = config.validateResultProof(result_proof, allReplicaVerifyKeysMap)
+				validation = config.checkForResultConsistency(result_proof,result, self.allReplicaVerifyKeysMap)
 				if(validation):
 					logger.info("Result proof correctly validated! SUCCESS !!")
 				else:
 					logger.error("Result proof incorrect! FAILED !!")
 		logger.info("executeOperations finished")
+
+
+	# def checkForResultConsistency(resultproof,res):
+	# 	delta= config.calculateHash(res)
+	# 	flag = True	
+	# 	validation, hashMaps = config.validateResultProof(resultproof,allReplicaVerifyKeysMap)
+	# 	if(!validation):
+	# 		return False
+	# 	# print("between this"+str(resultTuple[0])+"this the lenth od the returned tuple")
+	# 	for i in range(0, len(hashMaps)):
+	# 		if(hashMaps[i] == delta):
+	# 			continue
+	# 		else:
+	# 			flag = False
+	# 	return flag
 
 
 

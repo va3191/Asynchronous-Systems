@@ -1,4 +1,5 @@
 import nacl.hash
+import ast
 import logging as logger
 config={}
 def readConfigFile():
@@ -60,12 +61,25 @@ def calculateHash(message):
 	digest = HASHER(msg, encoder=nacl.encoding.HexEncoder)
 
 	# now send msg and digest to the user
-	print(nacl.encoding.HexEncoder.encode(msg))
-	print(digest)
 	return digest
 
+def checkForResultConsistency(resultproof,res, allReplicaVerifyKeysMap):
+		delta= calculateHash(res)
+		flag = True	
+		validation, hashMaps = validateResultProof(resultproof,allReplicaVerifyKeysMap)
+		# print("between this"+str(resultTuple[0])+"this the lenth od the returned tuple")
+		if(not validation):
+			return False
+		for i in range(0, len(hashMaps)):
+			if(hashMaps[i] == delta):
+				continue
+			else:
+				flag = False
+		return flag
+
 def validateResultProof(resultproof, allReplicaVerifyKeysMap):
-	logger.debug("ValidateResultProof : "+str(resultproof))
+	logger.debug("ValidateResultProof function called  with resultProof : "+str(resultproof))
+	hashValues=[]
 	for i in range(0,len(resultproof)):
 		try:
 			length = len(resultproof)
@@ -79,12 +93,15 @@ def validateResultProof(resultproof, allReplicaVerifyKeysMap):
 			result = verify_key.verify(message)
 
 			# logger.debug("verified")
-			actualResult = result.decode("utf-8")
+			actualResult = ast.literal_eval(result.decode("utf-8"))
 		except nacl.exceptions.BadSignatureError:
 			# logger.error("key mismatch failed for ", resultproof[length-i-1])
 			return (False,None)
+		res, op, hs = actualResult
+		# hashe= result.decode("utf-8")
 	# logger.info("validateResultProof. SUCCESSFULL!! ")
-	return (True,actualResult)
+		hashValues.append(hs)
+	return (True,hashValues)
 
 
 if __name__ == '__main__':

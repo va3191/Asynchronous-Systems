@@ -5,10 +5,10 @@ import nacl.signing
 from nacl.public import PrivateKey, Box
 import logging as logger
 import sys
-
+import ast
 class Replica(process):
 	
-	def setup(clients,olympus,currentReplica,prevReplica,nextReplica,headReplica,tailReplica,replica_state,currentReplicaSigningKey,allReplicaVerifyKeysMap):
+	def setup(replicas,clients,olympus,currentReplica,prevReplica,nextReplica,headReplica,tailReplica,replica_state,currentReplicaSigningKey,allReplicaVerifyKeysMap):
 		config.main()
 		logger.basicConfig(
 		format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
@@ -21,6 +21,7 @@ class Replica(process):
 		logger.info("Replica SETUP. currentReplica : "+str(currentReplica)+", clients : "+str(clients)+", olympus : "+str(olympus)+", replica_state : "+str(replica_state))
 
 	    # logger.info("*	***********Setting Up replica***********")
+		self.replicas= replicas
 		self.clients=clients
 		self.olympus = olympus
 		self.currentReplica=currentReplica
@@ -38,7 +39,6 @@ class Replica(process):
 
 		#REMOVING THIS
 		# self.operation_result={}
-
 		self.operation_result_internal={}
 		self.order_proof=[]
 		self.result_proof=[]
@@ -60,10 +60,10 @@ class Replica(process):
 
 	#CONTROL FLOW: From (Client to HeadReplica)
 	def receive(msg=('PERFORM_OPERATION', request_id,operation,client), from_=self.clients):
-		logger.info("PERFORM_OPERATION Called from client : "+str(client)+", request_id: "+str(request_id)+", operation: "+str(operation)+" at replica : "+str(self.currentReplica))
 
 		shuttle=None
 		self.slot_number+=1
+		logger.info("PERFORM_OPERATION Called from client : "+str(client)+", request_id: "+str(request_id)+", operation: "+str(operation)+", slot: "+ str(self.slot_number)+ "	at replica : "+str(self.currentReplica))
 		# self.operation_result[request_id] = self.executeOperation(request_id, operation)
 		updateSlotOperation(request_id,self.slot_number,operation)
 		self.operation_result_internal[request_id] = self.executeOperation(request_id, operation)
@@ -72,6 +72,7 @@ class Replica(process):
 		shuttle = self.updateShuttle(shuttle,tupl)
 		logger.debug("shuttle after update: "+str(shuttle))
 		self.updateOrder_Result_Proof(shuttle)
+
 		logger.debug("ResultProof: "+str(self.result_proof)+"\n"+"OrderProof: "+str(self.order_proof));
 		logger.info("PERFORM_OPERATION done at HeadReplica, transfering SHUTTLE to nextReplica : "+str(self.nextReplica))
 		send(('FORWARD_SHUTTLE', request_id,shuttle,operation,self.slot_number,client), to=self.nextReplica)
@@ -80,47 +81,55 @@ class Replica(process):
 	def receive(msg=('FORWARD_SHUTTLE',request_id,shuttle,operation,slot,client), from_=self.prevReplica):
 		logger.info("PERFORM_OPERATION SHUTTLE FORWARD. at "+str(self.currentReplica)+", from prevReplica : "+str(self.prevReplica)+", request_id: "+str(request_id)+", slot : "+str(slot)+", operation : "+str(operation))
 		logger.debug("SHUTTLE : "+str(shuttle));
-		if(validateOrderProof(shuttle,operation,slot)):
-			# self.operation_result[request_id] = self.executeOperation(request_id, operation)
-			self.operation_result_internal[request_id] = self.executeOperation(request_id, operation)
-			updateSlotOperation(request_id,slot,operation)
-			slot_number = slot
-			tupl = self.getResult_Order_Proof(request_id,operation,slot_number)
-			shuttle = self.updateShuttle(shuttle,tupl)
-			logger.debug("shuttle after update: "+str(shuttle))
-			self.updateOrder_Result_Proof(shuttle)
-
-			#validation successful now sending the shuttle forward
-			if(self.nextReplica == None):
-				
-				orderproof,resultproof = shuttle
-				logger.info("justfortest"+str(len(resultproof)))
-				self.cacheResult(request_id, resultproof)
-				#SENDING result to client
-				logger.info('SHUTTLE reached at Tail : '+str(self.currentReplica)+", sending result to client : "+str(client))
-				send(('RESULT_FROM_TAIL', resultproof ,), to=client)
-				#Starting REVERSE_SHUTTLE
-				logger.info('REVERSE_SHUTTLE starting. Forwarding to prevReplica : '+str(self.prevReplica))
-				send(('REVERSE_SHUTTLE', request_id, resultproof,), to=self.prevReplica)
-			else:
-				send(('FORWARD_SHUTTLE',request_id,shuttle,operation,slot,client), to=self.nextReplica)
+		flow = False
+		if(slot>1):
+			flow = checkSlotOperation(slot)
+			logger.debug("the value for checkSlotOperation is " +str(flow))
 		else:
-			# NOTE: replica turns itself immutable and sends wedge statement to client with proof od misbehaviour
-			logger.error("************************Validating order proof failed at one of the replicas********************")
+			flow = True
+		if(flow):
+			if(validateOrderProof(shuttle,operation,slot)):
+				# self.operation_result[request_id] = self.executeOperation(request_id, operation)
+				self.operation_result_internal[request_id] = self.executeOperation(request_id, operation)
+				updateSlotOperation(request_id,slot,operation)
+				slot_number = slot
+				tupl = self.getResult_Order_Proof(request_id,operation,slot_number)
+				shuttle = self.updateShuttle(shuttle,tupl)
+				logger.debug("shuttle after update: "+str(shuttle))
+				self.updateOrder_Result_Proof(shuttle)
+				#validation successful now sending the shuttle forward
+				if(self.nextReplica == None):
+					
+					orderproof,resultproof = shuttle
+					# logger.info("justfortest"+str(len(resultproof)))
+					self.cacheResult(request_id, resultproof)
+					#SENDING result to client
+					logger.info('SHUTTLE reached at Tail : '+str(self.currentReplica)+", sending result to client : "+str(client))
+					send(('RESULT_FROM_TAIL', resultproof ,self.operation_result_internal[request_id],), to=client)
+					#Starting REVERSE_SHUTTLE
+					logger.info('REVERSE_SHUTTLE starting. Forwarding to prevReplica : '+str(self.prevReplica))
+					send(('REVERSE_SHUTTLE', request_id, resultproof, self.operation_result_internal[request_id],), to=self.prevReplica)
+				else:
+					send(('FORWARD_SHUTTLE',request_id,shuttle,operation,slot,client), to=self.nextReplica)
+			else:
+				# NOTE: replica turns itself immutable and sends wedge statement to client with proof od misbehaviour
+				logger.error("************************Validating order proof failed at one of the replicas********************")
+		else:
+			logger.error("There is inconsistency in the slots, all previous slot havent been used for execution********************")
 
 	 #message to replca from previous 
-	def receive(msg=('REVERSE_SHUTTLE',request_id,result_proof,), from_=self.nextReplica):
+	def receive(msg=('REVERSE_SHUTTLE',request_id,result_proof, res,), from_=self.nextReplica):
 		logger.info("REVERSE_SHUTTLE received at replica : "+str(self.currentReplica)+", from nextReplica : "+str(self.nextReplica)+", request_id : "+str(request_id))
 		
-		validation,result = config.validateResultProof(result_proof, self.allReplicaVerifyKeysMap)
+		validation = config.checkForResultConsistency(result_proof, res, self.allReplicaVerifyKeysMap)
 		logger.info("the result from validation is " + str(validation))
 		if(validation):
-			self.cacheResult(request_id, result)
+			self.cacheResult(request_id, result_proof)
 			if(self.prevReplica == None):
 				logger.info("SHUTTLE reached at HEAD")
 			else:
 				logger.info("After caching result, forwarding to prevReplica : "+str(self.prevReplica))
-				send(('REVERSE_SHUTTLE',request_id,result_proof,), to=self.prevReplica)
+				send(('REVERSE_SHUTTLE',request_id,result_proof, res), to=self.prevReplica)
 		else:
 			logger.error("the validation failed at" + str(self.currentReplica))
 			logger.error("************************Validating order proof failed at one of the replicas********************")
@@ -140,7 +149,7 @@ class Replica(process):
 		#replicas(including head) in case it does not recognize the operation
 		if((requestId in self.requestIdToSoPair) and (requestId not in self.result_cache)):
 			logger.info("Result shuttle is yet to receive at the head, waiting for it!! fromReplica : "+str(fromReplica))
-			if await(some(received(('REVERSE_SHUTTLE',requestId,result_proof,),from_=self.nextReplica),has= (requestId in self.result_cache))):
+			if await(some(received(('REVERSE_SHUTTLE',requestId,result_proof,res,),from_=self.nextReplica),has= (requestId in self.result_cache))):
 				logger.info("REACHED HEAD FROM SHUTTLE & RETRANSMISSION COMPLETE")
 			elif(timeout(timeout)):
 				logger.info("TIMEOUT at Replica : "+str(self.currentReplica)+" sending RECONFIGURATION request to Olympus!!!!")		
@@ -187,7 +196,7 @@ class Replica(process):
 				elif(timeout(timeout)):
 					logger.info("timer expired at tail replica : "+str(self.currentReplica))
 			else:
-				if await(some(received(('REVERSE_SHUTTLE',requestId,result_proof,),from_=self.nextReplica),has=requestId in self.result_cache)):
+				if await(some(received(('REVERSE_SHUTTLE',requestId,result_proof,res,),from_=self.nextReplica),has=requestId in self.result_cache)):
 					logger.info("shuttle coming from next replica result_proof : "+str(result_proof)+", sending to client : "+str(client))
 					send(('RETRANSMISSION', self.result_cache[requestId] ,self.currentReplica), to=client)
 				elif(timeout(timeout)):
@@ -221,9 +230,10 @@ class Replica(process):
 			tempsplit=operation.split('\'')
 			if(self.dictionary_data[tempsplit[1]]):
 				value = self.dictionary_data[tempsplit[1]];
+				return value
 				logger.debug('get is executeed@@@@@@@@')	
 			else:
-				return 'fail'
+				return ''
 
 		elif(temp[0] == "slice"):
 			tempsplit=operation.split('\'')
@@ -243,23 +253,28 @@ class Replica(process):
 
 	def validateOrderProof(shuttle,operation,slot):
 		logger.info("validateOrderProof. slot : %s, operation : %s"%(slot,operation))
-		orderproof,resultproof = shuttle
-		for i in range(0,len(orderproof)):
+		order,result = shuttle
+		flag = True
+		for i in range(0,len(order)):
 			try:
 				# Create a VerifyKey object from a hex serialized public key
 				verify_key = nacl.signing.VerifyKey(self.allReplicaVerifyKeysMap[i], encoder=nacl.encoding.HexEncoder)
-				order,result = shuttle
 				logger.debug("order number"+str(i+1)+ "from shttle : "+ str(order[i]))
 				message = order[i]
 				# Check the validity of a message's signature
 				# Will raise nacl.exceptions.BadSignatureError if the signature check fails
-				verify_key.verify(message)
+				Tuple = verify_key.verify(message)
+				orderTuple = ast.literal_eval(Tuple.decode("utf-8"))
+				print("orderTuple as of now "+str(orderTuple)+str(slot)+str(operation))
+				if(orderTuple != (slot,operation)):
+					flag=False
+					break
 				logger.debug("verified")
 			except nacl.exceptions.BadSignatureError:
-				logger.error("key mismatch failed for ", orderproof[i])
+				logger.error("key mismatch failed for ", order[i])
 				return False
 		logger.info("validateOrderProof. SUCCESSFULL!! ")
-		return True
+		return flag
 
 	# def validateResultProof(resultproof):
 	# 	for i in range(0,len(resultproof)):
@@ -311,7 +326,7 @@ class Replica(process):
 		order = (slot_number,operation)
 		signedOrderProof= signMessage(str(order))
 		encryptedHash = config.calculateHash(self.operation_result_internal[request_id])
-		result = (self.operation_result_internal[request_id],operation,'encrypted')
+		result = (self.operation_result_internal[request_id],operation,encryptedHash)
 		signedResultProof = signMessage(str(result))
 		tupl = (signedOrderProof,signedResultProof)
 		# tupl = (str(order),str(result))
@@ -327,6 +342,29 @@ class Replica(process):
 				self.order_proof.append(i)
 			for j in rProof:
 				self.result_proof.append(j)
+
+		# logger.info("the updated orderproof"+str(self.order_proof))
+	def checkSlotOperation(slot):
+		index =self.replicas.index(self.currentReplica)
+		verify_key = nacl.signing.VerifyKey(allReplicaVerifyKeysMap[index], encoder=nacl.encoding.HexEncoder)
+		# logger.debug("result number",i+1, "from result proof", resultproof[length-i-1])
+		message = self.order_proof[len(self.order_proof)-1]
+		# Check the validity of a message's signature
+		# Will raise nacl.exceptions.BadSignatureError if the signature check fails
+		result = verify_key.verify(message)
+
+		# # logger.debug("verified")
+		actualResult = ast.literal_eval(result.decode("utf-8"))
+		s,o =actualResult
+		if(s == slot - 1):
+			logger.debug("the slots are consistent")
+			return True
+		else:
+			logger.debug("there is inconsistency among slots")
+			return False
+
+		
+
 
 
 
