@@ -1,9 +1,13 @@
 import nacl.hash
 import ast
 import logging as logger
+import ast
+import sys
+import getopt
+
 config={}
-def readConfigFile():
-	with open('system.config','r') as f:
+def readConfigFile(configFile):
+	with open(configFile,'r') as f:
 	    for line in f:
 	        if line[0] != '#':
 	          (key,sep,val) = line.partition('=')
@@ -17,16 +21,19 @@ def readConfigFile():
 	# print(config)
 
 
-def main():
-	readConfigFile();
+def config_main(filePath):
+	# print("main argv  : ",argv)
+	# Setup function for main class.
+	print("filePathfilePathfilePath : ",filePath)
+	readConfigFile(filePath);
 	logger.basicConfig(
 		format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
 		handlers=[
 		logger.FileHandler("{0}/{1}.log".format(readProperty("logfile_path"), readProperty("logfile_name"))),
 		logger.StreamHandler()
 		],
-		level=logger.DEBUG)
-
+		level=logger.INFO)
+	readFailures()
 
 def returnValueListAfterStrippingSpaces(val):
 	values = []
@@ -50,6 +57,66 @@ def readProperty(key):
 			host.append(hostsIps[int(client)])
 		return host
 	return returnValueListAfterStrippingSpaces(config[key]);
+
+def readFailures():
+	failureText='failures'
+	val = []
+	configurationNumber=int()
+	replicaNumber=int()
+	triggerList=["client_request","forwarded_request","shuttle","result_shuttle"]
+
+	failureDS = {}
+	failureDS["triggers"]=triggerList
+	'''
+	{
+		"triggers":["client_request","forwarded_request","shuttle","result_shuttle"],
+
+		"$configurationNumber" : {
+			"replica" : [
+				"$replicaNumber" : {
+					"client" : "$clientNumber"
+					"messageNumber" : "$messageNumber"
+					"triggerName" : "$triggerName"
+					"triggerFailure" : "$triggerFailure"
+				}
+			]
+			"client" : [
+				"$clientNumber" : {
+					"replica" : "$clientNumber"
+					"messageNumber" : "$messageNumber"
+					"triggerName" : "$triggerName"
+					"triggerFailure" : "$triggerFailure"
+				}
+			]
+		}
+	}
+	'''
+	for key,value in config.items():
+		if("failures" in key):
+			failureListKey = key.split("failures")[1]
+			failureListKeyList = ast.literal_eval(failureListKey)
+
+			configurationNumber=failureListKeyList[0]
+			replicaNumber=failureListKeyList[1]
+			failureDS[configurationNumber]={}
+			failureDS["replica"]=[]
+			failureDS["client"]=[]
+			
+			
+			failureValueList = value.split(";")
+			for failureValue in failureValueList:
+				trigger,failure = failureValue.split("),")
+				trigger +=')'
+				triggerName = trigger.split('(')[0]
+
+				triggerValuetemp = trigger.split(triggerName)[1]
+				triggerValuetempList = ast.literal_eval(triggerValuetemp)
+				clientNumber,messageNumber = triggerValuetempList
+				logger.info("clientNumber : "+str(clientNumber)+"=> messageNumber : "+str(messageNumber)+", failure : "+failure)
+	
+
+
+
 
 def calculateHash(message):
 	HASHER = nacl.hash.sha256
@@ -102,13 +169,6 @@ def validateResultProof(resultproof, allReplicaVerifyKeysMap):
 	# logger.info("validateResultProof. SUCCESSFULL!! ")
 		hashValues.append(hs)
 	return (True,hashValues)
-
-
-if __name__ == '__main__':
-	main()
-	
-
-
 
 
 

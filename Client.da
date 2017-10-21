@@ -13,22 +13,23 @@ class Client(process):
 	order_cache;
 
 	request_sequence
-
-	def setup(reqList,olympus,replicas, currentClient,allReplicaVerifyKeysMap):
-		config.main()
+	replicaRetransmissionCounter;
+	def setup(configFilePath,reqList,olympus,replicas, currentClient,allReplicaVerifyKeysMap):
+		config.config_main(configFilePath)
 		logger.basicConfig(
 		format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
 		handlers=[
 		logger.FileHandler("{0}/{1}.log".format(config.readProperty("logfile_path"), config.readProperty("logfile_name"))),
 		logger.StreamHandler()
 		],
-		level=logger.DEBUG)
+		level=logger.INFO)
 		logger.info("**********Setting up Client *************"); 
 		self.reqList=reqList
 		self.olympus=olympus
 		self.replicas=replicas
 		self.currentClient=currentClient
 		self.request_sequence={}
+		self.replicaRetransmissionCounter=0
 
 		# logger.info("logging for the first time ")
 		# logger.info("************Setting Up Client***********",config.readProperty("logfile_path"))
@@ -45,12 +46,11 @@ class Client(process):
 		
 		self.executeOperations()
 		
-		if("client_1" in currentClient):
-			time.sleep(10)
-			self.executeRetransmissionTest();
-			output("\n****************************\n****************************\n****************************")
-			# await(received('',))
-		
+		# if("client_1" in currentClient):
+		# 	time.sleep(10)
+		# 	self.executeRetransmissionTest();
+		# 	output("\n****************************\n****************************\n****************************")
+		# 	# await(received('',))
 
 	# def receive(msg=('RESULT_FROM_TAIL',result_proof,), from_=self.replicas[len(self.replicas)-1]): 
 	# 	logger.info("******** Result proof:" + str(result_proof) +" received from :"+str(self.replicas[len(self.replicas)-1]))
@@ -69,7 +69,7 @@ class Client(process):
 
 	def sendOperationToReplicaNode(msg,requestId,operation,replicaId):
 		send((msg,requestId, operation,self.currentClient,), to=replicaId)	
-		output("sendOperationToReplicaNode send at replicaId ",replicaId)
+		logger.info("Sending operations at Replicas from client: "+str(self.currentClient)+", requestId: "+str(requestId)+", operation : "+str(operation))
 
 	def executeRetransmissionTest():
 		# for operation in self.reqList:
@@ -77,6 +77,7 @@ class Client(process):
 		# 	self.request_sequence[request_id]=operation
 		logger.info("in executeRetransmissionTest at client : "+str(self.currentClient))
 		for requestId,operation in self.request_sequence.items():
+			self.replicaRetransmissionCounter=0
 			output("executeRetransmissionTest requestId : ",requestId, ', operation', operation)
 			self.retransmission(requestId,operation)
 			break;
@@ -84,6 +85,7 @@ class Client(process):
 
 	#Receive output for retransmission request from replica.
 	def receive(msg=("RETRANSMISSION",result_proof,replicaId,),):
+		self.replicaRetransmissionCounter+=1
 		logger.info("RETRANSMISSION Result received from replica : "+str(replicaId)+", result_proof : "+str(result_proof));
 		validation, result = config.validateResultProof(result_proof, allReplicaVerifyKeysMap)
 		logger.info("validation : "+str(validation)+", result : "+str(result))
@@ -93,23 +95,30 @@ class Client(process):
 			logger.error("Result proof incorrect! FAILED !!")
 
 	def retransmission(request_id,operation):
-		awaitResultQueue=set()
+		awaitResultQueue=[]
 		resultproof=str()
-		for rnum,rep in enumerate(replicas):
+		timeout = config.readProperty("client_retransmission_timeout")
+		for rnum,rep in enumerate(self.replicas):
+			logger.info("**************retransmission rnum : "+str(rnum)+", rep : "+str(rep))
 			sendOperationToReplicaNode('RETRANSMISSION',request_id,operation,rep)
-			awaitResultQueue.add(('FORWARD_SHUTTLE', resultproof ,))
-			
-        
-		time.sleep(1)
-		logger.debug("BEFORE: IN CLIENT FINISHED!!")
-		await(each(p in awaitResultQueue, has=received(('RETRANSMISSION', resultproof))))
-		logger.debug("AFTER: IN CLIENT FINISHED!!")
+			awaitResultQueue.append(('FORWARD_SHUTTLE', resultproof ,))
+
+		logger.info("***********awaitResultQueue : "+str(awaitResultQueue)+", \n")
+
+		# if (self.replicaRetransmissionCounter == len(self.replicas)):
+		if await(each(p in awaitResultQueue, has=received(('RETRANSMISSION', resultproof,)))):
+			logger.info("RETRANSMISSION complete !!!!")
+		elif(timeout(timeout)):
+			logger.error("RETRANSMISSION request Timed out!");
 
 
 
 	def executeOperations():
-		logger.info("The Client:%s.    workload to be performed : %s" %(currentClient, self.reqList))
+		logger.info("The Client:%s. workload to be performed : %s" %(currentClient, self.reqList))
 		result_proof=[]
+		timeout = config.readProperty("client_timeout")
+		retransmissionCounter = 0
+		maxRetransmissionCounter = config.readProperty('max_retransmission_counter')
 		for operation in self.reqList:
 			request_id = uuid.uuid4()
 			self.request_sequence[request_id]=operation
@@ -122,7 +131,12 @@ class Client(process):
 					logger.info("Result proof correctly validated! SUCCESS !!")
 				else:
 					logger.error("Result proof incorrect! FAILED !!")
-		logger.info("executeOperations finished")
+			elif(timeout(timeout)):
+				logger.error("Client Timed out!! Client : "+str(self.currentClient)+", request_id : "+str(request_id)+", operation : "+str(operation));
+				if(retransmissionCounter < maxRetransmissionCounter):
+					retransmission(request_id,operation)
+					retransmissionCounter=retransmissionCounter+1
+
 
 
 	# def checkForResultConsistency(resultproof,res):

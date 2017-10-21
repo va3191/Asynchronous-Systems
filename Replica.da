@@ -6,10 +6,10 @@ from nacl.public import PrivateKey, Box
 import logging as logger
 import sys
 import ast
+import time
 class Replica(process):
-	
-	def setup(replicas,clients,olympus,currentReplica,prevReplica,nextReplica,headReplica,tailReplica,replica_state,currentReplicaSigningKey,allReplicaVerifyKeysMap):
-		config.main()
+	def setup(configFilePath,replicas,clients,olympus,currentReplica,prevReplica,nextReplica,headReplica,tailReplica,replica_state,currentReplicaSigningKey,allReplicaVerifyKeysMap):
+		config.config_main(configFilePath)
 		logger.basicConfig(
 		format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
 		handlers=[
@@ -60,26 +60,26 @@ class Replica(process):
 
 	#CONTROL FLOW: From (Client to HeadReplica)
 	def receive(msg=('PERFORM_OPERATION', request_id,operation,client), from_=self.clients):
-
 		shuttle=None
 		self.slot_number+=1
 		logger.info("PERFORM_OPERATION Called from client : "+str(client)+", request_id: "+str(request_id)+", operation: "+str(operation)+", slot: "+ str(self.slot_number)+ "	at replica : "+str(self.currentReplica))
 		# self.operation_result[request_id] = self.executeOperation(request_id, operation)
 		updateSlotOperation(request_id,self.slot_number,operation)
 		self.operation_result_internal[request_id] = self.executeOperation(request_id, operation)
+
 		logger.debug("After execute Operation, result proof: "+ str(self.order_proof))
 		tupl = self.getResult_Order_Proof(request_id,operation,self.slot_number)
 		shuttle = self.updateShuttle(shuttle,tupl)
 		logger.debug("shuttle after update: "+str(shuttle))
 		self.updateOrder_Result_Proof(shuttle)
-
 		logger.debug("ResultProof: "+str(self.result_proof)+"\n"+"OrderProof: "+str(self.order_proof));
 		logger.info("PERFORM_OPERATION done at HeadReplica, transfering SHUTTLE to nextReplica : "+str(self.nextReplica))
 		send(('FORWARD_SHUTTLE', request_id,shuttle,operation,self.slot_number,client), to=self.nextReplica)
 
 	 #CONTROL FLOW: From (one Replica to another)
 	def receive(msg=('FORWARD_SHUTTLE',request_id,shuttle,operation,slot,client), from_=self.prevReplica):
-		logger.info("PERFORM_OPERATION SHUTTLE FORWARD. at "+str(self.currentReplica)+", from prevReplica : "+str(self.prevReplica)+", request_id: "+str(request_id)+", slot : "+str(slot)+", operation : "+str(operation))
+		logger.info("PERFORM_OPERATION SHUTTLE FORWARD. at "+str(self.currentReplica)+", from prevReplica : "+str(self.prevReplica)+", client: "+str(client)+", request_id: "+str(request_id)+", slot : "+str(slot)+", operation : "+str(operation))
+		# logger.info("orderProof length  : "+str(len(self.order_proof))+", self.order_proof : "+str(self.order_proof));
 		logger.debug("SHUTTLE : "+str(shuttle));
 		flow = False
 		if(slot>1):
@@ -105,6 +105,7 @@ class Replica(process):
 					self.cacheResult(request_id, resultproof)
 					#SENDING result to client
 					logger.info('SHUTTLE reached at Tail : '+str(self.currentReplica)+", sending result to client : "+str(client))
+					handleRetransmissionCase()
 					send(('RESULT_FROM_TAIL', resultproof ,self.operation_result_internal[request_id],), to=client)
 					#Starting REVERSE_SHUTTLE
 					logger.info('REVERSE_SHUTTLE starting. Forwarding to prevReplica : '+str(self.prevReplica))
@@ -116,6 +117,8 @@ class Replica(process):
 				logger.error("************************Validating order proof failed at one of the replicas********************")
 		else:
 			logger.error("There is inconsistency in the slots, all previous slot havent been used for execution********************")
+
+
 
 	 #message to replca from previous 
 	def receive(msg=('REVERSE_SHUTTLE',request_id,result_proof, res,), from_=self.nextReplica):
@@ -133,7 +136,6 @@ class Replica(process):
 		else:
 			logger.error("the validation failed at" + str(self.currentReplica))
 			logger.error("************************Validating order proof failed at one of the replicas********************")
-
 
 
 	#FROM NON-HEAD Replicas to HEAD Replica for Retransmission case
@@ -363,8 +365,12 @@ class Replica(process):
 			logger.debug("there is inconsistency among slots")
 			return False
 
-		
-
+	
+	def handleRetransmissionCase():
+		retransmission_case_replica_sleep_time=config.readProperty('retransmission_case_replica_sleep_time')
+		if(retransmission_case_replica_sleep_time > 0):
+			logger.info("sleeping for "+str(retransmission_case_replica_sleep_time)+", to mock retransmission case.")
+			time.sleep(retransmission_case_replica_sleep_time)
 
 
 

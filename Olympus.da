@@ -15,8 +15,8 @@ replicas = []
 class Olympus(process):
 	replicas = []
 	totalReplica = None;
-	def setup(clients):
-		config.main()
+	def setup(clients,configFilePath):
+		config.config_main(configFilePath)
 		logger.basicConfig(
 		format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
 		handlers=[
