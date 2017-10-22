@@ -147,9 +147,10 @@ def main():
 
 
 	############Creating Setting up client#################
-	operationList = config.readProperty("workload[1]");
-	logger.info("Operations from config file : "+str(operationList))
+	
 	for cnum,cli in enumerate(clients):
+		operationList = config.readProperty("workload["+str(cnum)+"]");
+		logger.info("Operations for client : "+str(cli)+" => "+str(operationList))
 		setup(cli,[configFilePath,operationList,olympus,replicas,cli,replicaVerifyKeys,clientSignKeys[cnum]])
 		start(cli)
 	#########################################################

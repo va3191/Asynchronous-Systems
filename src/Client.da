@@ -37,7 +37,8 @@ class Client(process):
 		self.operationFlag=False
 		self.dictdata={}
 		self.dictDataFromReplica={}
-		logger.debug("client setup finished")
+		logger.info("Client setup finished. Operations for client : "+str(currentClient)+" => "+str(reqList))
+		
  
 	def main(): pass
 
