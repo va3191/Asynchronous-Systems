@@ -1,5 +1,5 @@
 *******************************************************************
-
+TESTCASE 1
 CASE : NewRequest
 
 To trigger a New Request for a sequence of Operations
@@ -24,7 +24,7 @@ outcome
 	pass
 
 *******************************************************************
-
+TESTCASE 2
 CASE : Retransmission
 
 To trigger a New Request for a sequence of Operations
@@ -50,7 +50,7 @@ outcome
 
 *******************************************************************
 
-
+TESTCASE 3
 CASE : Failure when Replica(HEAD) 0 changes the operation for next message
 failures[0,0] = client_request(0,1),change_operation();shuttle(0,5),change_operation()
 
@@ -76,9 +76,8 @@ outcome
 
 *******************************************************************
 
-
+TESTCASE 4
 CASE : failures[0,1] = shuttle(0,2),drop_result_stmt()
-
 Failure when 2nd Replica drops the head replicas resultstatement from result_proof
 
 Description:
@@ -100,32 +99,32 @@ log_file_name
 outcome scenario
 	fail
 explaination:
-	when 2nd replica drops the head replica orderstatement from resultproof and forward the shuttle to next replica(tail in our case). Tail replica
-		1. forward the response to client
-		2. cache the wrong result proof shuttle
-		3. forward the shuttle to previous replica
-	In 1st case, since the resultproof is invalid, validation fails at client, client does retransmission in this case and forward the
-	request to all replicas. Since the tail replica have a wrong resultproof cached, it forwards the request to client. All other replicas
-	does not find anything in their cache and forward the request to head replica. Since the client gets the wrong resultproof and cannot retransmit,
-	retransmission operation timesout.
+	when 2nd replica drops the head replica resultstatement from resultproof and forward the shuttle to next replica(tail in our case). Tail replica
+		CASE 1. forward the response to client
+		CASE 2. cache the wrong result proof shuttle
+		CASE 3. forward the shuttle to previous replica
+
+		In 1st CASE , since the resultproof is invalid, validation fails at client, client does retransmission in this case and forward the
+		request to all replicas. Since the tail replica have a wrong resultproof cached, it forwards the request to client. All other replicas
+		does not find anything in their cache and forward the request to head replica. Since the client gets the wrong resultproof and cannot retransmit,
+		retransmission operation timesout.
 
 
 
 *******************************************************************
 
-
+TESTCASE 5
 CASE : failures[0,2] = shuttle(0,2),change_result()
-
-Failure when 2nd Replica drops the head replicas resultstatement from result_proof
+Failure when tail Replica changes its result from resultproof
 
 Description:
 	t failure=1
 	client=1
 	replica=3
 configuration_file_name
-	"5.nonHead.SH.DRS.config"
+	"6.Tail.RS.CR.config"
 Commands(When all commands are executed from sourcefolder):
-	1.) python3 -m da -n main RunSystem.da -i ../config/5.nonHead.SH.DRS.config 
+	1.) python3 -m da -n main RunSystem.da -i ../config/6.Tail.RS.CR.config
 				-i parameter helps to define the particular config file. It contains properties specific to retransmission, like
 				sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
 	2.) python3 -m da -n client_0 RunSystem.da 
@@ -137,4 +136,119 @@ log_file_name
 outcome scenario
 	fail
 explaination:
+	when tail replica changes the result from resultproof. 
+		CASE 1. forward the result_proof to client
+		CASE 2. cache the wrong result proof shuttle
+		CASE 3. forward the shuttle to previous replica
+		
+		In 1st CASE , since the resultproof is invalid, validation fails at client, client does retransmission in this case and forward the
+		request to all replicas. Since the tail replica have a wrong resultproof cached, it forwards the request to client. All other replicas
+		does not find anything in their cache and forward the request to head replica. Since the client gets the wrong resultproof and cannot retransmit,
+		retransmission operation timesout.
 
+
+*******************************************************************
+
+TESTCASE 7
+failures[0,2] = shuttle(0,2),drop_result_stmt()
+
+Failure when tail Replica drops the head replicas resultstatement from result_proof
+
+Description:
+	t failure=1
+	client=1
+	replica=3
+configuration_file_name
+	"7.Tail.SH.DRS.config"
+Commands(When all commands are executed from sourcefolder):
+	1.) python3 -m da -n main RunSystem.da -i ../config/7.Tail.SH.DRS.config
+				-i parameter helps to define the particular config file. It contains properties specific to retransmission, like
+				sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
+	2.) python3 -m da -n client_0 RunSystem.da 
+	3.) python3 -m da -n replica_0 RunSystem.da 
+	4.) python3 -m da -n replica_1 RunSystem.da 
+	5.) python3 -m da -n replica_2 RunSystem.da 
+log_file_name
+	run_system.log
+outcome scenario
+	fail
+explaination:
+	when 2nd tail drops the head replica resultstatement from resultproof and forward the shuttle to next replica(tail in our case). Tail replica
+		CASE 1. forward the result_proof to client
+		CASE 2. cache the wrong result proof shuttle
+		CASE 3. forward the shuttle to previous replica
+		
+		In 1st CASE , since the resultproof is invalid, validation fails at client, client does retransmission in this case and forward the
+		request to all replicas. Since the tail replica have a wrong resultproof cached, it forwards the request to client. All other replicas
+		does not find anything in their cache and forward the request to head replica. Since the client gets the wrong resultproof and cannot retransmit,
+		retransmission operation timesout.
+
+*******************************************************************
+
+
+TESTCASE 8
+failures[0,2] = result_shuttle(0,2),change_result()
+
+Failure when tail Replica drops the head replicas resultstatement from result_proof
+
+Description:
+	t failure=1
+	client=1
+	replica=3
+configuration_file_name
+	"8.Tail.RS.CR.config"
+Commands(When all commands are executed from sourcefolder):
+	1.) python3 -m da -n main RunSystem.da -i ../config/8.Tail.RS.CR.config
+				-i parameter helps to define the particular config file. It contains properties specific to retransmission, like
+				sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
+	2.) python3 -m da -n client_0 RunSystem.da 
+	3.) python3 -m da -n replica_0 RunSystem.da 
+	4.) python3 -m da -n replica_1 RunSystem.da 
+	5.) python3 -m da -n replica_2 RunSystem.da 
+log_file_name
+	run_system.log
+outcome scenario
+	fail
+explaination:
+	when 2nd tail drops the head replica resultstatement from resultproof and forward the shuttle to next replica(tail in our case). Tail replica
+		CASE 1. forward the result_proof to client
+		CASE 2. cache the wrong result proof shuttle
+		CASE 3. forward the shuttle to previous replica
+		
+		In 1st CASE , since the resultproof is invalid, validation fails at client, client does retransmission in this case and forward the
+		request to all replicas. Since the tail replica have a wrong resultproof cached, it forwards the request to client. All other replicas
+		does not find anything in their cache and forward the request to head replica. Since the client gets the wrong resultproof and cannot retransmit,
+		retransmission operation timesout.
+
+
+*******************************************************************
+
+TESTCASE 9
+failures[0,1] = result_shuttle(0,2),drop_result_stmt()
+
+Failure when nonHead Replica changes the result from result shuttle and forwards to prev replica while coming from tail to head.
+
+Description:
+	t failure=1
+	client=1
+	replica=3
+configuration_file_name
+	"9.tail.RS.DRS.config"
+Commands(When all commands are executed from sourcefolder):
+	1.) python3 -m da -n main RunSystem.da -i ../config/9.tail.RS.DRS.config
+				-i parameter helps to define the particular config file. It contains properties specific to retransmission, like
+				sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
+	2.) python3 -m da -n client_0 RunSystem.da 
+	3.) python3 -m da -n replica_0 RunSystem.da 
+	4.) python3 -m da -n replica_1 RunSystem.da 
+	5.) python3 -m da -n replica_2 RunSystem.da 
+log_file_name
+	run_system.log
+outcome scenario
+	fail
+explaination:
+	when 2nd nonHead Replica changes the result from result shuttle and forward the shuttle to prev replica(head in our case). head replica
+		CASE 1. validates the result proof and fails
+		
+
+*******************************************************************

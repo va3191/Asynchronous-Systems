@@ -86,7 +86,6 @@ class Replica(process):
 		if case == "TAIL":
 			# validTriggerSet.append("client_request")
 			validTriggerSet.append("shuttle")
-			validTriggerSet.append("result_shuttle")
 
 		return validTriggerSet
 
@@ -153,7 +152,7 @@ class Replica(process):
 					# logger.info("justfortest"+str(len(resultproof)))
 					self.cacheResult(request_id, resultproof)
 					#SENDING result to client
-					logger.info('SHUTTLE reached at Tail : '+str(self.currentReplica)+", sending result to client : "+str(client)+", final dict object : "+str(self.dictionary_data))
+					logger.info('SHUTTLE reached at Tail : '+str(self.currentReplica)+", sending result to client : "+str(client)+", final dict object : "+str(self.dictionary_data)+", for operation : "+str(operation))
 					handleRetransmissionCase()
 					# resultproof 	=change_result(resultproof, request_id, operation)
 					self.dictionary_data["operation"]=str(operation)
@@ -163,14 +162,14 @@ class Replica(process):
 					self.counters[client]["shuttleCounter"] =self.counters[client]["shuttleCounter"]+1
 					validTriggerSet=getValidTriggerSet("TAIL")
 					triggerName = checkForPossibleFailure(client,validTriggerSet)
-					logger.info("validTriggerSet found at TAIL : "+str(validTriggerSet))
 					logger.info("After checking for failures. triggerName : "+str(triggerName))
 					if(triggerName!=None):
+						logger.info("******************GOING INSIDE HOHO***************")
 						shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
-					orderproof,resultproof=shuttle
+						orderproof,resultproof=shuttle
 					########################################################################################################
 					#SENDING RESPONSE TO CLIENT
-					send(('RESULT_FROM_TAIL', resultproof ,self.operation_result_internal[request_id],self.dictionary_data,self.currentReplica), to=client)
+					send(('RESULT_FROM_TAIL',request_id, resultproof ,self.operation_result_internal[request_id],self.dictionary_data,self.currentReplica), to=client)
 					
 
 					#STARTING REVERSE SHUTTLE OPERATIONS
@@ -182,7 +181,6 @@ class Replica(process):
 					validTriggerSet=[]
 					validTriggerSet.append("result_shuttle")#getValidTriggerSet("TAIL")
 					triggerName = checkForPossibleFailure(client,validTriggerSet)
-					logger.info("validTriggerSet found at TAIL : "+str(validTriggerSet))
 					logger.info("After checking for failures. triggerName : "+str(triggerName))
 					if(triggerName!=None):
 						shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
@@ -191,8 +189,8 @@ class Replica(process):
 					send(('REVERSE_SHUTTLE', request_id, resultproof, self.operation_result_internal[request_id],client), to=self.prevReplica)
 				else:
 					self.counters[client]["shuttleCounter"] =self.counters[client]["shuttleCounter"]+1
-					validTriggerSet=getValidTriggerSet("NONHEAD")
-					logger.info("validTriggerSet found at NONHEAD : "+str(validTriggerSet))
+					validTriggerSet=[]#getValidTriggerSet("NONHEAD")
+					validTriggerSet.append("shuttle")
 					triggerName = checkForPossibleFailure(client,validTriggerSet)
 					logger.info("After checking for failures. triggerName : "+str(triggerName))
 					orderproof,resultproof = shuttle
@@ -201,7 +199,7 @@ class Replica(process):
 					send(('FORWARD_SHUTTLE',request_id,shuttle,operation,slot,client), to=self.nextReplica)
 			else:
 				# NOTE: replica turns itself immutable and sends wedge statement to client with proof od misbehaviour
-				logger.error("************************Validating order proof failed at replica : "+str(self.currentReplica))
+				logger.error("************************Validating order proof failed at replica : "+str(self.currentReplica)+", request_id : "+str(request_id))
 		else:
 			logger.error("There is inconsistency in the slots, all previous slot havent been used for execution********************")
 
@@ -209,9 +207,9 @@ class Replica(process):
 
 	 #message to replca from previous 
 	def receive(msg=('REVERSE_SHUTTLE',request_id,result_proof, res,client,), from_=self.nextReplica):
-		incrementCounter(client,"resultShuttleCounter")
+		# incrementCounter(client,"resultShuttleCounter")
+		self.counters[client]["resultShuttleCounter"] =self.counters[client]["resultShuttleCounter"]+1
 		logger.info("REVERSE_SHUTTLE received at replica : "+str(self.currentReplica)+", from nextReplica : "+str(self.nextReplica)+", request_id : "+str(request_id))
-		
 		validation = config.checkForResultConsistency(result_proof, res, self.allReplicaVerifyKeysMap)
 		logger.info("the result from validation is " + str(validation))
 		if(validation):
@@ -219,12 +217,21 @@ class Replica(process):
 			if(self.prevReplica == None):
 				logger.info("SHUTTLE reached at HEAD")
 			else:
-				# result_proof = drop_result_stmt(result_proof)
+				validTriggerSet=[]
+				validTriggerSet.append("result_shuttle")
+				triggerName = checkForPossibleFailure(client,validTriggerSet)
+				if(triggerName!=None):
+					shuttle=(None,result_proof)
+					slot_number=self.requestIdToSoPair[request_id][0]
+					operation=self.requestIdToSoPair[request_id][1]
+
+					shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
+					orderproof,result_proof= shuttle
 				logger.info("After caching result, forwarding to prevReplica : "+str(self.prevReplica))
-				send(('REVERSE_SHUTTLE',request_id,result_proof, res), to=self.prevReplica)
+				send(('REVERSE_SHUTTLE',request_id,result_proof, res,client,), to=self.prevReplica)
 		else:
 			logger.error("the validation failed at" + str(self.currentReplica))
-			logger.error("************************Validating order proof failed at replica : "+str(self.currentReplica))
+			logger.error("************************Validating order proof failed at replica : "+str(self.currentReplica)+", request_id : "+str(request_id))
 
 
 	#FROM NON-HEAD Replicas to HEAD Replica for Retransmission case

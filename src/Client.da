@@ -101,11 +101,8 @@ class Client(process):
 		resultproof=str()
 		timeout = config.readProperty("client_retransmission_timeout")
 		for rnum,rep in enumerate(self.replicas):
-			logger.info("**************retransmission rnum : "+str(rnum)+", rep : "+str(rep))
 			sendOperationToReplicaNode('RETRANSMISSION',request_id,operation,rep)
 			awaitResultQueue.append(('FORWARD_SHUTTLE', resultproof ,))
-
-		logger.info("***********awaitResultQueue : "+str(awaitResultQueue)+", \n")
 
 		# if (self.replicaRetransmissionCounter == len(self.replicas)):
 		if await(each(p in awaitResultQueue, has=received(('RETRANSMISSION', resultproof,)))):
@@ -113,8 +110,8 @@ class Client(process):
 		elif(timeout(timeout)):
 			logger.error("RETRANSMISSION request Timed out!");
 
-	def receive(msg=('RESULT_FROM_TAIL',result_proof,result,dictdata,replicaId),):
-		logger.info("Result SHUTTLE reached from tail Replica : "+str(replicaId)+", dictdata : "+str(dictdata))
+	def receive(msg=('RESULT_FROM_TAIL',request_id,result_proof,result,dictdata,replicaId),):
+		logger.info("Result SHUTTLE reached from tail Replica : "+str(replicaId)+", dictdata : "+str(dictdata)+", request_id : "+str(request_id))
 		validation = config.checkForResultConsistency(result_proof,result, self.allReplicaVerifyKeysMap)
 		if(validation):
 			logger.info("Result proof correctly validated! SUCCESS !!")
