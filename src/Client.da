@@ -30,6 +30,7 @@ class Client(process):
 		self.currentClient=currentClient
 		self.request_sequence={}
 		self.replicaRetransmissionCounter=0
+		self.operationFlag=False
 
 		# logger.info("logging for the first time ")
 		# logger.info("************Setting Up Client***********",config.readProperty("logfile_path"))
@@ -43,9 +44,7 @@ class Client(process):
 		received(('SET_UP',), from_=self.olympus)
 		logger.debug('Recieved Setup')
 		logger.debug("*********received SET_UP FROM Client***********")
-		
 		self.executeOperations()
-		
 		# if("client_1" in currentClient):
 		# 	time.sleep(10)
 		# 	self.executeRetransmissionTest();
@@ -61,7 +60,6 @@ class Client(process):
 	# 	else:
 	# 		logger.error("************************Validating order proof failed at Client********************")
 	# 	# output(result_proof)
-
 
 	def dictionary():
 		dictionary = [('movie','star'),('jedi','luke skywalker'),('actor','irfan'),('criket','sachin'),('chupa','aditya')]
@@ -85,7 +83,6 @@ class Client(process):
 	def executeTest():
 		expectedResult=config.readProperty('result[1]')
 
-
 	#Receive output for retransmission request from replica.
 	def receive(msg=("RETRANSMISSION",result_proof,replicaId,),):
 		self.replicaRetransmissionCounter+=1
@@ -94,8 +91,10 @@ class Client(process):
 		logger.info("validation : "+str(validation)+", result : "+str(result))
 		if(validation):
 			logger.info("Result proof correctly validated! SUCCESS !!")
+			self.operationFlag=True
 		else:
 			logger.error("Result proof incorrect! FAILED !!")
+			self.operationFlag=False
 
 	def retransmission(request_id,operation):
 		awaitResultQueue=[]
@@ -114,7 +113,15 @@ class Client(process):
 		elif(timeout(timeout)):
 			logger.error("RETRANSMISSION request Timed out!");
 
-
+	def receive(msg=('RESULT_FROM_TAIL',result_proof,result,dictdata,replicaId),):
+		logger.info("Result SHUTTLE reached from tail Replica : "+str(replicaId)+", dictdata : "+str(dictdata))
+		validation = config.checkForResultConsistency(result_proof,result, self.allReplicaVerifyKeysMap)
+		if(validation):
+			logger.info("Result proof correctly validated! SUCCESS !!")
+			self.operationFlag=True
+		else:
+			logger.error("Result proof incorrect! FAILED !!")
+			self.operationFlag=False
 
 	def executeOperations():
 		logger.info("The Client:%s. workload to be performed : %s" %(currentClient, self.reqList))
@@ -128,37 +135,19 @@ class Client(process):
 		for operation in self.reqList:
 			request_id = uuid.uuid4()
 			self.request_sequence[request_id]=operation
+			self.operationFlag=False
+			# logger.info("current operationFlag : "+str(self.operationFlag))
 			self.sendOperationToReplicaNode('PERFORM_OPERATION',request_id,operation,self.replicas[0])
 			logger.info("send operation to client "+str(self.currentClient)+", operation : "+str(operation))
 			
-			if await(some(received(('RESULT_FROM_TAIL',result_proof,result,dictdata,replicaId)))):
-				logger.info("Result SHUTTLE reached from tail Replica : "+str(replicaId)+", dictdata : "+str(dictdata)+", for operation : "+str(operation))
-				validation = config.checkForResultConsistency(result_proof,result, self.allReplicaVerifyKeysMap)
-				if(validation):
-					logger.info("Result proof correctly validated! SUCCESS !!")
-				else:
-					logger.error("Result proof incorrect! FAILED !!")
+			if await(self.operationFlag==True):
+				logger.info("operation executed !!!")
 			elif(timeout(timeout)):
 				logger.error("Client Timed out!! Client : "+str(self.currentClient)+", request_id : "+str(request_id)+", operation : "+str(operation));
 				if(retransmissionCounter < maxRetransmissionCounter):
 					retransmission(request_id,operation)
 					retransmissionCounter=retransmissionCounter+1
 
-
-
-	# def checkForResultConsistency(resultproof,res):
-	# 	delta= config.calculateHash(res)
-	# 	flag = True	
-	# 	validation, hashMaps = config.validateResultProof(resultproof,allReplicaVerifyKeysMap)
-	# 	if(!validation):
-	# 		return False
-	# 	# print("between this"+str(resultTuple[0])+"this the lenth od the returned tuple")
-	# 	for i in range(0, len(hashMaps)):
-	# 		if(hashMaps[i] == delta):
-	# 			continue
-	# 		else:
-	# 			flag = False
-	# 	return flag
 
 
 

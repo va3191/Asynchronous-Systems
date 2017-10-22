@@ -55,7 +55,7 @@ class Replica(process):
 			self.counters[client]["directRequestCounter"]=0
 			self.counters[client]["forwardRequestCounter"]=0
 			self.counters[client]["shuttleCounter"]=0
-			self.counters[client]["reverseShuttleCounter"]=0
+			self.counters[client]["resultShuttleCounter"]=0
 		
 		self.failureDS = config.readFailures()
 		logger.debug("REPLICA SETUP DONE!!")
@@ -79,15 +79,14 @@ class Replica(process):
 			validTriggerSet.append("shuttle")
 
 		if case == "NONHEAD":
-			validTriggerSet.append("client_request")
+			# validTriggerSet.append("client_request")
 			validTriggerSet.append("shuttle")
-			validTriggerSet.append("revese_shuttle")
-
+			validTriggerSet.append("result_shuttle")
 
 		if case == "TAIL":
-			validTriggerSet.append("client_request")
+			# validTriggerSet.append("client_request")
 			validTriggerSet.append("shuttle")
-			validTriggerSet.append("revese_shuttle")
+			validTriggerSet.append("result_shuttle")
 
 		return validTriggerSet
 
@@ -158,15 +157,51 @@ class Replica(process):
 					handleRetransmissionCase()
 					# resultproof 	=change_result(resultproof, request_id, operation)
 					self.dictionary_data["operation"]=str(operation)
+					########################################################################################################
+					#CHECKING FOR FAILURE :  SHUTTLE COUNTER : SENDING TO CLIENT
+					########################################################################################################
+					self.counters[client]["shuttleCounter"] =self.counters[client]["shuttleCounter"]+1
+					validTriggerSet=getValidTriggerSet("TAIL")
+					triggerName = checkForPossibleFailure(client,validTriggerSet)
+					logger.info("validTriggerSet found at TAIL : "+str(validTriggerSet))
+					logger.info("After checking for failures. triggerName : "+str(triggerName))
+					if(triggerName!=None):
+						shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
+					orderproof,resultproof=shuttle
+					########################################################################################################
+					#SENDING RESPONSE TO CLIENT
 					send(('RESULT_FROM_TAIL', resultproof ,self.operation_result_internal[request_id],self.dictionary_data,self.currentReplica), to=client)
-					#Starting REVERSE_SHUTTLE
+					
+
+					#STARTING REVERSE SHUTTLE OPERATIONS
 					logger.info('REVERSE_SHUTTLE starting. Forwarding to prevReplica : '+str(self.prevReplica))
+					########################################################################################################
+					#CHECKING FOR FAILURE : REVERSE SHUTTLE COUNTER : SENDING TO PREVIOUS REPLICA
+					########################################################################################################
+					self.counters[client]["resultShuttleCounter"] =self.counters[client]["resultShuttleCounter"]+1
+					validTriggerSet=[]
+					validTriggerSet.append("result_shuttle")#getValidTriggerSet("TAIL")
+					triggerName = checkForPossibleFailure(client,validTriggerSet)
+					logger.info("validTriggerSet found at TAIL : "+str(validTriggerSet))
+					logger.info("After checking for failures. triggerName : "+str(triggerName))
+					if(triggerName!=None):
+						shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
+					########################################################################################################
+					orderproof,resultproof=shuttle
 					send(('REVERSE_SHUTTLE', request_id, resultproof, self.operation_result_internal[request_id],client), to=self.prevReplica)
 				else:
+					self.counters[client]["shuttleCounter"] =self.counters[client]["shuttleCounter"]+1
+					validTriggerSet=getValidTriggerSet("NONHEAD")
+					logger.info("validTriggerSet found at NONHEAD : "+str(validTriggerSet))
+					triggerName = checkForPossibleFailure(client,validTriggerSet)
+					logger.info("After checking for failures. triggerName : "+str(triggerName))
+					orderproof,resultproof = shuttle
+					if(triggerName!=None):
+						shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
 					send(('FORWARD_SHUTTLE',request_id,shuttle,operation,slot,client), to=self.nextReplica)
 			else:
 				# NOTE: replica turns itself immutable and sends wedge statement to client with proof od misbehaviour
-				logger.error("************************Validating order proof failed at one of the replicas********************")
+				logger.error("************************Validating order proof failed at replica : "+str(self.currentReplica))
 		else:
 			logger.error("There is inconsistency in the slots, all previous slot havent been used for execution********************")
 
@@ -174,7 +209,7 @@ class Replica(process):
 
 	 #message to replca from previous 
 	def receive(msg=('REVERSE_SHUTTLE',request_id,result_proof, res,client,), from_=self.nextReplica):
-		incrementCounter(client,"reverseShuttleCounter")
+		incrementCounter(client,"resultShuttleCounter")
 		logger.info("REVERSE_SHUTTLE received at replica : "+str(self.currentReplica)+", from nextReplica : "+str(self.nextReplica)+", request_id : "+str(request_id))
 		
 		validation = config.checkForResultConsistency(result_proof, res, self.allReplicaVerifyKeysMap)
@@ -189,7 +224,7 @@ class Replica(process):
 				send(('REVERSE_SHUTTLE',request_id,result_proof, res), to=self.prevReplica)
 		else:
 			logger.error("the validation failed at" + str(self.currentReplica))
-			logger.error("************************Validating order proof failed at one of the replicas********************")
+			logger.error("************************Validating order proof failed at replica : "+str(self.currentReplica))
 
 
 	#FROM NON-HEAD Replicas to HEAD Replica for Retransmission case
@@ -234,7 +269,7 @@ class Replica(process):
 		else:#(self.currentReplica != self.headReplica):
 			#send request to head
 			#self.headReplica
-			logger.info("RETRANSMISSION_HEAD to HEAD REPLICA")
+			logger.info("RETRANSMISSION_HEAD to HEAD REPLICA currentReplica : "+ str(self.currentReplica))
 			send(("RETRANSMISSION_HEAD",requestId,operation,self.currentReplica),to=self.headReplica)
 			
 			timeout=config.readProperty("nonhead_timeout")
@@ -292,23 +327,18 @@ class Replica(process):
 				result= ''
 
 		elif(temp[0] == "slice"):
+			logger.info("After Executing Operation in dictonary. "+", dict before : "+str(self.dictionary_data)+"slice")
 			tempsplit=operation.split('\'')
-			print("tempSplit: ", tempsplit)
 			if(dictionary_data[tempsplit[1]]):
-				print("dictionarydata :   ", dictionary_data)
-				print("dictionary data   "+ str(dictionary_data[tempsplit[1]]) +"    ")
 				ind  = tempsplit[3].split(':')
-				print(ind, len(dictionary_data[tempsplit[1]]),int(ind[1]) )
-
 				if (len(dictionary_data[tempsplit[1]])) > int(ind[1]):
 					dictionary_data[tempsplit[1]] = dictionary_data[tempsplit[1]][int(ind[0]):int(ind[1])]
-					print("final Dictionary",dictionary_data[tempsplit[1]])
 					result= 'ok'
 				else:
 					result= 'fail'
 			else:
 				result= 'fail'
-		logger.info("After Executing Operation in dictonary. "+", dict after : "+str(self.dictionary_data))
+			logger.info("slice operation successfully executed")
 		return result
 
 
@@ -442,11 +472,11 @@ class Replica(process):
 			return change_operation(shuttle, request_id, slot_number, operation)
 			# logger.info("1. callFailureFunctionBasedOnTrigger triggerName : "+str(triggerName))
 		elif(triggerName == "change_result"):
-			# change_result()
-			logger.info("2. callFailureFunctionBasedOnTrigger triggerName : "+str(triggerName))
+			return change_result(shuttle, request_id, operation)
+			# logger.info("2. callFailureFunctionBasedOnTrigger triggerName : "+str(triggerName))
 		if(triggerName == "drop_result_stmt"):
 			# drop_result_stmt()
-			logger.info("3. callFailureFunctionBasedOnTrigger triggerName : "+str(triggerName))
+			return drop_result_stmt(shuttle)
 
 	def checkForPossibleFailure(client,validTriggerSet):
 		logger.info("Checking for possible failures. Current counter : "+str(self.counters)+", self.failureDS : "+str(self.failureDS))
@@ -478,7 +508,7 @@ class Replica(process):
 			elif(self.counters[client]["shuttleCounter"] == messageNumber and triggerName=="shuttle"):
 				# callFailureFunctionBasedOnTrigger(triggerFailure)
 				return triggerFailure
-			elif(self.counters[client]["reverseShuttleCounter"] == messageNumber and triggerName=="result_shuttle"):
+			elif(self.counters[client]["resultShuttleCounter"] == messageNumber and triggerName=="result_shuttle"):
 				# callFailureFunctionBasedOnTrigger(triggerFailure)
 				return triggerFailure
 		return None
@@ -505,9 +535,10 @@ class Replica(process):
 
 		return shuttle
 
-	def change_result(resultproof, requestId, operation):
+	def change_result(shuttle, requestId, operation):
+
 		logger.info("Change result called with resultproof" + "  requestId: "+ str(requestId) +"operation : "+ str(operation))
-		# order, result = shuttle
+		order, resultproof = shuttle
 		# lorder = len(order)
 		lresult = len(resultproof)
 		print("length of resultproof"+str(len(resultproof)))
@@ -519,14 +550,12 @@ class Replica(process):
 		resultproof =  resultproof[0:lresult-1]
 		# order[lorder] = signedOrderProof
 		resultproof.append(signedResultProof)
-		return resultproof
+		return (order, resultproof)
 		# shuttle = (order,signedResultProof)
 		# for i in Res
 
-		return resultproof
-
-	def drop_result_stmt(resultproof):
-		order , result = shuttle
+	def drop_result_stmt(shuttle):
+		order, result = shuttle
 		result = result[1:]
 		return (order,result)
 
