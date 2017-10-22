@@ -293,9 +293,16 @@ class Replica(process):
 
 		elif(temp[0] == "slice"):
 			tempsplit=operation.split('\'')
+			print("tempSplit: ", tempsplit)
 			if(dictionary_data[tempsplit[1]]):
-				if (len(dictionary_data[tempsplit[1]])) > int(temp[3]):
-					dictionary_data[tempsplit[1]].slice[:int(temp[3])]
+				print("dictionarydata :   ", dictionary_data)
+				print("dictionary data   "+ str(dictionary_data[tempsplit[1]]) +"    ")
+				ind  = tempsplit[3].split(':')
+				print(ind, len(dictionary_data[tempsplit[1]]),int(ind[1]) )
+
+				if (len(dictionary_data[tempsplit[1]])) > int(ind[1]):
+					dictionary_data[tempsplit[1]] = dictionary_data[tempsplit[1]][int(ind[0]):int(ind[1])]
+					print("final Dictionary",dictionary_data[tempsplit[1]])
 					result= 'ok'
 				else:
 					result= 'fail'
@@ -519,26 +526,9 @@ class Replica(process):
 		return resultproof
 
 	def drop_result_stmt(resultproof):
-		# order, result = shuttle
-		print("length of resultproof before operation" +str(len(resultproof)))
-		resultproof = resultproof[1:]
-		print("length of resultproof before operation" +str(len(resultproof)))
-		# shuttle = (order, result)
-		# print("length of oreder"+str(len(order)))
-		order = order[0:lorder-1]
-		# print("length of oreder"+str(len(order)))
-		result =  result[0:lresult-1]
-		orderStmt = (slot, "get('x')")
-		resultStmt = (self.operation_result_internal[requestId], operation, config.calculateHash(self.operation_result_internal[requestId]))
-		signedOrderProof= signMessage(str(orderStmt))
-		signedResultProof = signMessage(str(resultStmt))
-		order.append(signedOrderProof)
-		# print("length of oreder"+str(len(order)))
-		result.append(signedResultProof)
-		shuttle = (order,result)
-		logger.debug("change shuttle"+ str(shuttle))
-		logger.info("change_operation performed for requestId : "+str(requestId))
-		return shuttle
+		order , result = shuttle
+		result = result[1:]
+		return (order,result)
 
 
 
