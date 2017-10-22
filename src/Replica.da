@@ -9,7 +9,7 @@ import ast
 import time
 class Replica(process):
 	
-	def setup(configFilePath,replicas,clients,olympus,currentReplica,prevReplica,nextReplica,headReplica,tailReplica,replica_state,currentReplicaSigningKey,allReplicaVerifyKeysMap):
+	def setup(configFilePath,replicas,clients,olympus,currentReplica,prevReplica,nextReplica,headReplica,tailReplica,replica_state,currentReplicaSigningKey,allReplicaVerifyKeysMap,clientVerifyKeys):
 		config.config_main(configFilePath)
 		logger.basicConfig(
 		format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
@@ -31,6 +31,7 @@ class Replica(process):
 		self.headReplica=headReplica
 		self.tailReplica=tailReplica
 		self.replica_state=replica_state
+		self.clientVerifyKeys = clientVerifyKeys
 		#Main Dict object
 		self.dictionary_data={}#{'jedi':'luke skywalker','actor':'irfan','criket':'sachin','chupa':'aditya'}
 		#Result (key=requestId, value = (order_proof,result_proof)	
@@ -88,10 +89,29 @@ class Replica(process):
 			validTriggerSet.append("shuttle")
 
 		return validTriggerSet
-
+	def getData(request_id_en,operation_en,client):
+		try:
+			index =self.clients.index(client)
+			verify_key = nacl.signing.VerifyKey(self.clientVerifyKeys[index], encoder=nacl.encoding.HexEncoder)
+			tempId = verify_key.verify(request_id_en)
+			tempId1 = verify_key.verify(operation_en)
+			request_id = tempId.decode("utf-8")
+			operation = tempId1.decode("utf-8")
+		except  nacl.exceptions.BadSignatureError:
+			logger.error("client signed operation and requestID not valid| proof of misbehaviour")
+		return (request_id,operation)
 
 	#CONTROL FLOW: From (Client to HeadReplica)
-	def receive(msg=('PERFORM_OPERATION', request_id,operation,client), from_=node):
+	def receive(msg=('PERFORM_OPERATION', request_id_en,operation_en,client), from_=node):
+		# index =self.clients.index(client)
+		# verify_key = nacl.signing.VerifyKey(self.clientVerifyKeys[index], encoder=nacl.encoding.HexEncoder)
+		# tempId = verify_key.verify(request_id_en)
+		# tempId1 = verify_key.verify(operation_en)
+		# request_id = tempId.decode("utf-8")
+		# operation = tempId1.decode("utf-8")
+
+		request_id,operation = getData(request_id_en,operation_en,client)	
+		print("after decoding",request_id,operation)
 		#incrementing direct request counter from client 
 		# if("client" in node):
 		# logger.info("inside the if loop")
@@ -122,10 +142,11 @@ class Replica(process):
 
 		# logger.info("checking for failure injection")
 		# shuttle = change_operation(shuttle, request_id, self.slot_number, operation)
-		send(('FORWARD_SHUTTLE', request_id,shuttle,operation,self.slot_number,client), to=self.nextReplica)
+		send(('FORWARD_SHUTTLE', request_id_en,shuttle,operation_en,self.slot_number,client), to=self.nextReplica)
 
 	 #CONTROL FLOW: From (one Replica to another)
-	def receive(msg=('FORWARD_SHUTTLE',request_id,shuttle,operation,slot,client), from_=self.prevReplica):
+	def receive(msg=('FORWARD_SHUTTLE',request_id_en,shuttle,operation_en,slot,client), from_=self.prevReplica):
+		request_id,operation = getData(request_id_en,operation_en,client)
 		logger.info("PERFORM_OPERATION SHUTTLE FORWARD. at "+str(self.currentReplica)+", from prevReplica : "+str(self.prevReplica)+", client: "+str(client)+", request_id: "+str(request_id)+", slot : "+str(slot)+", operation : "+str(operation))
 		# logger.info("orderProof length  : "+str(len(self.order_proof))+", self.order_proof : "+str(self.order_proof));
 		logger.debug("SHUTTLE : "+str(shuttle));
@@ -196,7 +217,7 @@ class Replica(process):
 					orderproof,resultproof = shuttle
 					if(triggerName!=None):
 						shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
-					send(('FORWARD_SHUTTLE',request_id,shuttle,operation,slot,client), to=self.nextReplica)
+					send(('FORWARD_SHUTTLE',request_id_en,shuttle,operation_en,slot,client), to=self.nextReplica)
 			else:
 				# NOTE: replica turns itself immutable and sends wedge statement to client with proof od misbehaviour
 				logger.error("************************Validating order proof failed at replica : "+str(self.currentReplica)+", request_id : "+str(request_id))
@@ -235,7 +256,8 @@ class Replica(process):
 
 
 	#FROM NON-HEAD Replicas to HEAD Replica for Retransmission case
-	def receive(msg=('RETRANSMISSION_HEAD',requestId,operation,fromReplica,client),):
+	def receive(msg=('RETRANSMISSION_HEAD',requestId_en,operation_en,fromReplica,client),):
+		requestId,operation = getData(requestId_en,operation_en,client)
 		self.counters[client]["forwardRequestCounter"] =self.counters[client]["forwardRequestCounter"]+1
 		logger.info("RETRANSMISSION_HEAD request received at HEAD replica : "+str(self.currentReplica)+" from replica : "+str(fromReplica))
 		timeout = config.readProperty("head_timeout")
@@ -255,13 +277,14 @@ class Replica(process):
 		else:
 			#PERFORM Operation for FORWARD_SHUTTLE only once and stop for all other Replicas
 			logger.info("Operation is not recognized at HeadReplica. requestId : "+str(requestId)+", operation : "+str(operation))
-			send(("PERFORM_OPERATION",requestId,operation), to=self.headReplica)
+			send(("PERFORM_OPERATION",requestId_en,operation_en), to=self.headReplica)
 			if(timeout(timeout)):
 				logger.info("TIMEOUT at Replica : "+str(self.currentReplica)+" sending RECONFIGURATION request to Olympus!!!!")		
 			
 
 	#FROM Clients To Replicas
-	def receive(msg=('RETRANSMISSION',requestId,operation,client,), from_=self.clients):
+	def receive(msg=('RETRANSMISSION',requestId_en,operation_en,client,), from_=self.clients):
+		requestId,operation = getData(requestId_en,operation_en,client)
 		logger.info("RETRANSMISSION received at "+str(self.currentReplica)+", requestId : "+str(requestId)+", operation : "+str(operation)+ ", from client : "+str(client))
 		if(self.replica_state == 'IMMUTABLE'):
 			# if("replica_2" in self.currentReplica):
@@ -277,7 +300,7 @@ class Replica(process):
 			#send request to head
 			#self.headReplica
 			logger.info("RETRANSMISSION_HEAD to HEAD REPLICA currentReplica : "+ str(self.currentReplica))
-			send(("RETRANSMISSION_HEAD",requestId,operation,self.currentReplica),to=self.headReplica)
+			send(("RETRANSMISSION_HEAD",requestId_en,operation_en,self.currentReplica),to=self.headReplica)
 			
 			timeout=config.readProperty("nonhead_timeout")
 			#check if the current replica is a tailReplica, if yes, it will get result shuttle from prevReplica else

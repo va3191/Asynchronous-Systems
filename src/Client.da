@@ -3,6 +3,9 @@ import uuid
 import logging as logger
 import sys
 import time
+import nacl.utils
+import nacl.signing
+from nacl.public import PrivateKey, Box
 
 class Client(process):
 	
@@ -14,7 +17,7 @@ class Client(process):
 
 	request_sequence
 	replicaRetransmissionCounter;
-	def setup(configFilePath,reqList,olympus,replicas, currentClient,allReplicaVerifyKeysMap):
+	def setup(configFilePath,reqList,olympus,replicas, currentClient,allReplicaVerifyKeysMap, clientSignKey):
 		config.config_main(configFilePath)
 		logger.basicConfig(
 		format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
@@ -66,6 +69,8 @@ class Client(process):
 		return dictionary
 
 	def sendOperationToReplicaNode(msg,requestId,operation,replicaId):
+		requestId = signMessage(str(requestId))
+		operation = signMessage(str(operation))
 		send((msg,requestId, operation,self.currentClient,), to=replicaId)	
 		logger.info("Sending operations at Replicas from client: "+str(self.currentClient)+", requestId: "+str(requestId)+", operation : "+str(operation))
 
@@ -133,8 +138,11 @@ class Client(process):
 			request_id = uuid.uuid4()
 			self.request_sequence[request_id]=operation
 			self.operationFlag=False
+			# print("the request Id before entering the hole:", request_id, "  ",operation )
+			
 			# logger.info("current operationFlag : "+str(self.operationFlag))
 			self.sendOperationToReplicaNode('PERFORM_OPERATION',request_id,operation,self.replicas[0])
+
 			logger.info("send operation to client "+str(self.currentClient)+", operation : "+str(operation))
 			
 			if await(self.operationFlag==True):
@@ -144,6 +152,11 @@ class Client(process):
 				if(retransmissionCounter < maxRetransmissionCounter):
 					retransmission(request_id,operation)
 					retransmissionCounter=retransmissionCounter+1
+
+	def signMessage(msg):
+		signedMsg = clientSignKey.sign(str.encode(msg))
+		logger.debug("orignal message : "+str(msg)+", signedMsg : "+str(signedMsg))
+		return signedMsg
 
 
 
