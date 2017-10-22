@@ -34,9 +34,12 @@ def config_main(filePath):
 		],
 		level=logger.INFO)
 
-def returnValueListAfterStrippingSpaces(val):
+def returnValueListAfterStrippingSpaces(key,val):
 	values = []
 	returnValues = []
+	if("workload" in key and ";" not in str(val)):
+		returnValues.append(val)
+		return returnValues
 	if(";" in str(val)):
 		values = val.split(";")
 	else:
@@ -49,8 +52,8 @@ def readProperty(key):
 	if key == "client_hosts" or key == "replica_hosts":
 		host = []
 		hostsIps = []
-		hostsIps = returnValueListAfterStrippingSpaces(config["hosts"])
-		clientHostNumbers = returnValueListAfterStrippingSpaces(config[key])
+		hostsIps = returnValueListAfterStrippingSpaces(key,config["hosts"])
+		clientHostNumbers = returnValueListAfterStrippingSpaces(key,config[key])
 		# print("host : ",hostsIps);
 		for client in clientHostNumbers:
 			host.append(hostsIps[int(client)])
@@ -65,7 +68,7 @@ def readProperty(key):
 		mod=5
 		return pseudorandom(seed,n,mod)
 	
-	return returnValueListAfterStrippingSpaces(config[key]);
+	return returnValueListAfterStrippingSpaces(key,config[key]);
 
 def readFailures():
 	failureText='failures'
