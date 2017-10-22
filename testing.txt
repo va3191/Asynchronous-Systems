@@ -1,3 +1,6 @@
+new request t=1
+new request t=2
+
 *******************************************************************
 TESTCASE 1
 CASE : NewRequest
@@ -236,6 +239,37 @@ configuration_file_name
 	"9.tail.RS.DRS.config"
 Commands(When all commands are executed from sourcefolder):
 	1.) python3 -m da -n main RunSystem.da -i ../config/9.tail.RS.DRS.config
+				-i parameter helps to define the particular config file. It contains properties specific to retransmission, like
+				sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
+	2.) python3 -m da -n client_0 RunSystem.da 
+	3.) python3 -m da -n replica_0 RunSystem.da 
+	4.) python3 -m da -n replica_1 RunSystem.da 
+	5.) python3 -m da -n replica_2 RunSystem.da 
+log_file_name
+	run_system.log
+outcome scenario
+	fail
+explaination:
+	when 2nd nonHead Replica changes the result from result shuttle and forward the shuttle to prev replica(head in our case). head replica
+		CASE 1. validates the result proof and fails
+		
+
+*******************************************************************
+
+
+TESTCASE 10
+failures[0,1] = shuttle(0,1), change_operation(); result_shuttle(0,2), change_result(); result_shuttle(0,0), drop_result_stmt()
+
+Failure when nonHead Replica changes the result from result shuttle and forwards to prev replica while coming from tail to head.
+
+Description:
+	t failure=1
+	client=1
+	replica=3
+configuration_file_name
+	"9.tail.RS.DRS.config"
+Commands(When all commands are executed from sourcefolder):
+	1.) python3 -m da -n main RunSystem.da -i ../config/10.tail.RS.DRS.config
 				-i parameter helps to define the particular config file. It contains properties specific to retransmission, like
 				sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
 	2.) python3 -m da -n client_0 RunSystem.da 

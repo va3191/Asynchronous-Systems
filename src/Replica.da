@@ -335,12 +335,12 @@ class Replica(process):
 		result = ''
 		if(temp[0]=="put"):
 			tempsplit=operation.split('\'')
-			dictionary_data[tempsplit[1]]=tempsplit[3]
+			self.dictionary_data[tempsplit[1]]=tempsplit[3]
 			result='ok'
 
 		elif(temp[0] == "append"):
 			tempsplit=operation.split('\'')
-			if(self.dictionary_data[tempsplit[1]]):	
+			if(tempsplit[1] in self.dictionary_data):
 				self.dictionary_data[tempsplit[1]] = self.dictionary_data[tempsplit[1]] + ' ' + tempsplit[3]
 				logger.debug('append is executeed@@@@@@@@')
 				result= 'ok'
@@ -349,7 +349,7 @@ class Replica(process):
 
 		elif(temp[0] == "get"):
 			tempsplit=operation.split('\'')
-			if(self.dictionary_data[tempsplit[1]]):
+			if(tempsplit[1] in self.dictionary_data):
 				value = self.dictionary_data[tempsplit[1]];
 				result= value
 				logger.debug('get is executeed@@@@@@@@')	
@@ -357,12 +357,14 @@ class Replica(process):
 				result= ''
 
 		elif(temp[0] == "slice"):
-			logger.info("After Executing Operation in dictonary. "+", dict before : "+str(self.dictionary_data)+"slice")
 			tempsplit=operation.split('\'')
-			if(dictionary_data[tempsplit[1]]):
+			# logger.info("After Executing Operation in dictonary. => "+str(tempsplit))
+			# logger.info("str(tempsplit[1]) => "+str(tempsplit[1]))
+			# logger.info("str(dictionary_data[tempsplit[1]]) => "+str(dictionary_data[tempsplit[1]]))
+			if(tempsplit[1] in self.dictionary_data):
 				ind  = tempsplit[3].split(':')
-				if (len(dictionary_data[tempsplit[1]])) > int(ind[1]):
-					dictionary_data[tempsplit[1]] = dictionary_data[tempsplit[1]][int(ind[0]):int(ind[1])]
+				if (len(self.dictionary_data[tempsplit[1]])) > int(ind[1]):
+					self.dictionary_data[tempsplit[1]] = self.dictionary_data[tempsplit[1]][int(ind[0]):int(ind[1])]
 					result= 'ok'
 				else:
 					result= 'fail'
@@ -377,7 +379,7 @@ class Replica(process):
 		self.result_cache[request_id] = resultproof
 
 	def validateOrderProof(shuttle,operation,slot):
-		logger.info("validateOrderProof. slot : %s, operation : %s"%(slot,operation))
+		logger.info("validateOrderProof. slot : %s, operation : %s shuttle : %s"%(slot,operation,shuttle))
 		order,result = shuttle
 		flag = True
 		for i in range(0,len(order)):
@@ -399,6 +401,7 @@ class Replica(process):
 			except nacl.exceptions.BadSignatureError:
 				logger.error("key mismatch failed for ", order[i])
 				return False
+		logger.info("validaded flag : "+str(flag))
 		return flag
 
 	# def validateResultProof(resultproof):

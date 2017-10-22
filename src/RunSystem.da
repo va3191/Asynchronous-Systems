@@ -37,7 +37,9 @@ def readConfigFileName():
 def setup_main():
 	readConfigFileName()
 	config.config_main(configFilePath);	# initialize configuration file
-	print("*****************READING from config file : "+configFilePath+" **********")
+	print("*************************************************************************")
+	print("      STARTING SYSTEM MAIN : CONFIG-FILE : "+configFilePath)
+	print("*************************************************************************")
 
 	logger.basicConfig(
 	    format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
@@ -46,8 +48,7 @@ def setup_main():
 	        logger.StreamHandler()
 	    ],
 	    level=logger.DEBUG)
-	# logger.debug("DEBUG Removing previous run log file")
-	# logger.info("INFO Removing previous run log file")
+	logger.info("Removing old config file.")
 	os.remove((config.readProperty("logfile_path")+config.readProperty("logfile_name")+".log"))
 	
 

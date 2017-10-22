@@ -1,10 +1,12 @@
 import nacl.encoding
 import nacl.hash
 import ast
-import logging as logger
+import logging as log
 import ast
 import sys
 import getopt
+import hashlib
+import random
 
 config={}
 def readConfigFile(configFile):
@@ -23,18 +25,14 @@ def readConfigFile(configFile):
 
 
 def config_main(filePath):
-	# print("main argv  : ",argv)
-	# Setup function for main class.
-	print("filePathfilePathfilePath : ",filePath)
 	readConfigFile(filePath);
-	logger.basicConfig(
+	log.basicConfig(
 		format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
 		handlers=[
-		logger.FileHandler("{0}/{1}.log".format(readProperty("logfile_path"), readProperty("logfile_name"))),
-		logger.StreamHandler()
+		log.FileHandler("{0}/{1}.log".format(readProperty("logfile_path"), readProperty("logfile_name"))),
+		log.StreamHandler()
 		],
-		level=logger.INFO)
-	# readFailures()
+		level=log.DEBUG)
 
 def returnValueListAfterStrippingSpaces(val):
 	values = []
@@ -57,6 +55,16 @@ def readProperty(key):
 		for client in clientHostNumbers:
 			host.append(hostsIps[int(client)])
 		return host
+
+	if "workload" in key and "pseudorandom" in config[key]:
+		value = config[key]
+		tpl = value.split("pseudorandom")[1]
+		tupl = ast.literal_eval(tpl)
+		seed=tupl[0]
+		n=tupl[1]
+		mod=5
+		return pseudorandom(seed,n,mod)
+	
 	return returnValueListAfterStrippingSpaces(config[key]);
 
 def readFailures():
@@ -119,7 +127,7 @@ def readFailures():
 				replicaOperation["triggerName"]=triggerName
 				replicaOperation["triggerFailure"]=failure.split("()")[0]
 				failureDS[configurationNumber]["replica"][replicaNumber].append(replicaOperation)
-	logger.info("possible failures in config file failureDS :"+str(failureDS));#+", replicaNumber: "+str(replicaNumber)+", triggerName : "+triggerName+", clientNumber : "+str(clientNumber)+"=> messageNumber : "+str(messageNumber)+", failure : "+failure)
+	log.info("possible failures in config file failureDS :"+str(failureDS));#+", replicaNumber: "+str(replicaNumber)+", triggerName : "+triggerName+", clientNumber : "+str(clientNumber)+"=> messageNumber : "+str(messageNumber)+", failure : "+failure)
 	
 	return failureDS
 
@@ -153,7 +161,7 @@ def checkForResultConsistency(resultproof,res, allReplicaVerifyKeysMap):
 		return flag
 
 def validateResultProof(resultproof, allReplicaVerifyKeysMap):
-	logger.debug("ValidateResultProof function called  with resultProof : "+str(resultproof))
+	log.debug("ValidateResultProof function called  with resultProof : "+str(resultproof))
 	hashValues=[]
 	if(resultproof==None):
 		return False,None
@@ -163,25 +171,89 @@ def validateResultProof(resultproof, allReplicaVerifyKeysMap):
 
 			# Create a VerifyKey object from a hex serialized public key
 			verify_key = nacl.signing.VerifyKey(allReplicaVerifyKeysMap[length-i-1], encoder=nacl.encoding.HexEncoder)
-			# logger.debug("result number",i+1, "from result proof", resultproof[length-i-1])
+			# log.debug("result number",i+1, "from result proof", resultproof[length-i-1])
 			message = resultproof[length-i-1]
 			# Check the validity of a message's signature
 			# Will raise nacl.exceptions.BadSignatureError if the signature check fails
 			result = verify_key.verify(message)
 
-			# logger.debug("verified")
+			# log.debug("verified")
 			actualResult = ast.literal_eval(result.decode("utf-8"))
 		except nacl.exceptions.BadSignatureError:
-			# logger.error("key mismatch failed for ", resultproof[length-i-1])
+			# log.error("key mismatch failed for ", resultproof[length-i-1])
 			return (False,None)
 		res, op, hs = actualResult
 		# hashe= result.decode("utf-8")
-	# logger.info("validateResultProof. SUCCESSFULL!! ")
+	# log.info("validateResultProof. SUCCESSFULL!! ")
 		hashValues.append(hs)
 	return (True,hashValues)
 
+def randomNum(l):
+	a = random.randint(0,l)
+	b= random.randint(0,l)
+	if a<b:
+		return a,b
+	else:
+		return b,a
+
+def operationSpace(numArr):
+	operList=["get","put","slice","append"]
+	operations=[]
+	for i in range(numArr): 
+		oper=operList[i%4]
+		temp={}
+		tempstr=oper + "('key" +str(i)+"'"
+		if(oper =='get'):
+			tempstr=tempstr+")"
+		elif(oper =='put'):
+			temp["key"+str(i)]="value"+str(i)
+			tempstr = tempstr+",'"+str(temp["key"+str(i)])+"')"
+		elif(oper == "slice"):
+			a,b =randomNum(6)
+			tempstr= tempstr +",'" +str(a)+":"+str(b)+"')"
+		elif(oper =='append'):
+			temp["key"+str(i)]="value"+str(i)
+			tempstr = tempstr+",'"+str(temp["key"+str(i)])+"')"
+
+
+		operations.append(tempstr)
+	return operations
+
+def repeatable_random(seed , n,mod):
+
+	seed = random.seed(seed)
+	randomNumbers = []
+	while(n>0):
+		seed = random.randint(0, mod-1)
+		randomNumbers.append(seed)
+		n=n-1
+	return randomNumbers
+	# print("randomNumbers : "+str(randomNumbers))
+
+def pseudorandom(seed,n,mod):
+	operations=operationSpace(mod)
+	randomNumbers = repeatable_random(seed,n,mod)
+	finalOperations=[]
+	for i in range(0,n):
+		# print("randomNumber : "+randomNumbers[i])
+		finalOperations.append(operations[randomNumbers[i]])
+
+	# print("======>","".join(finalOperations))
+	return finalOperations
+
+
+# config_main("../config/system.config")
+# print("config[pseudorandom[2,3]]",readProperty("workload[0]"))
 
 
 
-config_main("../config/system.config")
+
+
+
+
+
+
+
+
+
 
