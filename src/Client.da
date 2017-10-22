@@ -82,6 +82,9 @@ class Client(process):
 			self.retransmission(requestId,operation)
 			break;
 
+	def executeTest():
+		expectedResult=config.readProperty('result[1]')
+
 
 	#Receive output for retransmission request from replica.
 	def receive(msg=("RETRANSMISSION",result_proof,replicaId,),):
@@ -119,13 +122,17 @@ class Client(process):
 		timeout = config.readProperty("client_timeout")
 		retransmissionCounter = 0
 		maxRetransmissionCounter = config.readProperty('max_retransmission_counter')
+		result=''
+		dictdata={}
+		replicaId=""
 		for operation in self.reqList:
 			request_id = uuid.uuid4()
 			self.request_sequence[request_id]=operation
 			self.sendOperationToReplicaNode('PERFORM_OPERATION',request_id,operation,self.replicas[0])
-			logger.info("send operation to client "+str(self.currentClient))
-			if await(some(received(('RESULT_FROM_TAIL',result_proof,result)))):
-				logger.debug("Result SHUTTLE reached from tail Replica : ")
+			logger.info("send operation to client "+str(self.currentClient)+", operation : "+str(operation))
+			
+			if await(some(received(('RESULT_FROM_TAIL',result_proof,result,dictdata,replicaId)))):
+				logger.info("Result SHUTTLE reached from tail Replica : "+str(replicaId)+", dictdata : "+str(dictdata)+", for operation : "+str(operation))
 				validation = config.checkForResultConsistency(result_proof,result, self.allReplicaVerifyKeysMap)
 				if(validation):
 					logger.info("Result proof correctly validated! SUCCESS !!")

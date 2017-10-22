@@ -8,6 +8,7 @@ import sys
 import ast
 import time
 class Replica(process):
+	
 	def setup(configFilePath,replicas,clients,olympus,currentReplica,prevReplica,nextReplica,headReplica,tailReplica,replica_state,currentReplicaSigningKey,allReplicaVerifyKeysMap):
 		config.config_main(configFilePath)
 		logger.basicConfig(
@@ -17,9 +18,7 @@ class Replica(process):
 		logger.StreamHandler()
 		],
 		level=logger.INFO)
-
 		logger.info("Replica SETUP. currentReplica : "+str(currentReplica)+", clients : "+str(clients)+", olympus : "+str(olympus)+", replica_state : "+str(replica_state))
-
 	    # logger.info("*	***********Setting Up replica***********")
 		self.replicas= replicas
 		self.clients=clients
@@ -48,18 +47,58 @@ class Replica(process):
 		if(prevReplica == None):
 			self.slot_number = 0
 
+		#counters for failure case
+		
+		self.counters={}
+		for client in clients:
+			self.counters[client]={}
+			self.counters[client]["directRequestCounter"]=0
+			self.counters[client]["forwardRequestCounter"]=0
+			self.counters[client]["shuttleCounter"]=0
+			self.counters[client]["reverseShuttleCounter"]=0
+		
+		self.failureDS = config.readFailures()
 		logger.debug("REPLICA SETUP DONE!!")
 		
 	def main(): pass	
 
+	def incrementCounter(client,counter):
+		self.counters[client][counter] =self.counters[client][counter]+1
+		
 	def updateSlotOperation(request_id,slot,operation):	
 		tempSOPair = []
 		tempSOPair.append(slot)
 		tempSOPair.append(operation)
 		self.requestIdToSoPair[request_id] = tuple(tempSOPair)
 
+	def getValidTriggerSet(case):
+		validTriggerSet=[]
+		if case == "HEAD":
+			validTriggerSet.append("client_request")
+			validTriggerSet.append("forwarded_request")
+			validTriggerSet.append("shuttle")
+
+		if case == "NONHEAD":
+			validTriggerSet.append("client_request")
+			validTriggerSet.append("shuttle")
+			validTriggerSet.append("revese_shuttle")
+
+
+		if case == "TAIL":
+			validTriggerSet.append("client_request")
+			validTriggerSet.append("shuttle")
+			validTriggerSet.append("revese_shuttle")
+
+		return validTriggerSet
+
+
 	#CONTROL FLOW: From (Client to HeadReplica)
-	def receive(msg=('PERFORM_OPERATION', request_id,operation,client), from_=self.clients):
+	def receive(msg=('PERFORM_OPERATION', request_id,operation,client), from_=node):
+		#incrementing direct request counter from client 
+		# if("client" in node):
+		# logger.info("inside the if loop")
+		self.counters[client]["directRequestCounter"] =self.counters[client]["directRequestCounter"]+1
+		self.counters[client]["shuttleCounter"] =self.counters[client]["shuttleCounter"]+1
 		shuttle=None
 		self.slot_number+=1
 		logger.info("PERFORM_OPERATION Called from client : "+str(client)+", request_id: "+str(request_id)+", operation: "+str(operation)+", slot: "+ str(self.slot_number)+ "	at replica : "+str(self.currentReplica))
@@ -73,6 +112,14 @@ class Replica(process):
 		logger.debug("shuttle after update: "+str(shuttle))
 		self.updateOrder_Result_Proof(shuttle)
 		logger.debug("ResultProof: "+str(self.result_proof)+"\n"+"OrderProof: "+str(self.order_proof));
+		
+		validTriggerSet=getValidTriggerSet("HEAD")
+		# validTriggerSet.add("result_shuttle")
+		triggerName = checkForPossibleFailure(client,validTriggerSet)
+		logger.info("After checking for failures. triggerName : "+str(triggerName))
+		if(triggerName!=None):
+			shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
+
 		logger.info("PERFORM_OPERATION done at HeadReplica, transfering SHUTTLE to nextReplica : "+str(self.nextReplica))
 
 		# logger.info("checking for failure injection")
@@ -107,15 +154,14 @@ class Replica(process):
 					# logger.info("justfortest"+str(len(resultproof)))
 					self.cacheResult(request_id, resultproof)
 					#SENDING result to client
-					logger.info('SHUTTLE reached at Tail : '+str(self.currentReplica)+", sending result to client : "+str(client))
+					logger.info('SHUTTLE reached at Tail : '+str(self.currentReplica)+", sending result to client : "+str(client)+", final dict object : "+str(self.dictionary_data))
 					handleRetransmissionCase()
 					# resultproof 	=change_result(resultproof, request_id, operation)
-					send(('RESULT_FROM_TAIL', resultproof ,self.operation_result_internal[request_id],), to=client)
-
+					self.dictionary_data["operation"]=str(operation)
+					send(('RESULT_FROM_TAIL', resultproof ,self.operation_result_internal[request_id],self.dictionary_data,self.currentReplica), to=client)
 					#Starting REVERSE_SHUTTLE
 					logger.info('REVERSE_SHUTTLE starting. Forwarding to prevReplica : '+str(self.prevReplica))
-
-					send(('REVERSE_SHUTTLE', request_id, resultproof, self.operation_result_internal[request_id],), to=self.prevReplica)
+					send(('REVERSE_SHUTTLE', request_id, resultproof, self.operation_result_internal[request_id],client), to=self.prevReplica)
 				else:
 					send(('FORWARD_SHUTTLE',request_id,shuttle,operation,slot,client), to=self.nextReplica)
 			else:
@@ -127,7 +173,8 @@ class Replica(process):
 
 
 	 #message to replca from previous 
-	def receive(msg=('REVERSE_SHUTTLE',request_id,result_proof, res,), from_=self.nextReplica):
+	def receive(msg=('REVERSE_SHUTTLE',request_id,result_proof, res,client,), from_=self.nextReplica):
+		incrementCounter(client,"reverseShuttleCounter")
 		logger.info("REVERSE_SHUTTLE received at replica : "+str(self.currentReplica)+", from nextReplica : "+str(self.nextReplica)+", request_id : "+str(request_id))
 		
 		validation = config.checkForResultConsistency(result_proof, res, self.allReplicaVerifyKeysMap)
@@ -147,6 +194,7 @@ class Replica(process):
 
 	#FROM NON-HEAD Replicas to HEAD Replica for Retransmission case
 	def receive(msg=('RETRANSMISSION_HEAD',requestId,operation,fromReplica,client),):
+		self.counters[client]["forwardRequestCounter"] =self.counters[client]["forwardRequestCounter"]+1
 		logger.info("RETRANSMISSION_HEAD request received at HEAD replica : "+str(self.currentReplica)+" from replica : "+str(fromReplica))
 		timeout = config.readProperty("head_timeout")
 		#NOTE: change it to  : if(requestId in self.result_cache):	
@@ -173,7 +221,6 @@ class Replica(process):
 	#FROM Clients To Replicas
 	def receive(msg=('RETRANSMISSION',requestId,operation,client,), from_=self.clients):
 		logger.info("RETRANSMISSION received at "+str(self.currentReplica)+", requestId : "+str(requestId)+", operation : "+str(operation)+ ", from client : "+str(client))
-		
 		if(self.replica_state == 'IMMUTABLE'):
 			# if("replica_2" in self.currentReplica):
 			logger.info("Replica is in IMMUTABLE state. Returning ERROR to clients")
@@ -218,42 +265,44 @@ class Replica(process):
 		await(received('',))
 
 	def executeOperation(request_id,operation):
-		logger.info("Executing Operation in dictonary. operation : "+str(operation))
+		logger.info("Executing Operation in dictonary. operation : "+str(operation)+", dict before : "+str(self.dictionary_data))
 		temp=operation.split('(')
-		
+		result = ''
 		if(temp[0]=="put"):
 			tempsplit=operation.split('\'')
 			dictionary_data[tempsplit[1]]=tempsplit[3]
-			return 'ok'
+			result='ok'
 
 		elif(temp[0] == "append"):
 			tempsplit=operation.split('\'')
 			if(self.dictionary_data[tempsplit[1]]):	
 				self.dictionary_data[tempsplit[1]] = self.dictionary_data[tempsplit[1]] + ' ' + tempsplit[3]
 				logger.debug('append is executeed@@@@@@@@')
-				return 'ok'
+				result= 'ok'
 			else:
-				return 'fail'
+				result= 'fail'
 
 		elif(temp[0] == "get"):
 			tempsplit=operation.split('\'')
 			if(self.dictionary_data[tempsplit[1]]):
 				value = self.dictionary_data[tempsplit[1]];
-				return value
+				result= value
 				logger.debug('get is executeed@@@@@@@@')	
 			else:
-				return ''
+				result= ''
 
 		elif(temp[0] == "slice"):
 			tempsplit=operation.split('\'')
 			if(dictionary_data[tempsplit[1]]):
 				if (len(dictionary_data[tempsplit[1]])) > int(temp[3]):
 					dictionary_data[tempsplit[1]].slice[:int(temp[3])]
-					return 'ok'
+					result= 'ok'
 				else:
-					return 'fail'
+					result= 'fail'
 			else:
-				return 'fail'
+				result= 'fail'
+		logger.info("After Executing Operation in dictonary. "+", dict after : "+str(self.dictionary_data))
+		return result
 
 
 	def cacheResult(request_id, resultproof):
@@ -283,7 +332,6 @@ class Replica(process):
 			except nacl.exceptions.BadSignatureError:
 				logger.error("key mismatch failed for ", order[i])
 				return False
-		logger.info("validateOrderProof. SUCCESSFULL!! ")
 		return flag
 
 	# def validateResultProof(resultproof):
@@ -380,6 +428,54 @@ class Replica(process):
 			logger.info("sleeping for "+str(retransmission_case_replica_sleep_time)+", to mock retransmission case.")
 			time.sleep(retransmission_case_replica_sleep_time)
 
+	def callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation):
+		# 'client_request', 'forwarded_request', 'shuttle', 'result_shuttle'
+		logger.info("callFailureFunctionBasedOnTrigger trying triggerName : "+str(triggerName)+" request_id : "+str(request_id))
+		if(triggerName == "change_operation"):
+			return change_operation(shuttle, request_id, slot_number, operation)
+			# logger.info("1. callFailureFunctionBasedOnTrigger triggerName : "+str(triggerName))
+		elif(triggerName == "change_result"):
+			# change_result()
+			logger.info("2. callFailureFunctionBasedOnTrigger triggerName : "+str(triggerName))
+		if(triggerName == "drop_result_stmt"):
+			# drop_result_stmt()
+			logger.info("3. callFailureFunctionBasedOnTrigger triggerName : "+str(triggerName))
+
+	def checkForPossibleFailure(client,validTriggerSet):
+		logger.info("Checking for possible failures. Current counter : "+str(self.counters)+", self.failureDS : "+str(self.failureDS))
+		if(self.failureDS == None or len(self.failureDS)==0) :
+			return
+		replicaIndex = self.replicas.index(self.currentReplica)
+		currentConfiguration = 0
+		failureDsReplicaDict = self.failureDS[currentConfiguration]["replica"]
+		if(replicaIndex not in failureDsReplicaDict):
+			return None
+		failureLists = self.failureDS[currentConfiguration]["replica"][replicaIndex]
+		for obj in failureLists:
+			triggerName = obj["triggerName"]
+			clientObj = obj["client"]
+			if(clientObj == None):
+				return None
+			messageNumber=obj["messageNumber"]
+			triggerFailure=obj["triggerFailure"]
+			if(clientObj != self.clients.index(client)):
+				continue
+			if(triggerName not in validTriggerSet):
+				continue
+			if(self.counters[client]["directRequestCounter"] == messageNumber and triggerName=="client_request"):
+				# callFailureFunctionBasedOnTrigger(triggerFailure)
+				return triggerFailure
+			elif(self.counters[client]["forwardRequestCounter"] == messageNumber and triggerName=="forwarded_request"):
+				# callFailureFunctionBasedOnTrigger(triggerFailure)
+				return triggerFailure
+			elif(self.counters[client]["shuttleCounter"] == messageNumber and triggerName=="shuttle"):
+				# callFailureFunctionBasedOnTrigger(triggerFailure)
+				return triggerFailure
+			elif(self.counters[client]["reverseShuttleCounter"] == messageNumber and triggerName=="result_shuttle"):
+				# callFailureFunctionBasedOnTrigger(triggerFailure)
+				return triggerFailure
+		return None
+
 	def change_operation(shuttle, requestId, slot, operation ):
 		#just before tsending the shuttle
 		logger.info("Change operation called with shuttle" + "  requestId: "+ str(requestId) +"operation : "+ str(operation))
@@ -428,6 +524,21 @@ class Replica(process):
 		resultproof = resultproof[1:]
 		print("length of resultproof before operation" +str(len(resultproof)))
 		# shuttle = (order, result)
+		# print("length of oreder"+str(len(order)))
+		order = order[0:lorder-1]
+		# print("length of oreder"+str(len(order)))
+		result =  result[0:lresult-1]
+		orderStmt = (slot, "get('x')")
+		resultStmt = (self.operation_result_internal[requestId], operation, config.calculateHash(self.operation_result_internal[requestId]))
+		signedOrderProof= signMessage(str(orderStmt))
+		signedResultProof = signMessage(str(resultStmt))
+		order.append(signedOrderProof)
+		# print("length of oreder"+str(len(order)))
+		result.append(signedResultProof)
+		shuttle = (order,result)
+		logger.debug("change shuttle"+ str(shuttle))
+		logger.info("change_operation performed for requestId : "+str(requestId))
+		return shuttle
 
 
 

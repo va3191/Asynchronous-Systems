@@ -64,10 +64,9 @@ def readFailures():
 	val = []
 	configurationNumber=int()
 	replicaNumber=int()
-	triggerList=["client_request","forwarded_request","shuttle","result_shuttle"]
-
+	# triggerList=["client_request","forwarded_request","shuttle","result_shuttle"]
 	failureDS = {}
-	failureDS["triggers"]=triggerList
+	# failureDS["triggers"]=triggerList
 	'''
 	{
 		"triggers":["client_request","forwarded_request","shuttle","result_shuttle"],
@@ -91,31 +90,38 @@ def readFailures():
 			]
 		}
 	}
+
 	'''
+
 	for key,value in config.items():
 		if("failures" in key):
 			failureListKey = key.split("failures")[1]
 			failureListKeyList = ast.literal_eval(failureListKey)
-
 			configurationNumber=failureListKeyList[0]
 			replicaNumber=failureListKeyList[1]
+			replicaArray=[]
 			failureDS[configurationNumber]={}
-			failureDS["replica"]=[]
-			failureDS["client"]=[]
-			
-			
+			failureDS[configurationNumber]["replica"]={}
+			# failureDS[configurationNumber]["client"]=[]
 			failureValueList = value.split(";")
 			for failureValue in failureValueList:
+				replicaOperation={}
+				if(replicaNumber not in failureDS[configurationNumber]["replica"]):
+					failureDS[configurationNumber]["replica"][replicaNumber]=[]
 				trigger,failure = failureValue.split("),")
 				trigger +=')'
 				triggerName = trigger.split('(')[0]
-
 				triggerValuetemp = trigger.split(triggerName)[1]
 				triggerValuetempList = ast.literal_eval(triggerValuetemp)
-				clientNumber,messageNumber = triggerValuetempList
-				logger.info("clientNumber : "+str(clientNumber)+"=> messageNumber : "+str(messageNumber)+", failure : "+failure)
+				clientNumber,messageNumber = triggerValuetempList			
+				replicaOperation["client"]=clientNumber
+				replicaOperation["messageNumber"]=messageNumber
+				replicaOperation["triggerName"]=triggerName
+				replicaOperation["triggerFailure"]=failure.split("()")[0]
+				failureDS[configurationNumber]["replica"][replicaNumber].append(replicaOperation)
+	logger.info("possible failures in config file failureDS :"+str(failureDS));#+", replicaNumber: "+str(replicaNumber)+", triggerName : "+triggerName+", clientNumber : "+str(clientNumber)+"=> messageNumber : "+str(messageNumber)+", failure : "+failure)
 	
-
+	return failureDS
 
 
 
@@ -177,5 +183,5 @@ def validateResultProof(resultproof, allReplicaVerifyKeysMap):
 
 
 
-
+config_main("../config/system.config")
 

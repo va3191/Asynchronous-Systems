@@ -13,7 +13,7 @@ client = import_da('Client')
 replica = import_da('Replica')
 configFilePath=''
 
-clients = set()
+clients = []
 replicas = []
 olympus = None
 
@@ -46,6 +46,8 @@ def setup_main():
 	        logger.StreamHandler()
 	    ],
 	    level=logger.DEBUG)
+	# logger.debug("DEBUG Removing previous run log file")
+	# logger.info("INFO Removing previous run log file")
 	os.remove((config.readProperty("logfile_path")+config.readProperty("logfile_name")+".log"))
 	
 
@@ -78,7 +80,7 @@ def main():
 		nodeName = clientBaseName+str(i)#+"@"+clientHosts[i];
 		clListTemp = new(client.Client,num=1, at=nodeName)
 		clientList.extend(clListTemp)
-	clients = set(clientList)
+	clients = list(clientList)
 	print("clients => ",clients);
 	#########################################################
 
