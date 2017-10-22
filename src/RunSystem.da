@@ -47,13 +47,13 @@ def setup_main():
 	        logger.FileHandler("{0}/{1}.log".format(config.readProperty("logfile_path"), config.readProperty("logfile_name"))),
 	        logger.StreamHandler()
 	    ],
-	    level=logger.DEBUG)
+	    level=logger.INFO)
 	logger.info("Removing old config file.")
 	os.remove((config.readProperty("logfile_path")+config.readProperty("logfile_name")+".log"))
 	
 
-def setup_keys(totalReplica,replicas):
-
+def setup_keys(replicas):
+	logger.info("Setting up Keys for replicas. Total Keys to generate : "+str(len(replicas)))
 	replicaSigningKeys = {}
 	replicaVerifyKeys = {}
 	for i,rep in enumerate(replicas):
@@ -95,7 +95,7 @@ def main():
 		clListTemp = new(client.Client,num=1, at=nodeName)
 		clientList.extend(clListTemp)
 	clients = list(clientList)
-	print("clients => ",clients);
+	logger.info("clients => "+str(clients));
 	(clientSignKeys, clientVerifyKeys) =setup_client_key(totalClients,clients)
 	#########################################################
 
@@ -103,6 +103,7 @@ def main():
 	###########Creating and setting up Olympus###############
 	olympus = new(olympuss.Olympus,num=1, at='onode')
 	setup(olympus,[clients,configFilePath])
+	logger.info("olympus => "+str(olympus))
 	#########################################################
 	
 	
@@ -115,16 +116,15 @@ def main():
 		nodeName = replicaBaseName+str(i)#+"@"+replicaHosts[i];
 		reListTemp = new(replica.Replica,num=1, at=nodeName)
 		replicas.extend(reListTemp)
-	print("replicas => ",self.replicas,", replica_hosts : ",replica_hosts);
+	logger.info("replicas => "+str(replicas))#,", replica_hosts : ",replica_hosts);
 	
-	(replicaSigningKeys,replicaVerifyKeys) = setup_keys(num_replica,replicas);
+	(replicaSigningKeys,replicaVerifyKeys) = setup_keys(replicas);
 	# print("replicaToPubPrivKey : ",replicaToPubPrivKey, " , replicaToPubKeys : ",replicaToPubKeys)
 	##Setting up Replica
 	replicaBaseName = "replica_"
 	for rnum,rep in enumerate(replicas):
-		replicaName = replicaBaseName+str(rnum)
+		# replicaName = replicaBaseName+str(rnum)
 		replica_state = "ACTIVE"
-		print("replicaName is : ",replicaName)
 		if rnum == 0:
 			prevReplica = None
 			nextReplica = replicas[rnum+1]
@@ -134,11 +134,9 @@ def main():
 		else:
 			nextReplica = replicas[rnum+1]
 			prevReplica = replicas[rnum-1]
-		print("*********replicaName : ",replicaName," prevReplica : ",prevReplica,", nextReplica : ",nextReplica)#,", pubPrivKeys[rnum] : ",replicaToPubPrivKey[rep],", replicaToPubKeys: ",replicaToPubKeys);
 		# setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica])
 		# print("replica : ",rep,", replicaToPubPrivKey: ",replicaToPubPrivKey[str(rep)])
 		# setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica,None,None])
-
 		setup(rep,[configFilePath,replicas,clients,olympus,rep,prevReplica,nextReplica,replicas[0],replicas[len(replicas)-1],replica_state,replicaSigningKeys[rnum],replicaVerifyKeys,clientVerifyKeys])
 
 	##Starting Replica
@@ -150,6 +148,7 @@ def main():
 
 	############Creating Setting up client#################
 	operationList = config.readProperty("workload[1]");
+	logger.info("Operations from config file : "+str(operationList))
 	for cnum,cli in enumerate(clients):
 		setup(cli,[configFilePath,operationList,olympus,replicas,cli,replicaVerifyKeys,clientSignKeys[cnum]])
 		start(cli)

@@ -27,12 +27,12 @@ def readConfigFile(configFile):
 def config_main(filePath):
 	readConfigFile(filePath);
 	log.basicConfig(
-		format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
+		format="%(asctime)s [%(threadName)-12.12s %(lineno)d] [%(levelname)-5.5s]  %(message)s",
 		handlers=[
 		log.FileHandler("{0}/{1}.log".format(readProperty("logfile_path"), readProperty("logfile_name"))),
 		log.StreamHandler()
 		],
-		level=log.DEBUG)
+		level=log.INFO)
 
 def returnValueListAfterStrippingSpaces(val):
 	values = []

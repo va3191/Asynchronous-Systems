@@ -26,7 +26,8 @@ class Client(process):
 		logger.StreamHandler()
 		],
 		level=logger.INFO)
-		logger.info("**********Setting up Client *************"); 
+		logger.info("In Client SETUP"); 
+
 		self.reqList=reqList
 		self.olympus=olympus
 		self.replicas=replicas
@@ -34,51 +35,33 @@ class Client(process):
 		self.request_sequence={}
 		self.replicaRetransmissionCounter=0
 		self.operationFlag=False
-
-		# logger.info("logging for the first time ")
-		# logger.info("************Setting Up Client***********",config.readProperty("logfile_path"))
-
+		logger.debug("client setup finished")
  
 	def main(): pass
 
 	def run():
-		logger.debug("*********RUN : Starting Client***********")
+		logger.info("Client start called. Inside run()")
 		send(('SET_UP',), to=self.olympus)
 		received(('SET_UP',), from_=self.olympus)
 		logger.debug('Recieved Setup')
-		logger.debug("*********received SET_UP FROM Client***********")
 		self.executeOperations()
-		# if("client_1" in currentClient):
-		# 	time.sleep(10)
-		# 	self.executeRetransmissionTest();
-		# 	output("\n****************************\n****************************\n****************************")
-		# 	# await(received('',))
-
-	# def receive(msg=('RESULT_FROM_TAIL',result_proof,), from_=self.replicas[len(self.replicas)-1]): 
-	# 	logger.info("******** Result proof:" + str(result_proof) +" received from :"+str(self.replicas[len(self.replicas)-1]))
-	# 	logger.debug("*********SHUTTLE Reached***********")
-	# 	validation, result = config.validateResultProof(result_proof, allReplicaVerifyKeysMap)
-	# 	if(validation):
-	# 		logger.info("******** Result proof validated: Checking consistency of result")
-	# 	else:
-	# 		logger.error("************************Validating order proof failed at Client********************")
-	# 	# output(result_proof)
+		
 
 	def dictionary():
 		dictionary = [('movie','star'),('jedi','luke skywalker'),('actor','irfan'),('criket','sachin'),('chupa','aditya')]
 		return dictionary
 
 	def sendOperationToReplicaNode(msg,requestId,operation,replicaId):
+		logger.info("Sending operations at Replicas, requestId: "+str(requestId)+", operation : "+str(operation))
 		requestId = signMessage(str(requestId))
 		operation = signMessage(str(operation))
 		send((msg,requestId, operation,self.currentClient,), to=replicaId)	
-		logger.info("Sending operations at Replicas from client: "+str(self.currentClient)+", requestId: "+str(requestId)+", operation : "+str(operation))
 
 	def executeRetransmissionTest():
 		# for operation in self.reqList:
 		# 	request_id = uuid.uuid4()
 		# 	self.request_sequence[request_id]=operation
-		logger.info("in executeRetransmissionTest at client : "+str(self.currentClient))
+		logger.info("in executeRetransmissionTest")
 		for requestId,operation in self.request_sequence.items():
 			self.replicaRetransmissionCounter=0
 			output("executeRetransmissionTest requestId : ",requestId, ', operation', operation)
@@ -102,6 +85,7 @@ class Client(process):
 			self.operationFlag=False
 
 	def retransmission(request_id,operation):
+		logger.info("Retransmission for request_id : "+str(request_id)+", operation : "+str(operation))
 		awaitResultQueue=[]
 		resultproof=str()
 		timeout = config.readProperty("client_retransmission_timeout")
@@ -135,21 +119,18 @@ class Client(process):
 		dictdata={}
 		replicaId=""
 		for operation in self.reqList:
+			logger.info("*************************************")
+			logger.info("process started for the operation : "+str(operation))
 			request_id = uuid.uuid4()
 			self.request_sequence[request_id]=operation
 			self.operationFlag=False
-			# print("the request Id before entering the hole:", request_id, "  ",operation )
-			
-			# logger.info("current operationFlag : "+str(self.operationFlag))
 			self.sendOperationToReplicaNode('PERFORM_OPERATION',request_id,operation,self.replicas[0])
-
-			logger.info("send operation to client "+str(self.currentClient)+", operation : "+str(operation))
-			
 			if await(self.operationFlag==True):
-				logger.info("operation executed !!!")
+				logger.info("Operation executed : "+str(operation))
 			elif(timeout(timeout)):
-				logger.error("Client Timed out!! Client : "+str(self.currentClient)+", request_id : "+str(request_id)+", operation : "+str(operation));
+				logger.error("Client Timed out!!"+", request_id : "+str(request_id)+", operation : "+str(operation));
 				if(retransmissionCounter < maxRetransmissionCounter):
+					logger.info("Retransmission counter : "+str(retransmissionCounter))
 					retransmission(request_id,operation)
 					retransmissionCounter=retransmissionCounter+1
 
