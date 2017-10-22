@@ -1,7 +1,7 @@
 import nacl.encoding
 import nacl.hash
 import ast
-import logging as log
+import logging as logger
 import ast
 import sys
 import getopt
@@ -26,13 +26,13 @@ def readConfigFile(configFile):
 
 def config_main(filePath):
 	readConfigFile(filePath);
-	log.basicConfig(
+	logger.basicConfig(
 		format="%(asctime)s [%(threadName)-12.12s %(lineno)d] [%(levelname)-5.5s]  %(message)s",
 		handlers=[
-		log.FileHandler("{0}/{1}.log".format(readProperty("logfile_path"), readProperty("logfile_name"))),
-		log.StreamHandler()
+		logger.FileHandler("{0}/{1}.log".format(readProperty("logfile_path"), readProperty("logfile_name"))),
+		logger.StreamHandler()
 		],
-		level=log.INFO)
+		level=logger.INFO)
 
 def returnValueListAfterStrippingSpaces(val):
 	values = []
@@ -127,7 +127,7 @@ def readFailures():
 				replicaOperation["triggerName"]=triggerName
 				replicaOperation["triggerFailure"]=failure.split("()")[0]
 				failureDS[configurationNumber]["replica"][replicaNumber].append(replicaOperation)
-	log.info("possible failures in config file failureDS :"+str(failureDS));#+", replicaNumber: "+str(replicaNumber)+", triggerName : "+triggerName+", clientNumber : "+str(clientNumber)+"=> messageNumber : "+str(messageNumber)+", failure : "+failure)
+	logger.info("possible failures in config file failureDS :"+str(failureDS));#+", replicaNumber: "+str(replicaNumber)+", triggerName : "+triggerName+", clientNumber : "+str(clientNumber)+"=> messageNumber : "+str(messageNumber)+", failure : "+failure)
 	
 	return failureDS
 
@@ -161,7 +161,7 @@ def checkForResultConsistency(resultproof,res, allReplicaVerifyKeysMap):
 		return flag
 
 def validateResultProof(resultproof, allReplicaVerifyKeysMap):
-	log.debug("ValidateResultProof function called  with resultProof : "+str(resultproof))
+	logger.debug("ValidateResultProof function called  with resultProof : "+str(resultproof))
 	hashValues=[]
 	if(resultproof==None):
 		return False,None
@@ -171,20 +171,20 @@ def validateResultProof(resultproof, allReplicaVerifyKeysMap):
 
 			# Create a VerifyKey object from a hex serialized public key
 			verify_key = nacl.signing.VerifyKey(allReplicaVerifyKeysMap[length-i-1], encoder=nacl.encoding.HexEncoder)
-			# log.debug("result number",i+1, "from result proof", resultproof[length-i-1])
+			# logger.debug("result number",i+1, "from result proof", resultproof[length-i-1])
 			message = resultproof[length-i-1]
 			# Check the validity of a message's signature
 			# Will raise nacl.exceptions.BadSignatureError if the signature check fails
 			result = verify_key.verify(message)
 
-			# log.debug("verified")
+			# logger.debug("verified")
 			actualResult = ast.literal_eval(result.decode("utf-8"))
 		except nacl.exceptions.BadSignatureError:
-			# log.error("key mismatch failed for ", resultproof[length-i-1])
+			# logger.error("key mismatch failed for ", resultproof[length-i-1])
 			return (False,None)
 		res, op, hs = actualResult
 		# hashe= result.decode("utf-8")
-	# log.info("validateResultProof. SUCCESSFULL!! ")
+	# logger.info("validateResultProof. SUCCESSFULL!! ")
 		hashValues.append(hs)
 	return (True,hashValues)
 
@@ -241,6 +241,52 @@ def pseudorandom(seed,n,mod):
 	# print("======>","".join(finalOperations))
 	return finalOperations
 
+# def executeOperationForClient(request_id,operation,dictionary_data):
+	
+
+def executeOperation(request_id,operation,dictionary_data):
+	logger.info("Executing Operation in dictonary. operation : "+str(operation))
+	temp=operation.split('(')
+	result = ''
+	if(temp[0]=="put"):
+		tempsplit=operation.split('\'')
+		dictionary_data[tempsplit[1]]=tempsplit[3]
+		result='ok'
+
+	elif(temp[0] == "append"):
+		tempsplit=operation.split('\'')
+		if(tempsplit[1] in dictionary_data):
+			dictionary_data[tempsplit[1]] = dictionary_data[tempsplit[1]] + ' ' + tempsplit[3]
+			logger.debug('append is executeed@@@@@@@@')
+			result= 'ok'
+		else:
+			result= 'fail'
+
+	elif(temp[0] == "get"):
+		tempsplit=operation.split('\'')
+		if(tempsplit[1] in dictionary_data):
+			value = dictionary_data[tempsplit[1]];
+			result= value
+			logger.debug('get is executeed@@@@@@@@')	
+		else:
+			result= ''
+
+	elif(temp[0] == "slice"):
+		tempsplit=operation.split('\'')
+		# logger.info("After Executing Operation in dictonary. => "+str(tempsplit))
+		# logger.info("str(tempsplit[1]) => "+str(tempsplit[1]))
+		# logger.info("str(dictionary_data[tempsplit[1]]) => "+str(dictionary_data[tempsplit[1]]))
+		if(tempsplit[1] in dictionary_data):
+			ind  = tempsplit[3].split(':')
+			if (len(dictionary_data[tempsplit[1]])) > int(ind[1]):
+				dictionary_data[tempsplit[1]] = dictionary_data[tempsplit[1]][int(ind[0]):int(ind[1])]
+				result= 'ok'
+			else:
+				result= 'fail'
+		else:
+			result= 'fail'
+		logger.info("slice operation successfully executed")
+	return result
 
 # config_main("../config/system.config")
 # print("config[pseudorandom[2,3]]",readProperty("workload[0]"))

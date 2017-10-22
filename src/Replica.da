@@ -116,7 +116,7 @@ class Replica(process):
 		shuttle=None
 		self.slot_number+=1
 		updateSlotOperation(request_id,self.slot_number,operation)
-		self.operation_result_internal[request_id] = self.executeOperation(request_id, operation)
+		self.operation_result_internal[request_id] = config.executeOperation(request_id, operation,self.dictionary_data)
 
 		logger.debug("after execute Operation, result proof: "+ str(self.order_proof))
 		tupl = self.getResult_Order_Proof(request_id,operation,self.slot_number)
@@ -151,8 +151,7 @@ class Replica(process):
 			flow = True
 		if(flow):
 			if(validateOrderProof(shuttle,operation,slot,request_id,client)):
-				# self.operation_result[request_id] = self.executeOperation(request_id, operation)
-				self.operation_result_internal[request_id] = self.executeOperation(request_id, operation)
+				self.operation_result_internal[request_id] = config.executeOperation(request_id, operation,self.dictionary_data)
 				updateSlotOperation(request_id,slot,operation)
 				slot_number = slot
 				tupl = self.getResult_Order_Proof(request_id,operation,slot_number)
@@ -169,7 +168,6 @@ class Replica(process):
 					logger.info("request_id : "+str(request_id)+", operation : "+str(operation)+", client : "+str(client)+'SHUTTLE reached at Tail')
 					handleRetransmissionCase()
 					# resultproof 	=change_result(resultproof, request_id, operation)
-					self.dictionary_data["operation"]=str(operation)
 					########################################################################################################
 					#CHECKING FOR FAILURE :  SHUTTLE COUNTER : SENDING TO CLIENT
 					########################################################################################################
@@ -321,50 +319,6 @@ class Replica(process):
 
 	def run():
 		await(received('',))
-
-	def executeOperation(request_id,operation):
-		logger.info("Executing Operation in dictonary. operation : "+str(operation)+", dict before : "+str(self.dictionary_data))
-		temp=operation.split('(')
-		result = ''
-		if(temp[0]=="put"):
-			tempsplit=operation.split('\'')
-			self.dictionary_data[tempsplit[1]]=tempsplit[3]
-			result='ok'
-
-		elif(temp[0] == "append"):
-			tempsplit=operation.split('\'')
-			if(tempsplit[1] in self.dictionary_data):
-				self.dictionary_data[tempsplit[1]] = self.dictionary_data[tempsplit[1]] + ' ' + tempsplit[3]
-				logger.debug('append is executeed@@@@@@@@')
-				result= 'ok'
-			else:
-				result= 'fail'
-
-		elif(temp[0] == "get"):
-			tempsplit=operation.split('\'')
-			if(tempsplit[1] in self.dictionary_data):
-				value = self.dictionary_data[tempsplit[1]];
-				result= value
-				logger.debug('get is executeed@@@@@@@@')	
-			else:
-				result= ''
-
-		elif(temp[0] == "slice"):
-			tempsplit=operation.split('\'')
-			# logger.info("After Executing Operation in dictonary. => "+str(tempsplit))
-			# logger.info("str(tempsplit[1]) => "+str(tempsplit[1]))
-			# logger.info("str(dictionary_data[tempsplit[1]]) => "+str(dictionary_data[tempsplit[1]]))
-			if(tempsplit[1] in self.dictionary_data):
-				ind  = tempsplit[3].split(':')
-				if (len(self.dictionary_data[tempsplit[1]])) > int(ind[1]):
-					self.dictionary_data[tempsplit[1]] = self.dictionary_data[tempsplit[1]][int(ind[0]):int(ind[1])]
-					result= 'ok'
-				else:
-					result= 'fail'
-			else:
-				result= 'fail'
-			logger.info("slice operation successfully executed")
-		return result
 
 
 	def cacheResult(request_id, resultproof):

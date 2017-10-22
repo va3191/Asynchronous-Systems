@@ -35,6 +35,8 @@ class Client(process):
 		self.request_sequence={}
 		self.replicaRetransmissionCounter=0
 		self.operationFlag=False
+		self.dictdata={}
+		self.dictDataFromReplica={}
 		logger.debug("client setup finished")
  
 	def main(): pass
@@ -103,11 +105,30 @@ class Client(process):
 		logger.info("Result SHUTTLE reached from tail Replica : "+str(replicaId)+", dictdata : "+str(dictdata)+", request_id : "+str(request_id))
 		validation = config.checkForResultConsistency(result_proof,result, self.allReplicaVerifyKeysMap)
 		if(validation):
-			logger.info("Result proof correctly validated! SUCCESS !!")
-			self.operationFlag=True
+			client_dict_validation_flag = config.readProperty("client_dict_validation_flag")
+			logger.info("client_dict_validation_flag => "+str(client_dict_validation_flag))
+			if(client_dict_validation_flag=="True"):
+				self.dictDataFromReplica=dictdata
+				logger.info("checking dictionary objects for consistency. dictDataFromReplica : "+str(self.dictDataFromReplica)+", dictdata : "+str(self.dictdata))
+				if(str(self.dictDataFromReplica) == str(self.dictdata)):
+					logger.info("successfully validated dictionary content from replica!")
+					logger.info("Result proof correctly validated! SUCCESS !!")
+					self.operationFlag=True
+				else:
+					logger.error("Failed validation for dictionary content from replica!")
+					logger.error("Result proof incorrect! FAILED !!")
+					self.operationFlag=False
+			else:
+				logger.info("Result proof correctly validated! SUCCESS !!")
+				self.operationFlag=True
 		else:
 			logger.error("Result proof incorrect! FAILED !!")
 			self.operationFlag=False
+			self.dictdata=dictdata
+
+	def computeOperations(request_id,operation):
+		config.executeOperation(request_id, operation,self.dictdata)
+
 
 	def executeOperations():
 		logger.info("The Client:%s. workload to be performed : %s" %(currentClient, self.reqList))
@@ -116,7 +137,6 @@ class Client(process):
 		retransmissionCounter = 0
 		maxRetransmissionCounter = config.readProperty('max_retransmission_counter')
 		result=''
-		dictdata={}
 		replicaId=""
 		for operation in self.reqList:
 			logger.info("*************************************")
@@ -124,6 +144,7 @@ class Client(process):
 			request_id = uuid.uuid4()
 			self.request_sequence[request_id]=operation
 			self.operationFlag=False
+			computeOperations(request_id,operation)
 			self.sendOperationToReplicaNode('PERFORM_OPERATION',request_id,operation,self.replicas[0])
 			if await(self.operationFlag==True):
 				logger.info("Operation executed : "+str(operation))
