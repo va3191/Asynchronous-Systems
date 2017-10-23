@@ -104,7 +104,7 @@ class Client(process):
 
 	def receive(msg=('RESULT_FROM_TAIL',request_id,result_proof,result,dictdata,replicaId),):
 		logger.info("Result SHUTTLE reached from tail Replica : "+str(replicaId)+", dictdata : "+str(dictdata)+", request_id : "+str(request_id))
-		validation = config.checkForResultConsistency(result_proof,result, self.allReplicaVerifyKeysMap)
+		validation = config.checkForResultConsistency(result_proof,result, self.allReplicaVerifyKeysMap, "client")
 		if(validation):
 			client_dict_validation_flag = config.readProperty("client_dict_validation_flag")
 			logger.info("client_dict_validation_flag => "+str(client_dict_validation_flag))
@@ -123,7 +123,7 @@ class Client(process):
 				logger.info("Result proof correctly validated! SUCCESS !!")
 				self.operationFlag=True
 		else:
-			logger.error("Result proof incorrect! FAILED !!")
+			logger.error("Result proof incorrect! FAILED | proof of misbehaviour!!")
 			self.operationFlag=False
 			self.dictdata=dictdata
 

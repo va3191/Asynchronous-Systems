@@ -32,7 +32,9 @@ def config_main(filePath):
 		logger.FileHandler("{0}/{1}.log".format(readProperty("logfile_path"), readProperty("logfile_name"))),
 		logger.StreamHandler()
 		],
-		level=logger.INFO)
+		level=logger.DEBUG)
+	# readFailures()
+
 
 def returnValueListAfterStrippingSpaces(key,val):
 	values = []
@@ -111,14 +113,21 @@ def readFailures():
 			configurationNumber=failureListKeyList[0]
 			replicaNumber=failureListKeyList[1]
 			replicaArray=[]
-			failureDS[configurationNumber]={}
-			failureDS[configurationNumber]["replica"]={}
-			# failureDS[configurationNumber]["client"]=[]
+			
+			if(configurationNumber not in failureDS):
+				failureDS[configurationNumber]={}
+
+			if("replica" not in failureDS[configurationNumber]):
+				failureDS[configurationNumber]["replica"]={}
+
+			if(replicaNumber not in failureDS[configurationNumber]["replica"]):
+				failureDS[configurationNumber]["replica"][replicaNumber]=[]
+
+			# print("replicaNumber : ",replicaNumber, ", failureDS : ",failureDS," failureDS[configurationNumber][replica]: ",failureDS[configurationNumber]["replica"][replicaNumber])
 			failureValueList = value.split(";")
+			
 			for failureValue in failureValueList:
 				replicaOperation={}
-				if(replicaNumber not in failureDS[configurationNumber]["replica"]):
-					failureDS[configurationNumber]["replica"][replicaNumber]=[]
 				trigger,failure = failureValue.split("),")
 				trigger +=')'
 				triggerName = trigger.split('(')[0]
@@ -130,8 +139,12 @@ def readFailures():
 				replicaOperation["triggerName"]=triggerName
 				replicaOperation["triggerFailure"]=failure.split("()")[0]
 				failureDS[configurationNumber]["replica"][replicaNumber].append(replicaOperation)
-	logger.info("possible failures in config file failureDS :"+str(failureDS));#+", replicaNumber: "+str(replicaNumber)+", triggerName : "+triggerName+", clientNumber : "+str(clientNumber)+"=> messageNumber : "+str(messageNumber)+", failure : "+failure)
+
+	logger.info("failures defined in config file failureDS :"+str(failureDS));#+", replicaNumber: "+str(replicaNumber)+", triggerName : "+triggerName+", clientNumber : "+str(clientNumber)+"=> messageNumber : "+str(messageNumber)+", failure : "+failure)
 	
+
+	# 	log.info("possible failures in config file failureDS :"+", replicaNumber: "+str(replicaNumber)+", triggerName : "+triggerName+", clientNumber : "+str(clientNumber)+"=> messageNumber : "+str(messageNumber)+", failure : "+failure)
+	#,", failureValueList : ",failureValueList)
 	return failureDS
 
 
@@ -147,20 +160,33 @@ def calculateHash(message):
 	# now send msg and digest to the user
 	return digest
 
-def checkForResultConsistency(resultproof,res, allReplicaVerifyKeysMap):
+def checkForResultConsistency(resultproof,res, allReplicaVerifyKeysMap, source):
 		delta= calculateHash(res)
+		quorum=0
+		validCount=0
+		if(source == "replica"):
+			quorum=int(config['num_replica'])
+		elif(source=="client"):
+			quorum = int(config['t']) +1
 
 		# print("the delta value of res:" + str(res) + " :delta:"+str(delta))
-		flag = True	
-		validation, hashMaps = validateResultProof(resultproof,allReplicaVerifyKeysMap)
+		flag = False	
+		if(source =="client"):
+			validation, hashMaps = validateResultProofClient(resultproof,allReplicaVerifyKeysMap)
+		elif(source =="replica"):
+			validation, hashMaps = validateResultProof(resultproof,allReplicaVerifyKeysMap)
+		print("validation : ", validation)
 		# print("between this"+str(resultTuple[0])+"this the lenth od the returned tuple")
 		if(not validation):
 			return False
 		for i in range(0, len(hashMaps)):
 			if(hashMaps[i] == delta):
+				validCount= validCount+1
 				continue
-			else:
-				flag = False
+		
+		if(validCount>=quorum):
+			flag=True
+
 		return flag
 
 def validateResultProof(resultproof, allReplicaVerifyKeysMap):
@@ -291,18 +317,48 @@ def executeOperation(request_id,operation,dictionary_data):
 		logger.info("slice operation successfully executed")
 	return result
 
-# config_main("../config/system.config")
+
+
+def validateResultProofClient(resultproof, allReplicaVerifyKeysMap):
+	logger.debug("ValidateResultProof function called  with resultProof : "+str(resultproof))
+	hashValues=[]
+	if(resultproof==None):
+		return False,None
+	# case=''
+	# i=0
+	# length = len(resultproof)
+	# if(len(resultproof)==config['num_replica']):
+	# 	index = length-i-1
+	# elif(len(resultproof)<config['num_replica']):
+	# 	index=length - i
+	for i in range(0,len(resultproof)):
+		try:
+			length = len(resultproof)
+
+			# Create a VerifyKey object from a hex serialized public key
+			if(len(resultproof)==config['num_replica']):
+				verify_key = nacl.signing.VerifyKey(allReplicaVerifyKeysMap[length-i-1], encoder=nacl.encoding.HexEncoder)
+			elif(len(resultproof)<config['num_replica']):
+				verify_key = nacl.signing.VerifyKey(allReplicaVerifyKeysMap[length-i], encoder=nacl.encoding.HexEncoder)
+			# logger.debug("result number",i+1, "from result proof", resultproof[length-i-1])
+			message = resultproof[length-i-1]
+			# Check the validity of a message's signature
+			# Will raise nacl.exceptions.BadSignatureError if the signature check fails
+			result = verify_key.verify(message)
+
+			# logger.debug("verified")
+			actualResult = ast.literal_eval(result.decode("utf-8"))
+		except nacl.exceptions.BadSignatureError:
+			# logger.error("key mismatch failed for ", resultproof[length-i-1])
+			return (False,None)
+		res, op, hs = actualResult
+		# hashe= result.decode("utf-8")
+	# logger.info("validateResultProof. SUCCESSFULL!! ")
+		hashValues.append(hs)
+	return (True,hashValues)
+
+
+config_main("../config/multiClient_multiFailure.config")
 # print("config[pseudorandom[2,3]]",readProperty("workload[0]"))
-
-
-
-
-
-
-
-
-
-
-
 
 

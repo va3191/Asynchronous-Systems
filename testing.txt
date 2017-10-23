@@ -110,8 +110,7 @@ explaination:
 		In 1st CASE , since the resultproof is invalid, validation fails at client, client does retransmission in this case and forward the
 		request to all replicas. Since the tail replica have a wrong resultproof cached, it forwards the request to client. All other replicas
 		does not find anything in their cache and forward the request to head replica. Since the client gets the wrong resultproof and cannot retransmit,
-		retransmission operation timesout.
-
+		retransmission operation timesout. Now since the second requests comes with slot 2 - and the shuttle has not been updated on replica 1(non head replica), this replica doesnt have any entry for slot 1 as the validation of order proof had failed.
 
 
 *******************************************************************
