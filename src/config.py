@@ -358,7 +358,7 @@ def validateResultProofClient(resultproof, allReplicaVerifyKeysMap):
 	return (True,hashValues)
 
 
-config_main("../config/multiClient_multiFailure.config")
+#config_main("../config/multiClient_multiFailure.config")
 # print("config[pseudorandom[2,3]]",readProperty("workload[0]"))
 
 
