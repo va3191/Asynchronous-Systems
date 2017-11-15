@@ -140,9 +140,12 @@ class Replica(process):
 		# logger.info("checking for failure injection")
 		# shuttle = change_operation(shuttle, request_id, self.slot_number, operation)
 		send(('FORWARD_SHUTTLE', request_id_en,shuttle,operation_en,self.slot_number,client), to=self.nextReplica)
-		if(self.slot_number%2==0 and self.slot_number -2 > 0):
+		logger.info("checkpt_interval : " + str(config.readProperty("checkpt_interval")))
+		checkpoint_interval = config.readProperty("checkpt_interval")
+		if(self.slot_number%checkpoint_interval==0 and self.slot_number - checkpoint_interval > 0):
+			
 			logger.info("CheckPoint function being called at HEAD")
-			executeCheckPointing(self.slot_number -2)
+			executeCheckPointing(self.slot_number - checkpoint_interval)
 
 	 #CONTROL FLOW: From (one o another)
 	def receive(msg=('FORWARD_SHUTTLE',request_id_en,shuttle,operation_en,slot,client), from_=self.prevReplica):
