@@ -42,6 +42,8 @@ class Replica(process):
 		self.operation_result_internal={}
 		self.order_proof=[]
 		self.result_proof=[]
+		self.checkpointHash={}
+		self.History=[]
 		#Object to store requestId to (Slot,Operation) pair
 		self.requestIdToSoPair = {}
 
@@ -122,6 +124,7 @@ class Replica(process):
 		tupl = self.getResult_Order_Proof(request_id,operation,self.slot_number)
 		shuttle = self.updateShuttle(shuttle,tupl)
 		logger.debug("shuttle after update: "+str(shuttle))
+		self.UpdateHistory(self.slot_number,operation,shuttle)
 		self.updateOrder_Result_Proof(shuttle)
 		logger.debug("ResultProof: "+str(self.result_proof)+"\n"+"OrderProof: "+str(self.order_proof));
 		
@@ -137,8 +140,11 @@ class Replica(process):
 		# logger.info("checking for failure injection")
 		# shuttle = change_operation(shuttle, request_id, self.slot_number, operation)
 		send(('FORWARD_SHUTTLE', request_id_en,shuttle,operation_en,self.slot_number,client), to=self.nextReplica)
+		if(self.slot_number%2==0 and self.slot_number -2 > 0):
+			logger.info("CheckPoint function being called at HEAD")
+			executeCheckPointing(self.slot_number -2)
 
-	 #CONTROL FLOW: From (one Replica to another)
+	 #CONTROL FLOW: From (one o another)
 	def receive(msg=('FORWARD_SHUTTLE',request_id_en,shuttle,operation_en,slot,client), from_=self.prevReplica):
 		request_id,operation = getUnsignedData(request_id_en,operation_en,client)
 		logger.info("PERFORM_OPERATION called at NONHEAD Replica request_id : "+str(request_id)+", operation : "+str(operation)+", client : "+str(client)+", from Replica : "+str(self.prevReplica))
@@ -157,6 +163,7 @@ class Replica(process):
 				tupl = self.getResult_Order_Proof(request_id,operation,slot_number)
 				shuttle = self.updateShuttle(shuttle,tupl)
 				logger.debug("shuttle after update: "+str(shuttle))
+				self.UpdateHistory(self.slot_number,operation,shuttle)
 				self.updateOrder_Result_Proof(shuttle)
 				#validation successful now sending the shuttle forward
 				if(self.nextReplica == None):
@@ -222,7 +229,52 @@ class Replica(process):
 		else:
 			logger.error("There is inconsistency in the slots, all previous slot havent been used for execution********************")
 
+	#######################################################
+	def receive(msg=('FORWARD_SHUTTLE_CHECKPOINTING',shuttle,checkpoint), from_=self.prevReplica):
+		# request_id,operation = getUnsignedData(request_id_en,operation_en,client)
+		logger.info("FORWARD_SHUTTLE_CHECKPOINTING called at NONHEAD Replica  "+", checkpoint : "+str(checkpoint)+", from Replica : "+str(self.prevReplica))
+		logger.debug("SHUTTLE : "+str(shuttle)+", checkpoint : "+str(checkpoint));
+		checkpointproof = getCheckPointProof()
+		shuttle = self.updateCheckpointShuttle(shuttle,checkpointproof,checkpoint)
+		logger.debug("checkpoint shuttle after update: "+str(shuttle))
+		logger.info("CHECKPOINTING SHUTTLE done at HeadReplica, transfering SHUTTLE to nextReplica : "+str(self.nextReplica))
 
+		# logger.info("checking for failure injection")
+		# shuttle = change_operation(shuttle, request_id, self.slot_number, operation)
+		
+		if(self.nextReplica == None):
+			########################################################################################################
+			#CHECKING FOR CheckpointConsistency :  SHUTTLE  : 
+			########################################################################################################
+			logger.info("SHUTTLE : "+str(shuttle)+", checkpoint : "+str(checkpoint)+'CHECKPOINT SHUTTLE reached at Tail')
+
+			validation = checkForCheckProofConsistency(shuttle, self.allReplicaVerifyKeysMap)
+			if(validation):
+				truncateHistory(checkpoint)
+				logger.info('CHECKPOINT_REVERSE_SHUTTLE starting. Forwarding to prevReplica : '+str(self.prevReplica))
+				send(('CHECKPOINT_REVERSE_SHUTTLE', shuttle,checkpoint), to=self.prevReplica)
+			else:
+				logger.error(", checkpoint : "+str(checkpoint)+ "    ******************Validating checkpoint proof failed at replica : "+str(self.currentReplica))
+		else:
+			send(('FORWARD_SHUTTLE_CHECKPOINTING',shuttle,checkpoint,), to=self.nextReplica)
+
+
+	######################################################
+	def receive(msg=('CHECKPOINT_REVERSE_SHUTTLE',shuttle,checkpoint,), from_=self.nextReplica):
+		logger.info("CHECKPOINT_REVERSE_SHUTTLE reached at replica shuttle : "+str(shuttle)+", checkpoint : "+str(checkpoint)+", from nextReplica : "+str(self.nextReplica))
+
+		validation = checkForCheckProofConsistency(shuttle, self.allReplicaVerifyKeysMap)
+		logger.info(" Result from checkpoint  validation is " + str(validation))
+		if(validation):
+			truncateHistory(checkpoint)
+			if(self.prevReplica == None):
+				logger.info(" CHECKPOINT SHUTTLE reached at HEAD")
+			else:
+				logger.info("checkpoint : "+str(checkpoint)+", after caching result, forwarding to prevReplica : "+str(self.prevReplica))
+				send(('CHECKPOINT_REVERSE_SHUTTLE', shuttle,checkpoint,), to=self.prevReplica)
+		else:
+			logger.error("the validation failed at" + str(self.currentReplica))
+			logger.error("************************Validating Check pointing proof failed at replica : "+str(self.currentReplica))
 
 	 #message to replca from previous 
 	def receive(msg=('REVERSE_SHUTTLE',request_id,result_proof, res,client,), from_=self.nextReplica):
@@ -556,6 +608,99 @@ class Replica(process):
 		order, result = shuttle
 		result = result[1:]
 		return (order,result)
+
+	def executeCheckPointing(checkpoint):
+		logger.debug("inside executeCheckPointing function for creating the current checkpoint")
+		checkpointproof = getCheckPointProof()
+		shuttle=[]
+		# tupl = self.getResult_Order_Proof(request_id,operation,self.slot_number)
+		shuttle = self.updateCheckpointShuttle(shuttle,checkpointproof,checkpoint)
+		logger.debug("checkpoint shuttle after update: "+str(shuttle))
+		logger.info("CHECKPOINTING SHUTTLE done at HeadReplica, transfering SHUTTLE to nextReplica : "+str(self.nextReplica))
+
+		# logger.info("checking for failure injection")
+		# shuttle = change_operation(shuttle, request_id, self.slot_number, operation)
+		send(('FORWARD_SHUTTLE_CHECKPOINTING',shuttle,checkpoint,), to=self.nextReplica)
+
+	def updateCheckpointShuttle(shuttle,checkpointproof,slot):
+		logger.debug("updateCheckpointShuttle at Replica : "+str(self.currentReplica))
+
+		if(len(shuttle)==0):
+			shuttle.append(slot)
+			shuttle.append(checkpointproof)
+			# shuttle=(order,result)
+		else:
+			shuttle.append(checkpointproof)
+			# shuttle[1].append(resultproof)
+
+		return shuttle
+
+	def getCheckPointProof():
+		logger.debug("inside executeCheckPointing function for creating the current checkpoint")
+		running_state = config.calculateHash(str(self.dictionary_data))
+		# checkPtProof = (slot_num,running_state)
+		signedCheckPtProof= signMessage(str(running_state))
+		return signedCheckPtProof
+
+	def checkForCheckProofConsistency(shuttle, allReplicaVerifyKeysMap):
+		logger.debug("Validating CheckPoint Proof function called  with shuttle : "+str(shuttle))
+		hashValues=[]
+		if(len(shuttle)==0):
+			return False
+		for i in range(1,len(shuttle)):
+			try:
+				# Create a VerifyKey object from a hex serialized public key
+				verify_key = nacl.signing.VerifyKey(allReplicaVerifyKeysMap[i-1], encoder=nacl.encoding.HexEncoder)
+				# logger.debug("result number",i+1, "from result proof", resultproof[length-i-1])
+				message = shuttle[i]
+				# Check the validity of a message's signature
+				# Will raise nacl.exceptions.BadSignatureError if the signature check fails
+				result = verify_key.verify(message)
+
+				# logger.debug("verified")
+				actualResult = ast.literal_eval(result.decode("utf-8"))
+			except nacl.exceptions.BadSignatureError:
+				# logger.error("key mismatch failed for ", resultproof[length-i-1])
+				return False
+			hashValues.append(actualResult)
+		flag = True
+		for i in range(len(hashValues)):
+			if(hashValues[0] != hashValues[i]):
+				flag = False
+				return False
+			else:
+				continue
+		return flag
+
+	def truncateHistory(checkpoint):
+		logger.info("TRUNCATE HISTORY function called at replica  : " +str(self.currentReplica))
+		print("checkpoint number : ", checkpoint)
+		index =self.replicas.index(self.currentReplica)
+		print("index:", index)
+		logger.debug("history:" + str(self.History))
+		logger.debug("history length before truncation:" + str(len(self.History)))
+		# print("history 1:",self.History[0][0])
+		for index in range(len(self.History)):
+			print("runnig the loop for ", self.History[index][0])
+			if(self.History[index][0] > checkpoint):
+				break;
+		print("history is being truncated at this slot", self.History[index][0])
+		self.History = self.History[index:]
+		logger.info("history length after truncation:" + str(len(self.History)))
+		self.checkpointHash[checkpoint]= config.calculateHash(str(self.dictionary_data))
+
+
+
+
+	def UpdateHistory(slot,op,order):
+		temp = []
+		temp.append(slot)
+		temp.append(op)
+		temp.append(order)
+		self.History.append(temp)
+
+
+
 
 
 
