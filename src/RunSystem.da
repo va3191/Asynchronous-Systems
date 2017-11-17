@@ -17,7 +17,6 @@ clients = []
 replicas = []
 olympus = None
 
-
 def readConfigFileName():
 	argv=sys.argv[1:]
 	inputfile = ''
@@ -51,116 +50,14 @@ def setup_main():
 	logger.info("Removing old config file.")
 	os.remove((config.readProperty("logfile_path")+config.readProperty("logfile_name")+".log"))
 	
-
-def setup_keys(replicas):
-	logger.info("Setting up Keys for replicas. Total Keys to generate : "+str(len(replicas)))
-	replicaSigningKeys = {}
-	replicaVerifyKeys = {}
-	for i,rep in enumerate(replicas):
-		signing_key = nacl.signing.SigningKey.generate()
-		verify_key = signing_key.verify_key
-		verify_key_hex = verify_key.encode(encoder=nacl.encoding.HexEncoder)
-		replicaSigningKeys[i] = signing_key;
-		replicaVerifyKeys[i] = verify_key_hex;
-	keys = []
-	keys.append(replicaSigningKeys)
-	keys.append(replicaVerifyKeys)
-	
-	return tuple(keys)
-
-def setup_client_key(totalClients,clients):
-	clientSignKeys={}
-	clientVerifyKeys={}
-	for i,rep in enumerate(clients):
-		signing_key = nacl.signing.SigningKey.generate()
-		verify_key = signing_key.verify_key
-		verify_key_hex = verify_key.encode(encoder=nacl.encoding.HexEncoder)
-		clientSignKeys[i] = signing_key;
-		clientVerifyKeys[i] = verify_key_hex;
-	keys = []
-	keys.append(clientSignKeys)
-	keys.append(clientVerifyKeys)
-	return tuple(keys)
-
 def main():
 	setup_main();	
-	#############creating client############################
-	num_replica = config.readProperty("num_replica")
-	totalClients = config.readProperty("num_client")
-	clientHosts = config.readProperty("client_hosts")
-	clientBaseName = "client_"
-	clientList=[]
-	for i in range(0,totalClients):
-		nodeName = clientBaseName+str(i)#+"@"+clientHosts[i];
-		clListTemp = new(client.Client,num=1, at=nodeName)
-		clientList.extend(clListTemp)
-	clients = list(clientList)
-	logger.info("clients => "+str(clients));
-	(clientSignKeys, clientVerifyKeys) =setup_client_key(totalClients,clients)
-	#########################################################
-
-
+	
 	###########Creating and setting up Olympus###############
 	olympus = new(olympuss.Olympus,num=1, at='onode')
-	setup(olympus,[clients,configFilePath])
+	setup(olympus,[configFilePath])
 	logger.info("olympus => "+str(olympus))
-	#########################################################
-	
-	
-	############Creating Replicas in Olympus#################
-	##Creating
-	
-	replica_hosts = config.readProperty("replica_hosts")
-	replicaBaseName = "replica_";
-	for i in range(0,num_replica):
-		nodeName = replicaBaseName+str(i)#+"@"+replicaHosts[i];
-		reListTemp = new(replica.Replica,num=1, at=nodeName)
-		replicas.extend(reListTemp)
-	logger.info("replicas => "+str(replicas))#,", replica_hosts : ",replica_hosts);
-	
-	(replicaSigningKeys,replicaVerifyKeys) = setup_keys(replicas);
-	# print("replicaToPubPrivKey : ",replicaToPubPrivKey, " , replicaToPubKeys : ",replicaToPubKeys)
-	##Setting up Replica
-	replicaBaseName = "replica_"
-	for rnum,rep in enumerate(replicas):
-		# replicaName = replicaBaseName+str(rnum)
-		replica_state = "ACTIVE"
-		if rnum == 0:
-			prevReplica = None
-			nextReplica = replicas[rnum+1]
-		elif rnum == num_replica-1:
-			prevReplica = replicas[rnum-1]
-			nextReplica = None
-		else:
-			nextReplica = replicas[rnum+1]
-			prevReplica = replicas[rnum-1]
-		# setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica])
-		# print("replica : ",rep,", replicaToPubPrivKey: ",replicaToPubPrivKey[str(rep)])
-		# setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica,None,None])
-		setup(rep,[configFilePath,replicas,clients,olympus,rep,prevReplica,nextReplica,replicas[0],replicas[len(replicas)-1],replica_state,replicaSigningKeys[rnum],replicaVerifyKeys,clientVerifyKeys])
-
-	##Starting Replica
-	for rep in replicas:
-		start(rep)
-	#########################################################
-	
-
-
-	############Creating Setting up client#################
-	
-	for cnum,cli in enumerate(clients):
-		operationList = config.readProperty("workload["+str(cnum)+"]");
-		logger.info("Operations for client : "+str(cli)+" => "+str(operationList))
-		setup(cli,[configFilePath,operationList,olympus,replicas,cli,replicaVerifyKeys,clientSignKeys[cnum]])
-		start(cli)
-	#########################################################
-
 	start(olympus)
-	send(('SET_UP',), to=olympus)
 
-
+	await(False)
 	
-	
-	
-	
-  
