@@ -32,7 +32,7 @@ def config_main(filePath):
 		logger.FileHandler("{0}/{1}.log".format(readProperty("logfile_path"), readProperty("logfile_name"))),
 		logger.StreamHandler()
 		],
-		level=logger.DEBUG)
+		level=logger.INFO)
 	# readFailures()
 
 
@@ -356,5 +356,22 @@ def validateResultProofClient(resultproof, allReplicaVerifyKeysMap):
 	# logger.info("validateResultProof. SUCCESSFULL!! ")
 		hashValues.append(hs)
 	return (True,hashValues)
+
+def getUnsignedData(operation_en,client,clientVerifyKeys,clients):
+		logger.debug("getUnsignedData for operation_en : "+str(operation_en))
+		# request_id=''
+		operation=''
+		try:
+			index =clients.index(client)
+			verify_key = nacl.signing.VerifyKey(clientVerifyKeys[index], encoder=nacl.encoding.HexEncoder)
+			# tempId = verify_key.verify(request_id_en)
+			tempId1 = verify_key.verify(operation_en)
+			# request_id = tempId.decode("utf-8")
+			operation = tempId1.decode("utf-8")
+		except  nacl.exceptions.BadSignatureError:
+			logger.error("operation_en: "+operation_en+", client signed operation not valid detected at olympus")
+		logger.debug("unsigned successfully at olympus")
+		return operation
+
 
 

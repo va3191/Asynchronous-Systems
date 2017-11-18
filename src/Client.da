@@ -36,7 +36,10 @@ class Client(process):
 		self.replicaRetransmissionCounter=0
 		self.operationFlag=False
 		self.dictdata={}
+
+		self.reconfigFlag=False
 		self.dictDataFromReplica={}
+		self.resultFromOlympus=False
 		logger.info("Client setup finished. Operations for client : "+str(currentClient)+" => "+str(reqList))
 		
  
@@ -127,6 +130,15 @@ class Client(process):
 			self.operationFlag=False
 			self.dictdata=dictdata
 
+	def receive(msg=('RESULT_FROM_OLYMPUS',clientResult,replicas,replicaVerifyKeys,),from_=self.olympus):
+		logger.info("FINAL UPDATED RESULT WITH NEW REPLICAS RECEIVED BY THE CLIENT FROM OLYMPUS\n")
+		self.resultFromOlympus=True
+		self.replicas = replicas
+		self.allReplicaVerifyKeysMap = replicaVerifyKeys
+
+
+
+
 	def computeOperations(request_id,operation):
 		config.executeOperation(request_id, operation,self.dictdata)
 
@@ -140,21 +152,28 @@ class Client(process):
 		result=''
 		replicaId=""
 		for operation in self.reqList:
+
 			logger.info("*************************************")
 			logger.info("process started for the operation : "+str(operation))
 			request_id = uuid.uuid4()
 			self.request_sequence[request_id]=operation
 			self.operationFlag=False
 			computeOperations(request_id,operation)
+			self.resultFromOlympus=False
 			self.sendOperationToReplicaNode('PERFORM_OPERATION',request_id,operation,self.replicas[0])
 			if await(self.operationFlag==True):
 				logger.info("Operation executed : "+str(operation))
 			elif(timeout(timeout)):
 				logger.error("Client Timed out!!"+", request_id : "+str(request_id)+", operation : "+str(operation));
-				if(retransmissionCounter < maxRetransmissionCounter):
-					logger.info("Retransmission counter : "+str(retransmissionCounter))
-					retransmission(request_id,operation)
-					retransmissionCounter=retransmissionCounter+1
+				if(self.reconfigFlag):
+					while (self.reconfigFlag):
+						while( not self.resultFromOlympus):
+							print(" ____________________waiting for reconfiguration to be completed____________")
+				else:
+					if(retransmissionCounter < maxRetransmissionCounter):
+						logger.info("Retransmission counter : "+str(retransmissionCounter))
+						# retransmission(request_id,operation)
+						retransmissionCounter=retransmissionCounter+1
 
 	def signMessage(msg):
 		signedMsg = clientSignKey.sign(str.encode(msg))

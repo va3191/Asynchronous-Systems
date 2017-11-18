@@ -7,9 +7,10 @@ import logging as logger
 import sys
 import ast
 import time
+import os
 class Replica(process):
 	
-	def setup(configFilePath,replicas,clients,olympus,currentReplica,prevReplica,nextReplica,headReplica,tailReplica,replica_state,currentReplicaSigningKey,allReplicaVerifyKeysMap,clientVerifyKeys):
+	def setup(configuration,configFilePath,replicas,clients,olympus,currentReplica,prevReplica,nextReplica,headReplica,tailReplica,replica_state,currentReplicaSigningKey,allReplicaVerifyKeysMap,clientVerifyKeys):
 		config.config_main(configFilePath)
 		logger.basicConfig(
 		format="%(asctime)s [%(threadName)-12.12s %(lineno)d] [%(levelname)-5.5s]  %(message)s",
@@ -18,8 +19,11 @@ class Replica(process):
 		logger.StreamHandler()
 		],
 		level=logger.INFO)
-		logger.info("Replica SETUP done. Clients : "+str(clients)+", Olympus : "+str(olympus)+", ReplicaState : "+str(replica_state))
-	    
+
+
+		print("*************************************************************************")
+		logger.info("Replica SETUP done. Clients : "+str(clients)+", Olympus : "+str(olympus)+", Replica : "+str(currentReplica) +", ReplicaState : "+str(replica_state))
+		print("*************************************************************************")
 		self.replicas= replicas
 		self.clients=clients
 		self.olympus = olympus
@@ -46,12 +50,14 @@ class Replica(process):
 		self.History=[]
 		#Object to store requestId to (Slot,Operation) pair
 		self.requestIdToSoPair = {}
-
+		self.currentCheckPoint=0
+		#object to store each clients last result, result statement 	
+		self.clientLastResult={}
 		if(prevReplica == None):
 			self.slot_number = 0
 
 		#counters for failure case
-		
+		self.configuration = configuration
 		self.counters={}
 		for client in clients:
 			self.counters[client]={}
@@ -104,282 +110,357 @@ class Replica(process):
 			operation = tempId1.decode("utf-8")
 		except  nacl.exceptions.BadSignatureError:
 			logger.error("request_id_en: "+request_id_en+", client signed operation and requestID not valid | proof of misbehaviour")
+
 		
 		logger.debug("request_id : "+str(request_id)+", unsigned successfully")
 		return (request_id,operation)
 
 	#CONTROL FLOW: From (Client to HeadReplica)
 	def receive(msg=('PERFORM_OPERATION', request_id_en,operation_en,client), from_=node):
-		request_id,operation = getUnsignedData(request_id_en,operation_en,client)	
-		logger.info("PERFORM_OPERATION at HEAD Replica request_id : "+str(request_id)+", operation : "+str(operation)+", client : "+str(client))
-		
-		self.counters[client]["directRequestCounter"] =self.counters[client]["directRequestCounter"]+1
-		self.counters[client]["shuttleCounter"] =self.counters[client]["shuttleCounter"]+1
-		shuttle=None
-		self.slot_number+=1
-		updateSlotOperation(request_id,self.slot_number,operation)
-		self.operation_result_internal[request_id] = config.executeOperation(request_id, operation,self.dictionary_data)
-
-		logger.debug("after execute Operation, result proof: "+ str(self.order_proof))
-		tupl = self.getResult_Order_Proof(request_id,operation,self.slot_number)
-		shuttle = self.updateShuttle(shuttle,tupl)
-		logger.debug("shuttle after update: "+str(shuttle))
-		self.UpdateHistory(self.slot_number,operation,shuttle)
-		self.updateOrder_Result_Proof(shuttle)
-		logger.debug("ResultProof: "+str(self.result_proof)+"\n"+"OrderProof: "+str(self.order_proof));
-		
-		validTriggerSet=getValidTriggerSet("HEAD")
-		# validTriggerSet.add("result_shuttle")
-		triggerName = checkForPossibleFailure(client,validTriggerSet)
-		logger.info("TriggerName Found => "+str(triggerName))
-		if(triggerName!=None):
-			shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
-
-		logger.info("PERFORM_OPERATION done at HeadReplica, transfering SHUTTLE to nextReplica : "+str(self.nextReplica))
-
-		# logger.info("checking for failure injection")
-		# shuttle = change_operation(shuttle, request_id, self.slot_number, operation)
-		send(('FORWARD_SHUTTLE', request_id_en,shuttle,operation_en,self.slot_number,client), to=self.nextReplica)
-		logger.info("checkpt_interval : " + str(config.readProperty("checkpt_interval")))
-		checkpoint_interval = config.readProperty("checkpt_interval")
-		if(self.slot_number%checkpoint_interval==0 and self.slot_number - checkpoint_interval > 0):
+		if(self.replica_state == 'ACTIVE'):
+			request_id,operation = getUnsignedData(request_id_en,operation_en,client)	
+			self.slot_number+=1
+			logger.info("PERFORM_OPERATION at HEAD Replica request_id : "+str(request_id)+", operation : "+str(operation)+", client : "+str(client) +",  slot number: "+str(self.slot_number))
 			
-			logger.info("CheckPoint function being called at HEAD")
-			executeCheckPointing(self.slot_number - checkpoint_interval)
+			self.counters[client]["directRequestCounter"] =self.counters[client]["directRequestCounter"]+1
+			self.counters[client]["shuttleCounter"] =self.counters[client]["shuttleCounter"]+1
+			shuttle=None
+			
+			updateSlotOperation(request_id,self.slot_number,operation)
+			self.operation_result_internal[request_id] = config.executeOperation(request_id, operation,self.dictionary_data)
+
+			logger.debug("after execute Operation, result proof: "+ str(self.order_proof))
+			tupl = self.getResult_Order_Proof(request_id,operation,self.slot_number)
+			shuttle = self.updateShuttle(shuttle,tupl)
+			logger.debug("shuttle after update: "+str(shuttle))
+			self.UpdateHistory(self.slot_number,operation_en,operation,shuttle, client)
+			self.updateOrder_Result_Proof(shuttle)
+			logger.debug("ResultProof: "+str(self.result_proof)+"\n"+"OrderProof: "+str(self.order_proof));
+			
+			validTriggerSet=getValidTriggerSet("HEAD")
+			# validTriggerSet.add("result_shuttle")
+			triggerName = checkForPossibleFailure(client,validTriggerSet)
+			logger.info("TriggerName Found => "+str(triggerName))
+			if(triggerName!=None):
+				shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
+
+			logger.info("PERFORM_OPERATION done at HeadReplica, transfering SHUTTLE to nextReplica : "+str(self.nextReplica))
+
+			# logger.info("checking for failure injection")
+			# shuttle = change_operation(shuttle, request_id, self.slot_number, operation)
+			send(('FORWARD_SHUTTLE', request_id_en,shuttle,operation_en,self.slot_number,client), to=self.nextReplica)
+			logger.info("checkpt_interval : " + str(config.readProperty("checkpt_interval")))
+			checkpoint_interval = config.readProperty("checkpt_interval")
+			if(self.slot_number%checkpoint_interval==0 and self.slot_number - checkpoint_interval > 0):
+				
+				logger.info("CheckPoint function being called at HEAD")
+				executeCheckPointing(self.slot_number - checkpoint_interval)
+
+				# remove this from here
+				if(self.slot_number == 6 and self.currentReplica == self.replicas[1]):
+					logger.info("calling for reconfiguration")
+				# callForReconfiguration(self.configuration) 
+		elif self.replica_state == "IMMUTABLE":
+			logger.info("REPLICA is in IMMUTABLE state, wont be performing any functions now")
 
 	 #CONTROL FLOW: From (one o another)
 	def receive(msg=('FORWARD_SHUTTLE',request_id_en,shuttle,operation_en,slot,client), from_=self.prevReplica):
-		request_id,operation = getUnsignedData(request_id_en,operation_en,client)
-		logger.info("PERFORM_OPERATION called at NONHEAD Replica request_id : "+str(request_id)+", operation : "+str(operation)+", client : "+str(client)+", from Replica : "+str(self.prevReplica))
-		logger.debug("SHUTTLE : "+str(shuttle)+", SLOT : "+str(slot));
-		flow = False
-		if(slot>1):
-			flow = checkSlotOperation(slot)
-			logger.debug("the value for checkSlotOperation is " +str(flow))
-		else:
-			flow = True
-		if(flow):
-			if(validateOrderProof(shuttle,operation,slot,request_id,client)):
-				self.operation_result_internal[request_id] = config.executeOperation(request_id, operation,self.dictionary_data)
-				updateSlotOperation(request_id,slot,operation)
-				slot_number = slot
-				tupl = self.getResult_Order_Proof(request_id,operation,slot_number)
-				shuttle = self.updateShuttle(shuttle,tupl)
-				logger.debug("shuttle after update: "+str(shuttle))
-				self.UpdateHistory(self.slot_number,operation,shuttle)
-				self.updateOrder_Result_Proof(shuttle)
-				#validation successful now sending the shuttle forward
-				if(self.nextReplica == None):
-					
-					orderproof,resultproof = shuttle
-					# logger.info("justfortest"+str(len(resultproof)))
-					self.cacheResult(request_id, resultproof)
-					#SENDING result to client
-					logger.info("request_id : "+str(request_id)+", operation : "+str(operation)+", client : "+str(client)+'SHUTTLE reached at Tail')
-					handleRetransmissionCase()
-					# resultproof 	=change_result(resultproof, request_id, operation)
-					########################################################################################################
-					#CHECKING FOR FAILURE :  SHUTTLE COUNTER : SENDING TO CLIENT
-					########################################################################################################
-					self.counters[client]["shuttleCounter"] =self.counters[client]["shuttleCounter"]+1
-					validTriggerSet=getValidTriggerSet("TAIL")
-					triggerName = checkForPossibleFailure(client,validTriggerSet)
-					logger.info("TriggerName Found => "+str(triggerName))
-					if(triggerName!=None):
-						shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
-						orderproof,resultproof=shuttle
-					########################################################################################################
-					#SENDING RESPONSE TO CLIENT
-					logger.info("sending reaponse to client")
-					send(('RESULT_FROM_TAIL',request_id, resultproof ,self.operation_result_internal[request_id],self.dictionary_data,self.currentReplica), to=client)
+		if(self.replica_state == 'ACTIVE'):
 
-					validation = config.checkForResultConsistency(resultproof, self.operation_result_internal[request_id], self.allReplicaVerifyKeysMap,"replica")
-					if(validation):
-
-						#STARTING REVERSE SHUTTLE OPERATIONS
-						logger.info('REVERSE_SHUTTLE starting. Forwarding to prevReplica : '+str(self.prevReplica))
+			request_id,operation = getUnsignedData(request_id_en,operation_en,client)
+			logger.info("PERFORM_OPERATION called at NONHEAD Replica request_id : "+str(request_id)+", operation : "+str(operation)+", client : "+str(client)+", from Replica : "+str(self.prevReplica))
+			logger.debug("SHUTTLE : "+str(shuttle)+", SLOT : "+str(slot));
+			flow = False
+			if(slot>1):
+				flow = checkSlotOperation(slot)
+				logger.debug("the value for checkSlotOperation is " +str(flow))
+			else:
+				flow = True
+			if(flow):
+				if(validateOrderProof(shuttle,operation,slot,request_id,client)):
+					self.operation_result_internal[request_id] = config.executeOperation(request_id, operation,self.dictionary_data)
+					updateSlotOperation(request_id,slot,operation)
+					slot_number = slot
+					tupl = self.getResult_Order_Proof(request_id,operation,slot_number)
+					shuttle = self.updateShuttle(shuttle,tupl)
+					logger.debug("shuttle after update: "+str(shuttle))
+					self.UpdateHistory(self.slot_number,operation_en,operation,shuttle, client)
+					self.updateOrder_Result_Proof(shuttle)
+					#validation successful now sending the shuttle forward
+					if(self.nextReplica == None):
+						
+						orderproof,resultproof = shuttle
+						# logger.info("justfortest"+str(len(resultproof)))
+						self.cacheResult(request_id, resultproof)
+						#SENDING result to client
+						logger.info("request_id : "+str(request_id)+", operation : "+str(operation)+", client : "+str(client)+'SHUTTLE reached at Tail')
+						handleRetransmissionCase()
+						# resultproof 	=change_result(resultproof, request_id, operation)
 						########################################################################################################
-						#CHECKING FOR FAILURE : REVERSE SHUTTLE COUNTER : SENDING TO PREVIOUS REPLICA
+						#CHECKING FOR FAILURE :  SHUTTLE COUNTER : SENDING TO CLIENT
 						########################################################################################################
-						self.counters[client]["resultShuttleCounter"] =self.counters[client]["resultShuttleCounter"]+1
-						validTriggerSet=[]
-						validTriggerSet.append("result_shuttle")#getValidTriggerSet("TAIL")
+						self.counters[client]["shuttleCounter"] =self.counters[client]["shuttleCounter"]+1
+						validTriggerSet=getValidTriggerSet("TAIL")
 						triggerName = checkForPossibleFailure(client,validTriggerSet)
-						logger.debug("counters : "+str(self.counters))
 						logger.info("TriggerName Found => "+str(triggerName))
 						if(triggerName!=None):
 							shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
+							orderproof,resultproof=shuttle
 						########################################################################################################
-						orderproof,resultproof=shuttle
-						send(('REVERSE_SHUTTLE', request_id, resultproof, self.operation_result_internal[request_id],client), to=self.prevReplica)
+						#SENDING RESPONSE TO CLIENT
+						logger.info("sending reaponse to client")
+						send(('RESULT_FROM_TAIL',request_id, resultproof ,self.operation_result_internal[request_id],self.dictionary_data,self.currentReplica), to=client)
 
+						validation = config.checkForResultConsistency(resultproof, self.operation_result_internal[request_id], self.allReplicaVerifyKeysMap,"replica")
+						if(validation):
+
+							#STARTING REVERSE SHUTTLE OPERATIONS
+							logger.info('REVERSE_SHUTTLE starting. Forwarding to prevReplica : '+str(self.prevReplica))
+							########################################################################################################
+							#CHECKING FOR FAILURE : REVERSE SHUTTLE COUNTER : SENDING TO PREVIOUS REPLICA
+							########################################################################################################
+							self.counters[client]["resultShuttleCounter"] =self.counters[client]["resultShuttleCounter"]+1
+							validTriggerSet=[]
+							validTriggerSet.append("result_shuttle")#getValidTriggerSet("TAIL")
+							triggerName = checkForPossibleFailure(client,validTriggerSet)
+							logger.debug("counters : "+str(self.counters))
+							logger.info("TriggerName Found => "+str(triggerName))
+							if(triggerName!=None):
+								shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
+							########################################################################################################
+							orderproof,resultproof=shuttle
+							updateClientsLastResult(resultproof,client,self.operation_result_internal[request_id], slot)
+							send(('REVERSE_SHUTTLE', request_id, resultproof, self.operation_result_internal[request_id],client), to=self.prevReplica)
+
+						else:
+							logger.error(", request_id : "+str(request_id)+ "    ******************Validating order proof failed at replica : "+str(self.currentReplica))
 					else:
-						logger.error(", request_id : "+str(request_id)+ "    ******************Validating order proof failed at replica : "+str(self.currentReplica))
+						self.counters[client]["shuttleCounter"] =self.counters[client]["shuttleCounter"]+1
+						validTriggerSet=[]#getValidTriggerSet("NONHEAD")
+						validTriggerSet.append("shuttle")
+						triggerName = checkForPossibleFailure(client,validTriggerSet)
+						logger.debug("counters : "+str(self.counters))
+						logger.info("TriggerName Found => "+str(triggerName))
+						orderproof,resultproof = shuttle
+						if(triggerName!=None):
+							shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
+						send(('FORWARD_SHUTTLE',request_id_en,shuttle,operation_en,slot,client), to=self.nextReplica)
 				else:
-					self.counters[client]["shuttleCounter"] =self.counters[client]["shuttleCounter"]+1
-					validTriggerSet=[]#getValidTriggerSet("NONHEAD")
-					validTriggerSet.append("shuttle")
-					triggerName = checkForPossibleFailure(client,validTriggerSet)
-					logger.debug("counters : "+str(self.counters))
-					logger.info("TriggerName Found => "+str(triggerName))
-					orderproof,resultproof = shuttle
-					if(triggerName!=None):
-						shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
-					send(('FORWARD_SHUTTLE',request_id_en,shuttle,operation_en,slot,client), to=self.nextReplica)
+					# NOTE: replica turns itself immutable and sends wedge statement to client with proof od misbehaviour
+					logger.error("************************Validating result proof failed at replica : "+str(self.currentReplica)+", request_id : "+str(request_id))
+					logger.info("calling for reconfiguration from replica  :: "+str(self.currentReplica))
+					callForReconfiguration(self.configuration)
 			else:
-				# NOTE: replica turns itself immutable and sends wedge statement to client with proof od misbehaviour
-				logger.error("************************Validating result proof failed at replica : "+str(self.currentReplica)+", request_id : "+str(request_id))
-		else:
-			logger.error("There is inconsistency in the slots, all previous slot havent been used for execution********************")
+				logger.error("There is inconsistency in the slots, all previous slot havent been used for execution********************")
+
+		elif self.replica_state=="IMMUTABLE":
+			logger.info("REPLICA is in IMMUTABLE state, wont be performing any functions now")
 
 	#######################################################
 	def receive(msg=('FORWARD_SHUTTLE_CHECKPOINTING',shuttle,checkpoint), from_=self.prevReplica):
-		# request_id,operation = getUnsignedData(request_id_en,operation_en,client)
-		logger.info("FORWARD_SHUTTLE_CHECKPOINTING called at NONHEAD Replica  "+", checkpoint : "+str(checkpoint)+", from Replica : "+str(self.prevReplica))
-		logger.debug("SHUTTLE : "+str(shuttle)+", checkpoint : "+str(checkpoint));
-		checkpointproof = getCheckPointProof()
-		shuttle = self.updateCheckpointShuttle(shuttle,checkpointproof,checkpoint)
-		logger.debug("checkpoint shuttle after update: "+str(shuttle))
-		logger.info("CHECKPOINTING SHUTTLE done at HeadReplica, transfering SHUTTLE to nextReplica : "+str(self.nextReplica))
+		if(self.replica_state == 'ACTIVE'):
+			# request_id,operation = getUnsignedData(request_id_en,operation_en,client)
+			logger.info("FORWARD_SHUTTLE_CHECKPOINTING called at NONHEAD Replica  "+", checkpoint : "+str(checkpoint)+", from Replica : "+str(self.prevReplica))
+			logger.debug("SHUTTLE : "+str(shuttle)+", checkpoint : "+str(checkpoint));
+			checkpointproof = getCheckPointProof()
+			shuttle = self.updateCheckpointShuttle(shuttle,checkpointproof,checkpoint)
+			logger.debug("checkpoint shuttle after update: "+str(shuttle))
+			logger.info("CHECKPOINTING SHUTTLE done at HeadReplica, transfering SHUTTLE to nextReplica : "+str(self.nextReplica))
 
-		# logger.info("checking for failure injection")
-		# shuttle = change_operation(shuttle, request_id, self.slot_number, operation)
-		
-		if(self.nextReplica == None):
-			########################################################################################################
-			#CHECKING FOR CheckpointConsistency :  SHUTTLE  : 
-			########################################################################################################
-			logger.info("SHUTTLE : "+str(shuttle)+", checkpoint : "+str(checkpoint)+'CHECKPOINT SHUTTLE reached at Tail')
+			# logger.info("checking for failure injection")
+			# shuttle = change_operation(shuttle, request_id, self.slot_number, operation)
+			
+			if(self.nextReplica == None):
+				########################################################################################################
+				#CHECKING FOR CheckpointConsistency :  SHUTTLE  : 
+				########################################################################################################
+				logger.info("SHUTTLE : "+str(shuttle)+", checkpoint : "+str(checkpoint)+'CHECKPOINT SHUTTLE reached at Tail')
 
-			validation = checkForCheckProofConsistency(shuttle, self.allReplicaVerifyKeysMap)
-			if(validation):
-				truncateHistory(checkpoint)
-				logger.info('CHECKPOINT_REVERSE_SHUTTLE starting. Forwarding to prevReplica : '+str(self.prevReplica))
-				send(('CHECKPOINT_REVERSE_SHUTTLE', shuttle,checkpoint), to=self.prevReplica)
+				validation = checkForCheckProofConsistency(shuttle, self.allReplicaVerifyKeysMap)
+				if(validation):
+					truncateHistory(checkpoint)
+					logger.info('CHECKPOINT_REVERSE_SHUTTLE starting. Forwarding to prevReplica : '+str(self.prevReplica))
+					send(('CHECKPOINT_REVERSE_SHUTTLE', shuttle,checkpoint), to=self.prevReplica)
+				else:
+					logger.error(", checkpoint : "+str(checkpoint)+ "    ******************Validating checkpoint proof failed at replica : "+str(self.currentReplica))
 			else:
-				logger.error(", checkpoint : "+str(checkpoint)+ "    ******************Validating checkpoint proof failed at replica : "+str(self.currentReplica))
-		else:
-			send(('FORWARD_SHUTTLE_CHECKPOINTING',shuttle,checkpoint,), to=self.nextReplica)
+				send(('FORWARD_SHUTTLE_CHECKPOINTING',shuttle,checkpoint,), to=self.nextReplica)
+
+		elif self.replica_state=="IMMUTABLE":
+			logger.info("REPLICA is in IMMUTABLE state, wont be performing any functions now")
 
 
 	######################################################
 	def receive(msg=('CHECKPOINT_REVERSE_SHUTTLE',shuttle,checkpoint,), from_=self.nextReplica):
-		logger.info("CHECKPOINT_REVERSE_SHUTTLE reached at replica shuttle : "+str(shuttle)+", checkpoint : "+str(checkpoint)+", from nextReplica : "+str(self.nextReplica))
 
-		validation = checkForCheckProofConsistency(shuttle, self.allReplicaVerifyKeysMap)
-		logger.info(" Result from checkpoint  validation is " + str(validation))
-		if(validation):
-			truncateHistory(checkpoint)
-			if(self.prevReplica == None):
-				logger.info(" CHECKPOINT SHUTTLE reached at HEAD")
+		if(self.replica_state == 'ACTIVE'):
+			logger.info("CHECKPOINT_REVERSE_SHUTTLE reached at replica shuttle : "+str(shuttle)+", checkpoint : "+str(checkpoint)+", from nextReplica : "+str(self.nextReplica))
+
+			validation = checkForCheckProofConsistency(shuttle, self.allReplicaVerifyKeysMap)
+			logger.info(" Result from checkpoint  validation is " + str(validation))
+			if(validation):
+				truncateHistory(checkpoint)
+				if(self.prevReplica == None):
+					logger.info(" CHECKPOINT SHUTTLE reached at HEAD")
+				else:
+					logger.info("checkpoint : "+str(checkpoint)+", after caching result, forwarding to prevReplica : "+str(self.prevReplica))
+					send(('CHECKPOINT_REVERSE_SHUTTLE', shuttle,checkpoint,), to=self.prevReplica)
 			else:
-				logger.info("checkpoint : "+str(checkpoint)+", after caching result, forwarding to prevReplica : "+str(self.prevReplica))
-				send(('CHECKPOINT_REVERSE_SHUTTLE', shuttle,checkpoint,), to=self.prevReplica)
-		else:
-			logger.error("the validation failed at" + str(self.currentReplica))
-			logger.error("************************Validating Check pointing proof failed at replica : "+str(self.currentReplica))
+				logger.error("the validation failed at" + str(self.currentReplica))
+				logger.error("************************Validating Check pointing proof failed at replica : "+str(self.currentReplica))
+
+		elif self.replica_state=="IMMUTABLE":
+			logger.info("REPLICA is in IMMUTABLE state, wont be performing any functions now")
 
 	 #message to replca from previous 
 	def receive(msg=('REVERSE_SHUTTLE',request_id,result_proof, res,client,), from_=self.nextReplica):
 		# incrementCounter(client,"resultShuttleCounter")
-		self.counters[client]["resultShuttleCounter"] =self.counters[client]["resultShuttleCounter"]+1
-		logger.info("REVERSE_SHUTTLE reached at replica request_id : "+str(request_id)+", client : "+str(client)+", from nextReplica : "+str(self.nextReplica))
-		validation = config.checkForResultConsistency(result_proof, res, self.allReplicaVerifyKeysMap,"replica")
-		logger.info("the result from validation is " + str(validation))
-		if(validation):
-			self.cacheResult(request_id, result_proof)
-			if(self.prevReplica == None):
-				logger.info("SHUTTLE reached at HEAD")
+		if(self.replica_state == 'ACTIVE'):
+			self.counters[client]["resultShuttleCounter"] =self.counters[client]["resultShuttleCounter"]+1
+			logger.info("REVERSE_SHUTTLE reached at replica request_id : "+str(request_id)+", client : "+str(client)+", from nextReplica : "+str(self.nextReplica))
+			validation = config.checkForResultConsistency(result_proof, res, self.allReplicaVerifyKeysMap,"replica")
+			logger.info("the result from validation is " + str(validation))
+			if(validation):
+				updateClientsLastResult(resultproof,client,self.operation_result_internal[request_id], slot)
+				self.cacheResult(request_id, result_proof)
+				if(self.prevReplica == None):
+					logger.info("SHUTTLE reached at HEAD")
+				else:
+					validTriggerSet=[]
+					validTriggerSet.append("result_shuttle")
+					triggerName = checkForPossibleFailure(client,validTriggerSet)
+					logger.debug("counters : "+str(self.counters))
+					logger.info("TriggerName Found => "+str(triggerName))
+					if(triggerName!=None):
+						shuttle=(None,result_proof)
+						slot_number=self.requestIdToSoPair[request_id][0]
+						operation=self.requestIdToSoPair[request_id][1]
+
+						shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
+						orderproof,result_proof= shuttle
+					logger.info("request_id : "+str(request_id)+", after caching result, forwarding to prevReplica : "+str(self.prevReplica))
+
+					send(('REVERSE_SHUTTLE',request_id,result_proof, res,client,), to=self.prevReplica)
 			else:
-				validTriggerSet=[]
-				validTriggerSet.append("result_shuttle")
-				triggerName = checkForPossibleFailure(client,validTriggerSet)
-				logger.debug("counters : "+str(self.counters))
-				logger.info("TriggerName Found => "+str(triggerName))
-				if(triggerName!=None):
-					shuttle=(None,result_proof)
-					slot_number=self.requestIdToSoPair[request_id][0]
-					operation=self.requestIdToSoPair[request_id][1]
-
-					shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
-					orderproof,result_proof= shuttle
-				logger.info("request_id : "+str(request_id)+", after caching result, forwarding to prevReplica : "+str(self.prevReplica))
-				send(('REVERSE_SHUTTLE',request_id,result_proof, res,client,), to=self.prevReplica)
-		else:
-			logger.error("the validation failed at" + str(self.currentReplica))
-			logger.error("************************Validating order proof failed at replica : "+str(self.currentReplica)+", request_id : "+str(request_id))
-
+				logger.error("the validation failed at" + str(self.currentReplica))
+				logger.error("************************Validating order proof failed at replica : "+str(self.currentReplica)+", request_id : "+str(request_id))
+		elif self.replica_state=="IMMUTABLE":
+			logger.info("REPLICA is in IMMUTABLE state, wont be performing any functions now")
 
 	#FROM NON-HEAD Replicas to HEAD Replica for Retransmission case
 	def receive(msg=('RETRANSMISSION_HEAD',requestId_en,operation_en,fromReplica,client),):
-		logger.info("RETRANSMISSION_HEAD to HEAD Replica")
-		requestId,operation = getUnsignedData(requestId_en,operation_en,client)
-		self.counters[client]["forwardRequestCounter"] =self.counters[client]["forwardRequestCounter"]+1
-		logger.info("RETRANSMISSION_HEAD request received from"+str(fromReplica))
-		timeout = config.readProperty("head_timeout")
-		#NOTE: change it to  : if(requestId in self.result_cache):	
-		if(requestId in self.result_cache):	
-			logger.info("RequestId found inside the cache. Returning response to client : "+client+", requestId : "+str(requestId))
-			send(("RETRANSMISSION",self.result_cache[requestId],self.currentReplica), to=client)
-			return;
-		#HEAD has already started operation for the first request sent by other 
-		#replicas(including head) in case it does not recognize the operation
-		if((requestId in self.requestIdToSoPair) and (requestId not in self.result_cache)):
-			logger.info("Result shuttle is yet to receive at the head, waiting for it!! fromReplica : "+str(fromReplica))
-			if await(some(received(('REVERSE_SHUTTLE',requestId,result_proof,res,),from_=self.nextReplica),has= (requestId in self.result_cache))):
-				logger.info("REACHED HEAD FROM SHUTTLE & RETRANSMISSION COMPLETE")
-			elif(timeout(timeout)):
-				logger.info("TIMEOUT at Replica : "+str(self.currentReplica)+" sending RECONFIGURATION request to Olympus!!!!")		
-		else:
-			#PERFORM Operation for FORWARD_SHUTTLE only once and stop for all other Replicas
-			logger.info("Operation is not recognized at HeadReplica. requestId : "+str(requestId)+", operation : "+str(operation))
-			send(("PERFORM_OPERATION",requestId_en,operation_en), to=self.headReplica)
-			if(timeout(timeout)):
-				logger.info("TIMEOUT at Replica : "+str(self.currentReplica)+" sending RECONFIGURATION request to Olympus!!!!")		
+		if(self.replica_state == 'ACTIVE'):
+			logger.info("RETRANSMISSION_HEAD to HEAD Replica")
+			requestId,operation = getUnsignedData(requestId_en,operation_en,client)
+			self.counters[client]["forwardRequestCounter"] =self.counters[client]["forwardRequestCounter"]+1
+			logger.info("RETRANSMISSION_HEAD request received from"+str(fromReplica))
+			timeout = config.readProperty("head_timeout")
+			#NOTE: change it to  : if(requestId in self.result_cache):	
+			if(requestId in self.result_cache):	
+				logger.info("RequestId found inside the cache. Returning response to client : "+client+", requestId : "+str(requestId))
+				send(("RETRANSMISSION",self.result_cache[requestId],self.currentReplica), to=client)
+				return;
+			#HEAD has already started operation for the first request sent by other 
+			#replicas(including head) in case it does not recognize the operation
+			if((requestId in self.requestIdToSoPair) and (requestId not in self.result_cache)):
+				logger.info("Result shuttle is yet to receive at the head, waiting for it!! fromReplica : "+str(fromReplica))
+				if await(some(received(('REVERSE_SHUTTLE',requestId,result_proof,res,),from_=self.nextReplica),has= (requestId in self.result_cache))):
+					logger.info("REACHED HEAD FROM SHUTTLE & RETRANSMISSION COMPLETE")
+				elif(timeout(timeout)):
+					logger.info("TIMEOUT at Replica : "+str(self.currentReplica)+" sending RECONFIGURATION request to Olympus!!!!")		
+			else:
+				#PERFORM Operation for FORWARD_SHUTTLE only once and stop for all other Replicas
+				logger.info("Operation is not recognized at HeadReplica. requestId : "+str(requestId)+", operation : "+str(operation))
+				send(("PERFORM_OPERATION",requestId_en,operation_en), to=self.headReplica)
+				if(timeout(timeout)):
+					logger.info("TIMEOUT at Replica : "+str(self.currentReplica)+" sending RECONFIGURATION request to Olympus!!!!")	
+		elif self.replica_state=="IMMUTABLE":
+			logger.info("REPLICA is in IMMUTABLE state, wont be performing any functions now")	
 			
 
 	#FROM Clients To Replicas
 	def receive(msg=('RETRANSMISSION',requestId_en,operation_en,client,), from_=self.clients):
-		requestId,operation = getUnsignedData(requestId_en,operation_en,client)
-		logger.info("RETRANSMISSION received at "+str(self.currentReplica)+", requestId : "+str(requestId)+", operation : "+str(operation)+ ", from client : "+str(client))
-		if(self.replica_state == 'IMMUTABLE'):
-			# if("replica_2" in self.currentReplica):
-			logger.info("Replica is in IMMUTABLE state. Returning ERROR to clients")
-			send(("RETRANSMISSION","ERROR",self.currentReplica), to=client)
-		#TEMPORARILY MADE NOT HERE, TO ALLOW NEXT CASE. REVERT IT TO : elif(requestId in self.result_cache):	
-		elif(requestId in self.result_cache):	
-			logger.info("RequestId found in replica cache. Returning to client : "+str(client))
-			#TODO NOTE Handle Shuttle 
-			send(("RETRANSMISSION",self.result_cache[requestId],self.currentReplica), to=client)
+		if(self.replica_state == 'ACTIVE'):
+			requestId,operation = getUnsignedData(requestId_en,operation_en,client)
+			logger.info("RETRANSMISSION received at "+str(self.currentReplica)+", requestId : "+str(requestId)+", operation : "+str(operation)+ ", from client : "+str(client))
+			if(self.replica_state == 'IMMUTABLE'):
+				# if("replica_2" in self.currentReplica):
+				logger.info("Replica is in IMMUTABLE state. Returning ERROR to clients")
+				send(("RETRANSMISSION","ERROR",self.currentReplica), to=client)
+			#TEMPORARILY MADE NOT HERE, TO ALLOW NEXT CASE. REVERT IT TO : elif(requestId in self.result_cache):	
+			elif(requestId in self.result_cache):	
+				logger.info("RequestId found in replica cache. Returning to client : "+str(client))
+				#TODO NOTE Handle Shuttle 
+				send(("RETRANSMISSION",self.result_cache[requestId],self.currentReplica), to=client)
 
-		else:#(self.currentReplica != self.headReplica):
-			#send request to head
-			#self.headReplica
-			logger.info("Operation is not recognized. Forwarding to HEAD REPLICA. From currentReplica : "+ str(self.currentReplica)+", client : "+str(client))
-			send(("RETRANSMISSION_HEAD",requestId_en,operation_en,self.currentReplica,client),to=self.headReplica)
-			
-			timeout=config.readProperty("nonhead_timeout")
-			#check if the current replica is a tailReplica, if yes, it will get result shuttle from prevReplica else
-			#all other shuttle will receive results from nextReplica
-			slot=int()
-			shuttle=[]
-			# if ((self.currentReplica==self.tailReplica) and await(some(received(('SHUTTLE','FORWARD',request_id,shuttle,operation,slot),from_=self.prevReplica)))) or await(some(received(('SHUTTLE','REVERSE',requestId,result_proof,),from_=self.nextReplica),has=requestId in self.result_cache)):
-			
-			if (self.currentReplica==self.tailReplica):
-				if(await(some(received(('FORWARD_SHUTTLE',request_id,shuttle,operation,slot),from_=self.prevReplica)))):
-					logger.info("in retransmission unrecognised request. Shuttle reached to tail node : "+str(result_proof)+", sending to client : "+str(client))
-					send(('RETRANSMISSION', self.result_cache[requestId] ,self.currentReplica), to=client)
-				elif(timeout(timeout)):
-					logger.info("timer expired at tail replica : "+str(self.currentReplica))
-			else:
-				if await(some(received(('REVERSE_SHUTTLE',requestId,result_proof,res,),from_=self.nextReplica),has=requestId in self.result_cache)):
-					logger.info("shuttle coming from next replica result_proof : "+str(result_proof)+", sending to client : "+str(client))
-					send(('RETRANSMISSION', self.result_cache[requestId] ,self.currentReplica), to=client)
-				elif(timeout(timeout)):
-					logger.info("timer expired at non head replica : "+str(self.currentReplica))
-					#TODO RECONFIGURATION
+			else:#(self.currentReplica != self.headReplica):
+				#send request to head
+				#self.headReplica
+				logger.info("Operation is not recognized. Forwarding to HEAD REPLICA. From currentReplica : "+ str(self.currentReplica)+", client : "+str(client))
+				send(("RETRANSMISSION_HEAD",requestId_en,operation_en,self.currentReplica,client),to=self.headReplica)
+				
+				timeout=config.readProperty("nonhead_timeout")
+				#check if the current replica is a tailReplica, if yes, it will get result shuttle from prevReplica else
+				#all other shuttle will receive results from nextReplica
+				slot=int()
+				shuttle=[]
+				# if ((self.currentReplica==self.tailReplica) and await(some(received(('SHUTTLE','FORWARD',request_id,shuttle,operation,slot),from_=self.prevReplica)))) or await(some(received(('SHUTTLE','REVERSE',requestId,result_proof,),from_=self.nextReplica),has=requestId in self.result_cache)):
+				
+				if (self.currentReplica==self.tailReplica):
+					if(await(some(received(('FORWARD_SHUTTLE',request_id,shuttle,operation,slot),from_=self.prevReplica)))):
+						logger.info("in retransmission unrecognised request. Shuttle reached to tail node : "+str(result_proof)+", sending to client : "+str(client))
+						send(('RETRANSMISSION', self.result_cache[requestId] ,self.currentReplica), to=client)
+					elif(timeout(timeout)):
+						logger.info("timer expired at tail replica : "+str(self.currentReplica))
+				else:
+					if await(some(received(('REVERSE_SHUTTLE',requestId,result_proof,res,),from_=self.nextReplica),has=requestId in self.result_cache)):
+						logger.info("shuttle coming from next replica result_proof : "+str(result_proof)+", sending to client : "+str(client))
+						send(('RETRANSMISSION', self.result_cache[requestId] ,self.currentReplica), to=client)
+					elif(timeout(timeout)):
+						logger.info("timer expired at non head replica : "+str(self.currentReplica))
+						#TODO RECONFIGURATION
+		elif self.replica_state=="IMMUTABLE":
+			logger.info("REPLICA is in IMMUTABLE state, wont be performing any functions now")	
+
+
+	def receive(msg=('WEDGE_REQUEST_STATEMENT',), from_=self.olympus):
+		logger.info("************Wedge Statement requested from Olympus******** Going into Immutable state")
+		self.replica_state = "IMMUTABLE"
+		# check if the replica is in immutable in all other cases
+		send(('WEDGE_STATEMENT',self.currentCheckPoint,self.History,), to=self.olympus)
+		# send(('WEDGE_STATEMENT',), to=self.olympus)
+
+	def receive(msg=('CATCH_UP',orders,), from_=self.olympus):
+		logger.info("************ CATCH_UP requested from Olympus******** Going to execute the orders ")
+		# check if the replica is in immutable in all other cases
+		print ("length of incoming order", orders, len(orders))
+		if len(orders)>0:
+			for i in  range(len(orders)):
+				slot_CU,operation_CU, client_CU= orders[i]
+				logger.info("Executing the order for slot : " + str(slot_CU))
+				oper = config.getUnsignedData(operation_CU,client_CU,self.clientVerifyKeys,self.clients)
+				result =config.executeOperation("not required in this case",oper,self.dictionary_data)
+				ehash = config.calculateHash(result)
+				resulpr = (result,oper,ehash)
+				logger.info("Order Executed the order for slot : " + str(slot_CU))
+				#do we need request Id also
+				self.clientLastResult[client_CU] = resulpr
+				logger.info(" Client updated with the last result statement")
+		dict_hash = config.calculateHash(str(self.dictionary_data))
+		send(('CAUGHT_UP',dict_hash,self.clientLastResult,), to=self.olympus)
+		logger.info("************ CAUGHT_UP sent to Olympus******** ")
+
+	def receive(msg=('GET_RUNNING_STATE',), from_=self.olympus):
+		logger.info("************FINAL GET_RUNNING_STATE requested from Olympus********")
+		dict_hash = config.calculateHash(str(self.dictionary_data))
+		send(('RUNNING_STATE',dict_hash,), to=self.olympus)
+		logger.info("************FINAL RUNNING_STATE sent to Olympus********")
 		
-		#(msg,requestId,operation,replicaId):
+	def receive(msg=('KILLING_REPLICAS',), from_=self.olympus):
+		logger.info("Killing Myself: This is replica: " + str(self.currentReplica))
+		# end(self.currentReplica)
+		os._exit(-1)
+		logger.info("exited")
 
 	def run():
 		await(received('',))
@@ -572,19 +653,23 @@ class Replica(process):
 		order, result = shuttle
 		lorder = len(order)
 		lresult = len(result)
-		print("length of oreder"+str(len(order)))
+		# print("length of oreder"+str(len(order)))
 		order = order[0:lorder-1]
-		print("length of oreder"+str(len(order)))
+		# print("length of oreder"+str(len(order)))
 		result =  result[0:lresult-1]
 		orderStmt = (slot, "get('x')")
 		resultStmt = (operation_result_internal[requestId], operation, config.calculateHash(operation_result_internal[requestId]))
 		signedOrderProof= signMessage(str(orderStmt))
 		signedResultProof = signMessage(str(resultStmt))
 		order.append(signedOrderProof)
-		print("length of oreder"+str(len(order)))
+		# print("length of oreder"+str(len(order)))
 		result.append(signedResultProof)
 		shuttle = (order,result)
 		logger.debug("change shuttle"+ str(shuttle))
+		slot , op,rep_op, client, order_p = self.History[len(self.History)-1]
+		self.History = self.History[0:len(self.History)-1]
+		tempHist = (slot, op,"get('x')" , client ,order )
+		self.History.append(tempHist)
 
 		return shuttle
 
@@ -677,34 +762,42 @@ class Replica(process):
 
 	def truncateHistory(checkpoint):
 		logger.info("TRUNCATE HISTORY function called at replica  : " +str(self.currentReplica))
-		print("checkpoint number : ", checkpoint)
+		logger.debug("checkpoint number : " + str(checkpoint))
 		index =self.replicas.index(self.currentReplica)
-		print("index:", index)
+		# print("index:", index)
 		logger.debug("history:" + str(self.History))
 		logger.debug("history length before truncation:" + str(len(self.History)))
 		# print("history 1:",self.History[0][0])
 		for index in range(len(self.History)):
-			print("runnig the loop for ", self.History[index][0])
+			# print("runnig the loop for ", self.History[index][0])
 			if(self.History[index][0] > checkpoint):
 				break;
 		print("history is being truncated at this slot", self.History[index][0])
 		self.History = self.History[index:]
 		logger.info("history length after truncation:" + str(len(self.History)))
 		self.checkpointHash[checkpoint]= config.calculateHash(str(self.dictionary_data))
+		self.currentCheckPoint = checkpoint
 
 
-
-
-	def UpdateHistory(slot,op,order):
+	def UpdateHistory(slot,op,rep_op,shuttle, client):
 		temp = []
+		order, res = shuttle
 		temp.append(slot)
 		temp.append(op)
+		temp.append(rep_op)
+		temp.append(client)
 		temp.append(order)
 		self.History.append(temp)
 
+	def updateClientsLastResult(rProof,client,res, slot):
+		tupl = (slot,rProof,res)
+		self.clientLastResult[client] = tupl
+		logger.debug(" client dictionary after updatinf last result is :" + str(self.clientLastResult))
 
-
-
+	def callForReconfiguration(configuration):
+		logger.debug("olympus::", self.olympus)
+		self.replica_state="ACTIVE"
+		send(('RECONFIGURATION_REQUEST',configuration,), to=self.olympus)
 
 
 
