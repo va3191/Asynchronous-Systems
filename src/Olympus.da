@@ -6,6 +6,7 @@ import nacl.signing
 from nacl.public import PrivateKey, Box
 import logging as logger
 import sys
+import time
 import getopt
 import random
 
@@ -30,6 +31,8 @@ class Olympus(process):
 		self.runningStateReplicaHash=[]
 		self.clientLastResult={}
 		self.replicaVerifyKeys = []
+		self.initHist ={}
+		self.reconfigIsCalled=False
 
 		# config.config_main(configFilePath);	# initialize configuration file
 	
@@ -37,7 +40,7 @@ class Olympus(process):
 		logger.debug("*********RUN : Olympus***********")
 		(clients, clientSignKeys, clientVerifyKeys)=createClient()
 		self.clients=clients
-		(replicas,replicaSigningKeys,replicaVerifyKeys)=createReplicas(clients,self,clientVerifyKeys)
+		(replicas,replicaSigningKeys,replicaVerifyKeys)=createReplicas(clients,self,clientVerifyKeys,self.initHist)
 		self.replicas = replicas
 		self.replicaVerifyKeys = replicaVerifyKeys
 		self.clientVerifyKeys = clientVerifyKeys
@@ -101,7 +104,7 @@ class Olympus(process):
 			setup(cli,[self.configFilePath,operationList,olympus,replicas,cli,replicaVerifyKeys,clientSignKeys[cnum]])
 			start(cli)
 
-	def createReplicas(clients,olympus,clientVerifyKeys):
+	def createReplicas(clients,olympus,clientVerifyKeys, initHist):
 		logger.info("function called to create new configuration of replicas")
 		if(len(self.replicas) > 0):
 			killOldReplicas()
@@ -135,7 +138,7 @@ class Olympus(process):
 			# setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica])
 			# print("replica : ",rep,", replicaToPubPrivKey: ",replicaToPubPrivKey[str(rep)])
 			# setup(rep,[clients[0],olympus,replicaName,prevReplica,nextReplica,None,None])
-			setup(rep,[self.currentnumofConfiguration,self.configFilePath,replicas,clients,olympus,rep,prevReplica,nextReplica,replicas[0],replicas[len(replicas)-1],replica_state,replicaSigningKeys[rnum],replicaVerifyKeys,clientVerifyKeys])
+			setup(rep,[initHist,self.currentnumofConfiguration,self.configFilePath,replicas,clients,olympus,rep,prevReplica,nextReplica,replicas[0],replicas[len(replicas)-1],replica_state,replicaSigningKeys[rnum],replicaVerifyKeys,clientVerifyKeys])
 
 		##Starting Replica
 		for rep in replicas:
@@ -145,17 +148,26 @@ class Olympus(process):
 
 	def receive(msg=('RECONFIGURATION_REQUEST', configuration), from_=node):
 		# client.reconfigFlag=True
-		logger.info("RECONFIGURATION_REQUEST request recieved from  Replica : " + str(node) + ":configuration number :"+str(configuration) + ", :current configuration number :"+str(self.currentnumofConfiguration))
-		if (configuration >= self.currentnumofConfiguration):
-			self.currentnumofConfiguration = self.currentnumofConfiguration + 1
-			logger.debug("this might be the place where it burst" + str(self.replicas))
-			for rnum,rep in enumerate(self.replicas):
-				logger.info("WEDGE_REQUEST_STATEMENT sent to replica : " + str(rep))
-				send(('WEDGE_REQUEST_STATEMENT',), to=rep)
-			self.wedge_statement = []	
-			self.slotOpSuperset={}
-			self.caughtUpStatements =[]
-			self.runningStateReplicaHash=[]
+		if(not self.reconfigIsCalled):
+			self.reconfigIsCalled=True
+			logger.info("RECONFIGURATION_REQUEST request recieved from  Replica : " + str(node) + ":configuration number :"+str(configuration) + ", :current configuration number :"+str(self.currentnumofConfiguration))
+			logger.info("Updating Clients Regarding Reconfiguration")
+			updateClientForReconfiguration()
+			if (configuration >= self.currentnumofConfiguration):
+				# self.currentnumofConfiguration = self.currentnumofConfiguration + 1
+				logger.debug("this might be the place where it burst" + str(self.replicas))
+				sendWedgeStatements()
+				self.currentnumofConfiguration = self.currentnumofConfiguration + 1
+				self.wedge_statement = []	
+				self.slotOpSuperset={}
+				self.caughtUpStatements =[]
+				self.runningStateReplicaHash=[]
+				self.isQuorumSatisfied=False
+
+	def sendWedgeStatements():
+		for rnum,rep in enumerate(self.replicas):
+			logger.info("WEDGE_REQUEST_STATEMENT sent to replica : " + str(rep))
+			send(('WEDGE_REQUEST_STATEMENT',), to=rep)
 
 	def receive(msg=('WEDGE_STATEMENT', checkpoint, history), from_=node):
 		logger.info("wedge statement recieved from replica: " +str(node))
@@ -303,12 +315,13 @@ class Olympus(process):
 		logger.info("requesting replica"+str(self.replicas[rand])+"  to send  hash of it's running state")
 		send(('GET_RUNNING_STATE',), to=self.replicas[rand])
 
-	def receive(msg=('RUNNING_STATE', runningStateHash), from_=node):
-
+	def receive(msg=('RUNNING_STATE', runningState), from_=node):
+		self.initHist = runningState
 		logger.info("Final running state recieved from replica :  " + str(node))
+		runningStateHash = config.calculateHash(str(runningState))
 		if(runningStateHash == self.currentHash):
 			logger.info("Creating new set of replicas with new running state")
-			(replicas,replicaSigningKeys,replicaVerifyKeys)=createReplicas(self.clients,self,self.clientVerifyKeys)
+			(replicas,replicaSigningKeys,replicaVerifyKeys)=createReplicas(self.clients,self,self.clientVerifyKeys,self.initHist)
 			# (replicas,replicaSigningKeys,replicaVerifyKeys)=createReplicas(clients,self,clientVerifyKeys)
 			self.replicas = replicas
 			self.replicaVerifyKeys = replicaVerifyKeys
@@ -328,10 +341,33 @@ class Olympus(process):
 	def updateClient(replicas,replicaVerifyKeys):
 		logger.info("sending the updated replicas from olympus to clients")
 		print(len(self.clientLastResult))
+		# time.sleep(6)
 		for i in self.clients:
 			logger.info("client: " + str(i))
+			
 		for client in self.clients:
 			send(('RESULT_FROM_OLYMPUS',self.clientLastResult[client],replicas,replicaVerifyKeys,), to=client)
+
+	def updateClientForReconfiguration():
+		for client in self.clients:
+			send(('UNDERGOING_RECONFIGURATION',), to=client)
+
+	def receive(msg=('PROOF_OF_MISBEHAVIOUR', result_pr, res), from_=node):
+		logger.info("proof of misbehaviour recieved from client, validating the proof")
+		validation = config.checkForResultConsistency(result_pr,res, self.replicaVerifyKeys, "client")
+		if(not validation):
+			if( not self.reconfigIsCalled):
+				updateClientForReconfiguration()
+				sendWedgeStatements()
+				self.currentnumofConfiguration = self.currentnumofConfiguration + 1
+				self.wedge_statement = []	
+				self.slotOpSuperset={}
+				self.caughtUpStatements =[]
+				self.runningStateReplicaHash=[]
+				self.isQuorumSatisfied=False
+
+
+
 
 
 

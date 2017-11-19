@@ -10,7 +10,7 @@ import time
 import os
 class Replica(process):
 	
-	def setup(configuration,configFilePath,replicas,clients,olympus,currentReplica,prevReplica,nextReplica,headReplica,tailReplica,replica_state,currentReplicaSigningKey,allReplicaVerifyKeysMap,clientVerifyKeys):
+	def setup(initHist,configuration,configFilePath,replicas,clients,olympus,currentReplica,prevReplica,nextReplica,headReplica,tailReplica,replica_state,currentReplicaSigningKey,allReplicaVerifyKeysMap,clientVerifyKeys):
 		config.config_main(configFilePath)
 		logger.basicConfig(
 		format="%(asctime)s [%(threadName)-12.12s %(lineno)d] [%(levelname)-5.5s]  %(message)s",
@@ -37,7 +37,7 @@ class Replica(process):
 		self.replica_state=replica_state
 		self.clientVerifyKeys = clientVerifyKeys
 		#Main Dict object
-		self.dictionary_data={}#{'jedi':'luke skywalker','actor':'irfan','criket':'sachin','chupa':'aditya'}
+		self.dictionary_data=initHist#{'jedi':'luke skywalker','actor':'irfan','criket':'sachin','chupa':'aditya'}
 		#Result (key=requestId, value = (order_proof,result_proof)	
 		self.result_cache={}
 
@@ -65,7 +65,12 @@ class Replica(process):
 			self.counters[client]["forwardRequestCounter"]=0
 			self.counters[client]["shuttleCounter"]=0
 			self.counters[client]["resultShuttleCounter"]=0
-		
+			# self.counters[olympus]["wedge_request"]=0
+			# self.counters[olympus]["new_configuration"]=0
+			# self.counters["completed_checkpoint"]=0
+			# self.counters["checkpoint"]=0
+			# self.counters[olympus]["get_running_state"]=0
+			# self.counters[olympus]["catch_up"]=0
 		self.failureDS = config.readFailures()
 		logger.debug("REPLICA SETUP DONE!!")
 		
@@ -110,6 +115,7 @@ class Replica(process):
 			operation = tempId1.decode("utf-8")
 		except  nacl.exceptions.BadSignatureError:
 			logger.error("request_id_en: "+request_id_en+", client signed operation and requestID not valid | proof of misbehaviour")
+			# callForReconfiguration(self.configuration)
 
 		
 		logger.debug("request_id : "+str(request_id)+", unsigned successfully")
@@ -118,6 +124,7 @@ class Replica(process):
 	#CONTROL FLOW: From (Client to HeadReplica)
 	def receive(msg=('PERFORM_OPERATION', request_id_en,operation_en,client), from_=node):
 		if(self.replica_state == 'ACTIVE'):
+			logger.info("************************FORWARD SHUTTLE***************")
 			request_id,operation = getUnsignedData(request_id_en,operation_en,client)	
 			self.slot_number+=1
 			logger.info("PERFORM_OPERATION at HEAD Replica request_id : "+str(request_id)+", operation : "+str(operation)+", client : "+str(client) +",  slot number: "+str(self.slot_number))
@@ -166,7 +173,7 @@ class Replica(process):
 	 #CONTROL FLOW: From (one o another)
 	def receive(msg=('FORWARD_SHUTTLE',request_id_en,shuttle,operation_en,slot,client), from_=self.prevReplica):
 		if(self.replica_state == 'ACTIVE'):
-
+			logger.info("************************FORWARD SHUTTLE***************")
 			request_id,operation = getUnsignedData(request_id_en,operation_en,client)
 			logger.info("PERFORM_OPERATION called at NONHEAD Replica request_id : "+str(request_id)+", operation : "+str(operation)+", client : "+str(client)+", from Replica : "+str(self.prevReplica))
 			logger.debug("SHUTTLE : "+str(shuttle)+", SLOT : "+str(slot));
@@ -213,7 +220,7 @@ class Replica(process):
 
 						validation = config.checkForResultConsistency(resultproof, self.operation_result_internal[request_id], self.allReplicaVerifyKeysMap,"replica")
 						if(validation):
-
+							logger.info("************************REVERSE SHUTTLE***************")
 							#STARTING REVERSE SHUTTLE OPERATIONS
 							logger.info('REVERSE_SHUTTLE starting. Forwarding to prevReplica : '+str(self.prevReplica))
 							########################################################################################################
@@ -265,7 +272,7 @@ class Replica(process):
 			checkpointproof = getCheckPointProof()
 			shuttle = self.updateCheckpointShuttle(shuttle,checkpointproof,checkpoint)
 			logger.debug("checkpoint shuttle after update: "+str(shuttle))
-			logger.info("CHECKPOINTING SHUTTLE done at HeadReplica, transfering SHUTTLE to nextReplica : "+str(self.nextReplica))
+			logger.info("CHECKPOINTING SHUTTLE done at NONHEAD Replica, transfering SHUTTLE to nextReplica : "+str(self.nextReplica))
 
 			# logger.info("checking for failure injection")
 			# shuttle = change_operation(shuttle, request_id, self.slot_number, operation)
@@ -294,14 +301,14 @@ class Replica(process):
 	def receive(msg=('CHECKPOINT_REVERSE_SHUTTLE',shuttle,checkpoint,), from_=self.nextReplica):
 
 		if(self.replica_state == 'ACTIVE'):
-			logger.info("CHECKPOINT_REVERSE_SHUTTLE reached at replica shuttle : "+str(shuttle)+", checkpoint : "+str(checkpoint)+", from nextReplica : "+str(self.nextReplica))
+			logger.info("CHECKPOINT_REVERSE_SHUTTLE reached at replica" +str(self.currentReplica)+",  shuttle : "+str(shuttle)+", checkpoint : "+str(checkpoint)+", from nextReplica : "+str(self.nextReplica))
 
 			validation = checkForCheckProofConsistency(shuttle, self.allReplicaVerifyKeysMap)
 			logger.info(" Result from checkpoint  validation is " + str(validation))
 			if(validation):
 				truncateHistory(checkpoint)
 				if(self.prevReplica == None):
-					logger.info(" CHECKPOINT SHUTTLE reached at HEAD")
+					logger.info(" CHECKPOINT  REVERSE SHUTTLE reached at HEAD")
 				else:
 					logger.info("checkpoint : "+str(checkpoint)+", after caching result, forwarding to prevReplica : "+str(self.prevReplica))
 					send(('CHECKPOINT_REVERSE_SHUTTLE', shuttle,checkpoint,), to=self.prevReplica)
@@ -314,14 +321,16 @@ class Replica(process):
 
 	 #message to replca from previous 
 	def receive(msg=('REVERSE_SHUTTLE',request_id,result_proof, res,client,), from_=self.nextReplica):
+		
 		# incrementCounter(client,"resultShuttleCounter")
 		if(self.replica_state == 'ACTIVE'):
+			logger.info("************************REVERSE SHUTTLE***************")
 			self.counters[client]["resultShuttleCounter"] =self.counters[client]["resultShuttleCounter"]+1
 			logger.info("REVERSE_SHUTTLE reached at replica request_id : "+str(request_id)+", client : "+str(client)+", from nextReplica : "+str(self.nextReplica))
 			validation = config.checkForResultConsistency(result_proof, res, self.allReplicaVerifyKeysMap,"replica")
 			logger.info("the result from validation is " + str(validation))
 			if(validation):
-				updateClientsLastResult(resultproof,client,self.operation_result_internal[request_id], slot)
+				updateClientsLastResult(result_proof,client,self.operation_result_internal[request_id], self.requestIdToSoPair[request_id][0])
 				self.cacheResult(request_id, result_proof)
 				if(self.prevReplica == None):
 					logger.info("SHUTTLE reached at HEAD")
@@ -452,9 +461,9 @@ class Replica(process):
 
 	def receive(msg=('GET_RUNNING_STATE',), from_=self.olympus):
 		logger.info("************FINAL GET_RUNNING_STATE requested from Olympus********")
-		dict_hash = config.calculateHash(str(self.dictionary_data))
-		send(('RUNNING_STATE',dict_hash,), to=self.olympus)
-		logger.info("************FINAL RUNNING_STATE sent to Olympus********")
+		# dict_hash = config.calculateHash(str(self.dictionary_data))
+		send(('RUNNING_STATE',self.dictionary_data,), to=self.olympus)
+		logger.info("************FINAL_RUNNING_STATE sent to Olympus********")
 		
 	def receive(msg=('KILLING_REPLICAS',), from_=self.olympus):
 		logger.info("Killing Myself: This is replica: " + str(self.currentReplica))
@@ -696,6 +705,42 @@ class Replica(process):
 		order, result = shuttle
 		result = result[1:]
 		return (order,result)
+
+	def crash():
+		logger.info("Inside the crash failure, killing the replica" + str(self.currentReplica))
+		os_exit(-1)
+
+	def truncate_history(n):
+		self.History = self.History[:len(self.History)- n]
+
+	def sleep(time): 
+		time.sleep(time)
+
+	def drop():
+		#you will have to check where all this can be usd and put a flag there
+		pass 
+	def extra_op():
+		executeOperation("not required here", put('a','a'), self.dictionary_data)
+
+	def invalid_result_sig(msg):
+		currentReplicaSigningKey = list(currentReplicaSigningKey)
+		currentReplicaSigningKey[0] = (currentReplicaSigningKey[0] +1)%256
+		newsigned = bytes(currentReplicaSigningKey)
+		signedMsg = newsigned.sign(str.encode(msg))
+		return signedMsg
+
+	def invalid_order_sig(msg):
+		currentReplicaSigningKey = list(currentReplicaSigningKey)
+		currentReplicaSigningKey[0] = (currentReplicaSigningKey[0] +1)%256
+		newsigned = bytes(currentReplicaSigningKey)
+		signedMsg = newsigned.sign(str.encode(msg))
+		return signedMsg
+
+	def drop_checkpt_stmts(chkStmt, t):
+		chkStmt = chkStmt[t+2:]
+
+	def increment_slot(s):
+		s = s+1
 
 	def executeCheckPointing(checkpoint):
 		logger.debug("inside executeCheckPointing function for creating the current checkpoint")

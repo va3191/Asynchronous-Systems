@@ -40,6 +40,7 @@ class Client(process):
 		self.reconfigFlag=False
 		self.dictDataFromReplica={}
 		self.resultFromOlympus=False
+		self.requestIdRecieved=False
 		logger.info("Client setup finished. Operations for client : "+str(currentClient)+" => "+str(reqList))
 		
  
@@ -129,14 +130,22 @@ class Client(process):
 			logger.error("Result proof incorrect! FAILED | proof of misbehaviour!!")
 			self.operationFlag=False
 			self.dictdata=dictdata
+			callForReconfig(result_proof,result)
+
+	def callForReconfig(result_proof,result):
+		send(('PROOF_OF_MISBEHAVIOUR',result_proof,result,), to=self.olympus)
 
 	def receive(msg=('RESULT_FROM_OLYMPUS',clientResult,replicas,replicaVerifyKeys,),from_=self.olympus):
 		logger.info("FINAL UPDATED RESULT WITH NEW REPLICAS RECEIVED BY THE CLIENT FROM OLYMPUS\n")
 		self.resultFromOlympus=True
+		self.reconfigFlag = False
+		self.requestIdRecieved=True
 		self.replicas = replicas
 		self.allReplicaVerifyKeysMap = replicaVerifyKeys
 
-
+	def receive(msg=('UNDERGOING_RECONFIGURATION',),from_=self.olympus):
+		logger.info("Replicas are undergoing Configuration********* Waiting.........\n")
+		self.reconfigFlag=True
 
 
 	def computeOperations(request_id,operation):
@@ -152,12 +161,13 @@ class Client(process):
 		result=''
 		replicaId=""
 		for operation in self.reqList:
-
+			counter=0
 			logger.info("*************************************")
 			logger.info("process started for the operation : "+str(operation))
 			request_id = uuid.uuid4()
 			self.request_sequence[request_id]=operation
 			self.operationFlag=False
+			self.requestIdRecieved=False
 			computeOperations(request_id,operation)
 			self.resultFromOlympus=False
 			self.sendOperationToReplicaNode('PERFORM_OPERATION',request_id,operation,self.replicas[0])
@@ -165,20 +175,29 @@ class Client(process):
 				logger.info("Operation executed : "+str(operation))
 			elif(timeout(timeout)):
 				logger.error("Client Timed out!!"+", request_id : "+str(request_id)+", operation : "+str(operation));
+				logger.info("reconfigFlag : "+ str(self.reconfigFlag) + ", resultFromOlympus: "+str(self.resultFromOlympus))
 				if(self.reconfigFlag):
-					while (self.reconfigFlag):
-						while( not self.resultFromOlympus):
+					# print("inside the flag")
+					if await(not self.reconfigFlag):
+						# print("inside the await")
+						if await(self.resultFromOlympus):
+							logger.info("reconfigFlag : "+ str(self.reconfigFlag) + ", resultFromOlympus: "+str(self.resultFromOlympus))
+							# if(counter ==200):
+								# break
 							print(" ____________________waiting for reconfiguration to be completed____________")
+							counter = counter +1
 				else:
-					if(retransmissionCounter < maxRetransmissionCounter):
+					if(retransmissionCounter < maxRetransmissionCounter and not self.requestIdRecieved):
 						logger.info("Retransmission counter : "+str(retransmissionCounter))
-						# retransmission(request_id,operation)
+						retransmission(request_id,operation)
 						retransmissionCounter=retransmissionCounter+1
 
 	def signMessage(msg):
 		signedMsg = clientSignKey.sign(str.encode(msg))
 		logger.debug("orignal message : "+str(msg)+", signedMsg : "+str(signedMsg))
 		return signedMsg
+
+
 
 
 
