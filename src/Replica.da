@@ -164,8 +164,8 @@ class Replica(process):
 				executeCheckPointing(self.slot_number - checkpoint_interval)
 
 				# remove this from here
-				if(self.slot_number == 6 and self.currentReplica == self.replicas[1]):
-					logger.info("calling for reconfiguration")
+				# if(self.slot_number == 6 and self.currentReplica == self.replicas[1]):
+				# 	logger.info("calling for reconfiguration")
 				# callForReconfiguration(self.configuration) 
 		elif self.replica_state == "IMMUTABLE":
 			logger.info("REPLICA is in IMMUTABLE state, wont be performing any functions now")
@@ -240,7 +240,8 @@ class Replica(process):
 							send(('REVERSE_SHUTTLE', request_id, resultproof, self.operation_result_internal[request_id],client), to=self.prevReplica)
 
 						else:
-							logger.error(", request_id : "+str(request_id)+ "    ******************Validating order proof failed at replica : "+str(self.currentReplica))
+							logger.error(", request_id : "+str(request_id)+ "    ******************Validating result proof failed at replica : "+str(self.currentReplica))
+							callForReconfiguration(self.configuration)
 					else:
 						self.counters[client]["shuttleCounter"] =self.counters[client]["shuttleCounter"]+1
 						validTriggerSet=[]#getValidTriggerSet("NONHEAD")
@@ -254,7 +255,7 @@ class Replica(process):
 						send(('FORWARD_SHUTTLE',request_id_en,shuttle,operation_en,slot,client), to=self.nextReplica)
 				else:
 					# NOTE: replica turns itself immutable and sends wedge statement to client with proof od misbehaviour
-					logger.error("************************Validating result proof failed at replica : "+str(self.currentReplica)+", request_id : "+str(request_id))
+					logger.error("************************Validating order proof failed at replica : "+str(self.currentReplica)+", request_id : "+str(request_id))
 					logger.info("calling for reconfiguration from replica  :: "+str(self.currentReplica))
 					callForReconfiguration(self.configuration)
 			else:
@@ -434,6 +435,7 @@ class Replica(process):
 
 	def receive(msg=('WEDGE_REQUEST_STATEMENT',), from_=self.olympus):
 		logger.info("************Wedge Statement requested from Olympus******** Going into Immutable state")
+		time.sleep(2)
 		self.replica_state = "IMMUTABLE"
 		# check if the replica is in immutable in all other cases
 		send(('WEDGE_STATEMENT',self.currentCheckPoint,self.History,), to=self.olympus)
@@ -780,6 +782,8 @@ class Replica(process):
 		hashValues=[]
 		if(len(shuttle)==0):
 			return False
+		if(len(shuttle) != len(self.replicas)):
+			return False
 		for i in range(1,len(shuttle)):
 			try:
 				# Create a VerifyKey object from a hex serialized public key
@@ -841,6 +845,7 @@ class Replica(process):
 
 	def callForReconfiguration(configuration):
 		logger.debug("olympus::", self.olympus)
+		logger.info("reconfiguration called from Replcia")
 		self.replica_state="ACTIVE"
 		send(('RECONFIGURATION_REQUEST',configuration,), to=self.olympus)
 

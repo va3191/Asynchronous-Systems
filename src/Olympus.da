@@ -148,6 +148,7 @@ class Olympus(process):
 
 	def receive(msg=('RECONFIGURATION_REQUEST', configuration), from_=node):
 		# client.reconfigFlag=True
+		logger.info("reconfiguration request recieved from replica :" + str(node))
 		if(not self.reconfigIsCalled):
 			self.reconfigIsCalled=True
 			logger.info("RECONFIGURATION_REQUEST request recieved from  Replica : " + str(node) + ":configuration number :"+str(configuration) + ", :current configuration number :"+str(self.currentnumofConfiguration))
@@ -265,14 +266,15 @@ class Olympus(process):
 			for i in history:
 				slot,operation,rep_op,client,order  = i
 				slots.append(slot)
-			logger.info("slots present in the hostory of replica: " + str(slots))
+			logger.info("slots present in the hostory of replica: " + str(replica) + ":: " + str(slots))
 
 			rep, hist = maxHistoryReplica
 			for hist_item in hist:
 				slot_maxH,operation_maxH,rep_op_maxH,client_maxH,order_max_H = hist_item
 				# op = config.getUnsignedData(operation_maxH, client_maxH,self.clientVerifyKeys,self.clients)
-				if( slot_maxH not in slots):
+				if( slot_maxH not in slots and slot_maxH > max(slots)):
 					logger.info(" slot  "+ str(slot_maxH) + "  is not in hostory of replica " + str(replica))
+
 					tupl = (slot_maxH,operation_maxH,client_maxH)
 					temp.append(tupl)
 			catchup_messages[replica] = temp
@@ -304,8 +306,10 @@ class Olympus(process):
 				self.currentHash = self.runningStateReplicaHash[0]
 				getRunningState(self.caughtUpStatements)
 			else:
+				logger.info("Hash aren't consistent we need to find another quorum")
 				self.wedge_statement= self.wedge_statement[1:] + self.wedge_statement[:1]
 				self.slotOpSuperset={}
+				self.isQuorumSatisfied = False
 				checkForQuorum()
 
 	def getRunningState(caughtUpStatements):
@@ -319,6 +323,7 @@ class Olympus(process):
 		self.initHist = runningState
 		logger.info("Final running state recieved from replica :  " + str(node))
 		runningStateHash = config.calculateHash(str(runningState))
+
 		if(runningStateHash == self.currentHash):
 			logger.info("Creating new set of replicas with new running state")
 			(replicas,replicaSigningKeys,replicaVerifyKeys)=createReplicas(self.clients,self,self.clientVerifyKeys,self.initHist)
@@ -357,6 +362,8 @@ class Olympus(process):
 		validation = config.checkForResultConsistency(result_pr,res, self.replicaVerifyKeys, "client")
 		if(not validation):
 			if( not self.reconfigIsCalled):
+				self.reconfigIsCalled = True
+				logger.info("calli")
 				updateClientForReconfiguration()
 				sendWedgeStatements()
 				self.currentnumofConfiguration = self.currentnumofConfiguration + 1
@@ -365,6 +372,8 @@ class Olympus(process):
 				self.caughtUpStatements =[]
 				self.runningStateReplicaHash=[]
 				self.isQuorumSatisfied=False
+			else:
+				logger.info("already reconfiguration in progress")
 
 
 
