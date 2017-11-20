@@ -181,7 +181,7 @@ class Olympus(process):
 				checkpoint, Hisotry, replica = repl
 				print("replica", replica)
 				for i in Hisotry:
-					slot,operation,rep_op,client,order = i
+					slot,operation,rep_op,client,req_id,order = i
 					op = config.getUnsignedData(operation, client, self.clientVerifyKeys,self.clients)
 					print(slot, op, " s o pairs")
 		if ( not self.isQuorumSatisfied):
@@ -209,7 +209,7 @@ class Olympus(process):
 					for j in range(len(Hisotry)):
 						# logger.info("j: "+str(j)+", len(Hisotry): "+str(len(Hisotry)))
 						logger.info("relica " + str(replica) +"checking in history : length " + str(len(Hisotry))+"j :" + str(j))
-						slot,operation,rep_op,client,order = Hisotry[j]
+						slot,operation,rep_op,client,req_id,order = Hisotry[j]
 						op = config.getUnsignedData(operation, client,self.clientVerifyKeys,self.clients)
 						logger.info("contents for " + str(replica)+ "  wedge statement. slot:  " + str(slot) + ",  operation: "+ str(op)+ ",  client: " + str(client)+", j: "+str(j)+"\n")
 						print("contents of self.slotsuperset::", self.slotOpSuperset)
@@ -264,18 +264,18 @@ class Olympus(process):
 			# if(replica == self.replicas[1]):
 			# 	history =  history[0:2]
 			for i in history:
-				slot,operation,rep_op,client,order  = i
+				slot,operation,rep_op,client,req_id,order  = i
 				slots.append(slot)
 			logger.info("slots present in the hostory of replica: " + str(replica) + ":: " + str(slots))
 
 			rep, hist = maxHistoryReplica
 			for hist_item in hist:
-				slot_maxH,operation_maxH,rep_op_maxH,client_maxH,order_max_H = hist_item
+				slot_maxH,operation_maxH,rep_op_maxH,client_maxH,req_id_maxH,order_max_H = hist_item
 				# op = config.getUnsignedData(operation_maxH, client_maxH,self.clientVerifyKeys,self.clients)
 				if( slot_maxH not in slots and slot_maxH > max(slots)):
 					logger.info(" slot  "+ str(slot_maxH) + "  is not in hostory of replica " + str(replica))
 
-					tupl = (slot_maxH,operation_maxH,client_maxH)
+					tupl = (slot_maxH,operation_maxH,client_maxH,req_id_maxH)
 					temp.append(tupl)
 			catchup_messages[replica] = temp
 		# i have catchup messages for allt he replica sin the quorum
@@ -348,7 +348,7 @@ class Olympus(process):
 		print(len(self.clientLastResult))
 		# time.sleep(6)
 		for i in self.clients:
-			logger.info("client: " + str(i))
+			logger.info("client: " + str(i) + "  updated")
 			
 		for client in self.clients:
 			send(('RESULT_FROM_OLYMPUS',self.clientLastResult[client],replicas,replicaVerifyKeys,), to=client)

@@ -40,6 +40,7 @@ class Client(process):
 		self.reconfigFlag=False
 		self.dictDataFromReplica={}
 		self.resultFromOlympus=False
+		self.resultO=''
 		self.requestIdRecieved=False
 		logger.info("Client setup finished. Operations for client : "+str(currentClient)+" => "+str(reqList))
 		
@@ -142,6 +143,7 @@ class Client(process):
 		self.requestIdRecieved=True
 		self.replicas = replicas
 		self.allReplicaVerifyKeysMap = replicaVerifyKeys
+		self.resultO = clientResult
 
 	def receive(msg=('UNDERGOING_RECONFIGURATION',),from_=self.olympus):
 		logger.info("Replicas are undergoing Configuration********* Waiting.........\n")
@@ -160,7 +162,10 @@ class Client(process):
 		maxRetransmissionCounter = config.readProperty('max_retransmission_counter')
 		result=''
 		replicaId=""
-		for operation in self.reqList:
+		index=0
+		while  index < len(self.reqList):
+			logger.info("running for index " + str(index))
+			operation = self.reqList[index]
 			counter=0
 			logger.info("*************************************")
 			logger.info("process started for the operation : "+str(operation))
@@ -186,11 +191,24 @@ class Client(process):
 								# break
 							print(" ____________________waiting for reconfiguration to be completed____________")
 							counter = counter +1
+				elif self.resultFromOlympus==True :
+					logger.info("resultFromOlympus flag value   " + str(self.resultFromOlympus) )
+					# calling 
+					self.resultFromOlympus=False
+					logger.info("running for index before " + str(index))
+					res,oper,hashed,requestid =self.resultO
+					print("requestId:  "+ str(request_id) + " requestId: "+ str(requestid))
+					if(str(request_id) == str(requestid)):
+						print("the request IDS are same")
+						index = index - 1
+					logger.info("running for index after " + str(index))
 				else:
 					if(retransmissionCounter < maxRetransmissionCounter and not self.requestIdRecieved):
 						logger.info("Retransmission counter : "+str(retransmissionCounter))
 						retransmission(request_id,operation)
 						retransmissionCounter=retransmissionCounter+1
+			index = index + 1
+			logger.info("running for index in the end " + str(index))
 
 	def signMessage(msg):
 		signedMsg = clientSignKey.sign(str.encode(msg))
