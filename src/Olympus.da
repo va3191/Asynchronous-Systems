@@ -11,9 +11,6 @@ import getopt
 import random
 
 class Olympus(process):
-	# replicas = []
-	# client=[]
-
 	def setup(configFilePath):
 		logger.info("Olympus setup Called. Self: "+str(self))
 		self.configFilePath=configFilePath
@@ -24,7 +21,7 @@ class Olympus(process):
 		self.slotOpSuperset= {}
 		self.quorumReplica=[]
 		self.currentnumofConfiguration = 0
-		self.configuration = 1
+		self.configuration = 0
 		self.clientVerifyKeys=[]
 		self.currentHash =''
 		self.caughtUpStatements =[]
@@ -148,7 +145,7 @@ class Olympus(process):
 
 	def receive(msg=('RECONFIGURATION_REQUEST', configuration), from_=node):
 		# client.reconfigFlag=True
-		logger.info("reconfiguration request recieved from replica :" + str(node))
+		logger.info("reconfiguration request recieved from replica :" + str(node)+", self.reconfigIsCalled: "+str(self.reconfigIsCalled))
 		if(not self.reconfigIsCalled):
 			self.reconfigIsCalled=True
 			logger.info("RECONFIGURATION_REQUEST request recieved from  Replica : " + str(node) + ":configuration number :"+str(configuration) + ", :current configuration number :"+str(self.currentnumofConfiguration))
@@ -301,6 +298,7 @@ class Olympus(process):
 		callForCatchupToReplicas(catchup_messages)
 
 	def callForCatchupToReplicas( catchup_messages):
+		self.caughtUpStatements=[]
 		for rep in catchup_messages.keys():
 			logger.info("sending CATCH_UP up message to replica" + str(rep) + "length od content is :" + str(len(catchup_messages[rep])))
 			# send(('WEDGE_REQUEST_STATEMENT',), to=rep)
@@ -333,28 +331,47 @@ class Olympus(process):
 	def getRunningState(caughtUpStatements):
 		logger.info("requesting one of the replicas in quorum at random to send their hash of running state")
 		num = len(caughtUpStatements)
+		# print("1. getRunningState =>"+str(num))
 		rand = random.randint(0,num)
+		# print("2. getRunningState =>"+str(rand))
 		logger.info("requesting replica"+str(self.replicas[rand])+"  to send  hash of it's running state")
 		send(('GET_RUNNING_STATE',), to=self.replicas[rand])
-
-	def receive(msg=('RUNNING_STATE', runningState), from_=node):
-		self.initHist = runningState
-		logger.info("Final running state recieved from replica :  " + str(node))
-		runningStateHash = config.calculateHash(str(runningState))
-
-		if(runningStateHash == self.currentHash):
-			logger.info("Creating new set of replicas with new running state")
-			(replicas,replicaSigningKeys,replicaVerifyKeys)=createReplicas(self.clients,self,self.clientVerifyKeys,self.initHist)
-			# (replicas,replicaSigningKeys,replicaVerifyKeys)=createReplicas(clients,self,clientVerifyKeys)
-			self.replicas = replicas
-			self.replicaVerifyKeys = replicaVerifyKeys
-			updateClient(replicas,replicaVerifyKeys)
-			self.reconfigIsCalled = False
-
-			# killOldReplicas()
-			#call new create replcias
-		else:
+		running_state_timeout=2
+		if (await(some(received(('RUNNING_STATE', runningState,), from_=node)))):
+			runningStateHash = config.calculateHash(str(runningState))
+			if(runningStateHash == self.currentHash):
+				self.initHist = runningState
+				logger.info("Creating new set of replicas with new running state")
+				(replicas,replicaSigningKeys,replicaVerifyKeys)=createReplicas(self.clients,self,self.clientVerifyKeys,self.initHist)
+				# (replicas,replicaSigningKeys,replicaVerifyKeys)=createReplicas(clients,self,clientVerifyKeys)
+				self.replicas = replicas
+				self.replicaVerifyKeys = replicaVerifyKeys
+				updateClient(replicas,replicaVerifyKeys)
+				self.reconfigIsCalled = False				
+			else:
+				logger.error("running state hash do not match with current hash at olympus, calling running_state again")
+				getRunningState(self.caughtUpStatements)
+		elif(timeout(running_state_timeout)):
+			logger.error("RUNNING_STATE timeout, calling again, calling running_state again")
 			getRunningState(self.caughtUpStatements)
+
+	# def receive(msg=('RUNNING_STATE', runningState), from_=node):
+	# 	self.initHist = runningState
+	# 	logger.info("Final running state recieved from replica :  " + str(node))
+	# 	runningStateHash = config.calculateHash(str(runningState))
+
+	# 	if(runningStateHash == self.currentHash):
+	# 		logger.info("Creating new set of replicas with new running state")
+	# 		(replicas,replicaSigningKeys,replicaVerifyKeys)=createReplicas(self.clients,self,self.clientVerifyKeys,self.initHist)
+	# 		# (replicas,replicaSigningKeys,replicaVerifyKeys)=createReplicas(clients,self,clientVerifyKeys)
+	# 		self.replicas = replicas
+	# 		self.replicaVerifyKeys = replicaVerifyKeys
+	# 		updateClient(replicas,replicaVerifyKeys)
+	# 		self.reconfigIsCalled = False
+	# 		# killOldReplicas()
+	# 		#call new create replcias
+	# 	else:
+	# 		getRunningState(self.caughtUpStatements)
 
 	def killOldReplicas():
 		logger.info("killing all the old replicas")

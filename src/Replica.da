@@ -20,7 +20,6 @@ class Replica(process):
 		],
 		level=logger.INFO)
 
-
 		print("*************************************************************************")
 		logger.info("Replica SETUP done. Clients : "+str(clients)+", Olympus : "+str(olympus)+", Replica : "+str(currentReplica) +", ReplicaState : "+str(replica_state))
 		print("*************************************************************************")
@@ -59,18 +58,22 @@ class Replica(process):
 		#counters for failure case
 		self.configuration = configuration
 		self.counters={}
+		self.drop_failure_flag=False
+		#Initializing counter for mocking failures
+		self.counters["wedge_requestCounter"]=0
+		self.counters["new_configurationCounter"]=0
+		self.counters["checkpointCounter"]=0
+		self.counters["completed_checkpointCounter"]=0
+		self.counters["get_running_stateCounter"]=0
+		self.counters["catch_upCounter"]=0
+
+
 		for client in clients:
 			self.counters[client]={}
 			self.counters[client]["directRequestCounter"]=0
 			self.counters[client]["forwardRequestCounter"]=0
 			self.counters[client]["shuttleCounter"]=0
 			self.counters[client]["resultShuttleCounter"]=0
-			# self.counters[olympus]["wedge_request"]=0
-			# self.counters[olympus]["new_configuration"]=0
-			# self.counters["completed_checkpoint"]=0
-			# self.counters["checkpoint"]=0
-			# self.counters[olympus]["get_running_state"]=0
-			# self.counters[olympus]["catch_up"]=0
 		self.failureDS = config.readFailures()
 		logger.debug("REPLICA SETUP DONE!!")
 		
@@ -91,17 +94,15 @@ class Replica(process):
 			validTriggerSet.append("client_request")
 			validTriggerSet.append("forwarded_request")
 			validTriggerSet.append("shuttle")
-
 		if case == "NONHEAD":
 			# validTriggerSet.append("client_request")
 			validTriggerSet.append("shuttle")
 			validTriggerSet.append("result_shuttle")
-
 		if case == "TAIL":
 			# validTriggerSet.append("client_request")
 			validTriggerSet.append("shuttle")
-
 		return validTriggerSet
+
 	def getUnsignedData(request_id_en,operation_en,client):
 		logger.debug("getUnsignedData for request_id_en : "+str(request_id_en))
 		request_id=''
@@ -115,9 +116,6 @@ class Replica(process):
 			operation = tempId1.decode("utf-8")
 		except  nacl.exceptions.BadSignatureError:
 			logger.error("request_id_en: "+request_id_en+", client signed operation and requestID not valid | proof of misbehaviour")
-			# callForReconfiguration(self.configuration)
-
-		
 		logger.debug("request_id : "+str(request_id)+", unsigned successfully")
 		return (request_id,operation)
 
@@ -128,7 +126,9 @@ class Replica(process):
 			request_id,operation = getUnsignedData(request_id_en,operation_en,client)	
 			self.slot_number+=1
 			logger.info("PERFORM_OPERATION at HEAD Replica request_id : "+str(request_id)+", operation : "+str(operation)+", client : "+str(client) +",  slot number: "+str(self.slot_number))
-			
+			validTriggerSetPhase3=[]
+			validTriggerSetPhase3.append("new_configuration")
+			runPossibleFailure(validTriggerSetPhase3,None)
 			self.counters[client]["directRequestCounter"] =self.counters[client]["directRequestCounter"]+1
 			self.counters[client]["shuttleCounter"] =self.counters[client]["shuttleCounter"]+1
 			shuttle=None
@@ -170,15 +170,19 @@ class Replica(process):
 				# 	logger.info("calling for reconfiguration")
 				# callForReconfiguration(self.configuration) 
 		elif self.replica_state == "IMMUTABLE":
-			logger.info("REPLICA is in IMMUTABLE state, wont be performing any functions now")
+			logger.info("REPLICA is in IMMUTABLE state, wont be performing any operations now")
 
 	 #CONTROL FLOW: From (one o another)
 	def receive(msg=('FORWARD_SHUTTLE',request_id_en,shuttle,operation_en,slot,client), from_=self.prevReplica):
+		self.slot_number=slot
 		if(self.replica_state == 'ACTIVE'):
 			logger.info("************************FORWARD SHUTTLE***************")
 			request_id,operation = getUnsignedData(request_id_en,operation_en,client)
-			logger.info("PERFORM_OPERATION called at NONHEAD Replica request_id : "+str(request_id)+", operation : "+str(operation)+", client : "+str(client)+", from Replica : "+str(self.prevReplica))
+			logger.info("PERFORM_OPERATION called at NONHEAD Replica request_id : "+str(request_id)+", slot_number: "+str(slot)+", operation : "+str(operation)+", client : "+str(client)+", from Replica : "+str(self.prevReplica))
 			logger.debug("SHUTTLE : "+str(shuttle)+", SLOT : "+str(slot));
+			validTriggerSetPhase3=[]
+			validTriggerSetPhase3.append("new_configuration")
+			runPossibleFailure(validTriggerSetPhase3,None)
 			flow = False
 			if(slot>1):
 				flow = checkSlotOperation(slot)
@@ -200,7 +204,6 @@ class Replica(process):
 					updateClientsLastResult(rpr,client,self.operation_result_internal[request_id], slot, request_id)
 					#validation successful now sending the shuttle forward
 					if(self.nextReplica == None):
-						
 						orderproof,resultproof = shuttle
 						# logger.info("justfortest"+str(len(resultproof)))
 						self.cacheResult(request_id, resultproof)
@@ -267,7 +270,8 @@ class Replica(process):
 					logger.info("calling for reconfiguration from replica  :: "+str(self.currentReplica))
 					callForReconfiguration(self.configuration)
 			else:
-				logger.error("There is inconsistency in the slots, all previous slot havent been used for execution********************")
+				logger.error("There is inconsistency in the slots, calling reconfiguration********************")
+				callForReconfiguration(self.configuration)
 
 		elif self.replica_state=="IMMUTABLE":
 			logger.info("REPLICA is in IMMUTABLE state, wont be performing any functions now")
@@ -276,8 +280,14 @@ class Replica(process):
 	def receive(msg=('FORWARD_SHUTTLE_CHECKPOINTING',shuttle,checkpoint), from_=self.prevReplica):
 		if(self.replica_state == 'ACTIVE'):
 			# request_id,operation = getUnsignedData(request_id_en,operation_en,client)
-			logger.info("FORWARD_SHUTTLE_CHECKPOINTING called at NONHEAD Replica  "+", checkpoint : "+str(checkpoint)+", from Replica : "+str(self.prevReplica))
+			logger.info("FORWARD_SHUTTLE_CHECKPOINTING called at NONHEAD Replica  "+", checkpoint : "+str(checkpoint)+", self.slot_number: "+str(self.slot_number)+", from Replica : "+str(self.prevReplica))
 			logger.debug("SHUTTLE : "+str(shuttle)+", checkpoint : "+str(checkpoint));
+			self.counters["checkpointCounter"]+=1
+			validTriggerSetPhase3=[]
+			validTriggerSetPhase3.append("checkpoint")
+			print("yay before checkpoint trigger")
+			runPossibleFailure(validTriggerSetPhase3,None)
+			print("yay after checkpoint trigger")
 			checkpointproof = getCheckPointProof()
 			shuttle = self.updateCheckpointShuttle(shuttle,checkpointproof,checkpoint)
 			logger.debug("checkpoint shuttle after update: "+str(shuttle))
@@ -291,14 +301,20 @@ class Replica(process):
 				#CHECKING FOR CheckpointConsistency :  SHUTTLE  : 
 				########################################################################################################
 				logger.info("SHUTTLE : "+str(shuttle)+", checkpoint : "+str(checkpoint)+'CHECKPOINT SHUTTLE reached at Tail')
-
+				self.counters["completed_checkpointCounter"]+=1
 				validation = checkForCheckProofConsistency(shuttle, self.allReplicaVerifyKeysMap)
 				if(validation):
+					logger.info("CHECKPOINT_SHUTTLE_PROOF successfully veried at Tail")
 					truncateHistory(checkpoint)
 					logger.info('CHECKPOINT_REVERSE_SHUTTLE starting. Forwarding to prevReplica : '+str(self.prevReplica))
-					send(('CHECKPOINT_REVERSE_SHUTTLE', shuttle,checkpoint), to=self.prevReplica)
+					validTriggerSetPhase3=[]
+					validTriggerSetPhase3.append("completed_checkpoint")
+					print("size of checkPt shuttle before failure => ",len(shuttle))
+					runPossibleFailure(validTriggerSetPhase3,shuttle)
+					print("size of checkPt shuttle after failure => ",len(shuttle))
+					send(('CHECKPOINT_REVERSE_SHUTTLE', shuttle,checkpoint), to=self.prevReplica)			
 				else:
-					logger.error(", checkpoint : "+str(checkpoint)+ "    ******************Validating checkpoint proof failed at replica : "+str(self.currentReplica))
+					logger.error("CHECKPOINT_SHUTTLE_PROOF Verification failed !!!!")
 			else:
 				send(('FORWARD_SHUTTLE_CHECKPOINTING',shuttle,checkpoint,), to=self.nextReplica)
 
@@ -308,9 +324,13 @@ class Replica(process):
 
 	######################################################
 	def receive(msg=('CHECKPOINT_REVERSE_SHUTTLE',shuttle,checkpoint,), from_=self.nextReplica):
-
 		if(self.replica_state == 'ACTIVE'):
 			logger.info("CHECKPOINT_REVERSE_SHUTTLE reached at replica" +str(self.currentReplica)+",  shuttle : "+str(shuttle)+", checkpoint : "+str(checkpoint)+", from nextReplica : "+str(self.nextReplica))
+			validTriggerSetPhase3=[]
+			print("size of checkPt shuttle before failure => ",len(shuttle))
+			validTriggerSetPhase3.append("completed_checkpoint")
+			print("size of checkPt shuttle after failure => ",len(shuttle))
+			runPossibleFailure(validTriggerSetPhase3,shuttle)
 
 			validation = checkForCheckProofConsistency(shuttle, self.allReplicaVerifyKeysMap)
 			logger.info(" Result from checkpoint  validation is " + str(validation))
@@ -342,7 +362,7 @@ class Replica(process):
 				
 				self.cacheResult(request_id, result_proof)
 				if(self.prevReplica == None):
-					logger.info("SHUTTLE reached at HEAD")
+					logger.info("SHUTTLE reached at HEAD for slot : "+str(self.slot_number))
 				else:
 					validTriggerSet=[]
 					validTriggerSet.append("result_shuttle")
@@ -436,16 +456,18 @@ class Replica(process):
 						send(('RETRANSMISSION', self.result_cache[requestId] ,self.currentReplica), to=client)
 					elif(timeout(timeout)):
 						logger.info("timer expired at non head replica : "+str(self.currentReplica))
-						#TODO RECONFIGURATION
+						callForReconfiguration(self.configuration)
+
 		elif self.replica_state=="IMMUTABLE":
 			logger.info("REPLICA is in IMMUTABLE state, wont be performing any functions now")	
 
-
 	def receive(msg=('WEDGE_REQUEST_STATEMENT',), from_=self.olympus):
+		self.counters["wedge_requestCounter"]+=1
+		logger.info('WEDGE_REQUEST_STATEMENT self.counters["wedge_requestCounter"]: '+str(self.counters["wedge_requestCounter"])+", currentConfiguration: "+str(self.configuration))
+		validTriggerSet=[]
+		validTriggerSet.append("wedge_request")		
+		runPossibleFailure(validTriggerSet,None)
 		logger.info("************Wedge Statement requested from Olympus******** Going into Immutable state")
-		if(self.currentReplica == self.replicas[2]):
-			print("waiting for sleep")
-			# time.sleep(5)
 		self.replica_state = "IMMUTABLE"
 		# check if the replica is in immutable in all other cases
 		send(('WEDGE_STATEMENT',self.currentCheckPoint,self.History,), to=self.olympus)
@@ -454,6 +476,10 @@ class Replica(process):
 	def receive(msg=('CATCH_UP',orders,), from_=self.olympus):
 		logger.info("************ CATCH_UP requested from Olympus******** Going to execute the orders ")
 		# check if the replica is in immutable in all other cases
+		self.counters["catch_upCounter"]+=1
+		validTriggerSet=[]
+		validTriggerSet.append("catch_up")		
+		runPossibleFailure(validTriggerSet,None)
 		print ("length of incoming order", orders, len(orders))
 		if len(orders)>0:
 			for i in  range(len(orders)):
@@ -474,9 +500,18 @@ class Replica(process):
 		logger.info("************ CAUGHT_UP sent to Olympus******** ")
 
 	def receive(msg=('GET_RUNNING_STATE',), from_=self.olympus):
-		logger.info("************ FINAL GET_RUNNING_STATE requested from Olympus********")
+		logger.info("************FINAL GET_RUNNING_STATE requested from Olympus********"+str(self.drop_failure_flag))
 		# dict_hash = config.calculateHash(str(self.dictionary_data))
-		send(('RUNNING_STATE',self.dictionary_data,), to=self.olympus)
+		self.counters["get_running_stateCounter"] += 1
+		validTriggerSetPhase3=[]
+		validTriggerSetPhase3.append("get_running_state")
+		runPossibleFailure(validTriggerSetPhase3,None)
+		if(self.drop_failure_flag==True):
+			logger.info("Droping RUNNING_STATE message from sending to Olympus.")
+			self.drop_failure_flag=False
+		else:
+			send(('RUNNING_STATE',self.dictionary_data,), to=self.olympus)
+			
 		logger.info("************FINAL_RUNNING_STATE sent to Olympus********")
 		
 	def receive(msg=('KILLING_REPLICAS',), from_=self.olympus):
@@ -485,7 +520,18 @@ class Replica(process):
 		os._exit(-1)
 		logger.info("exited")
 
+	def runPossibleFailure(validTriggerSet,chkptShuttle):
+		logger.info("checkForPossibleFailure_PHASE_3 runPossibleFailure => "+str(validTriggerSet))
+		triggerName,triggerFailure_m = checkForPossibleFailure_PHASE_3(validTriggerSet)
+		logger.info("checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => "+str(triggerName))
+		if(triggerName!=None):
+			if(triggerName == "drop_checkpt_stmts"):
+				t=config.readProperty("t")+1
+			callFailureFunctionBasedOnTrigger_PHASE_3(triggerName,triggerFailure_m,chkptShuttle)
+
 	def run():
+		logger.info("Starting replica in configuration number : "+str(self.configuration))
+		self.counters["new_configurationCounter"]=self.configuration
 		await(received('',))
 
 
@@ -674,6 +720,29 @@ class Replica(process):
 	# 		logger.debug("before returning")
 	# 	return None
 
+	def callFailureFunctionBasedOnTrigger_PHASE_3(triggerName,trigger_n,chkptShuttle):
+		logger.info("callFailureFunctionBasedOnTrigger triggerName: "+str(triggerName)+", trigger_n: "+str(trigger_n))
+		
+		if(triggerName == "crash"):
+			crash()
+		elif(triggerName == "truncate_history"):
+			truncate_history(trigger_n)
+		elif(triggerName == "sleep"):
+			sleep(trigger_n)
+		elif(triggerName == "increment_slot"):
+			increment_slot()
+		elif(triggerName == "extra_op"):
+			return extra_op()
+		elif(triggerName == "drop"):
+			self.drop_failure_flag=True
+		# if(triggerName == "invalid_order_sig"):
+		# 	return drop_result_stmt(shuttle)
+		# if(triggerName == "invalid_result_sig"):
+		# 	return drop_result_stmt(shuttle)
+		if(triggerName == "drop_checkpt_stmts"):
+			return drop_checkpt_stmts(chkptShuttle)
+		
+
 	def checkForPossibleFailure(client,validTriggerSet):
 		logger.info("CheckForPossibleFailure : "+str(self.counters)+", self.failureDS : "+str(self.failureDS)+", client : "+str(client))
 		if(self.failureDS == None or len(self.failureDS)==0) :
@@ -721,6 +790,57 @@ class Replica(process):
 		print("CheckForPossibleFailure returning 4")
 		return None
 
+	def checkForPossibleFailure_PHASE_3(validTriggerSet):
+		'''
+		self.counters["wedge_requestCounter"]=0
+		self.counters["new_configurationCounter"]=0
+		self.counters["checkpointCounter"]=0
+		self.counters["completed_checkpointCounter"]=0
+		self.counters["get_running_stateCounter"]=0
+		self.counters["catch_upCounter"]
+
+		'''
+		logger.info("checkForPossibleFailure_PHASE_3 called with configuration number: "+str(self.configuration)+",validTriggerSet : "+str(validTriggerSet)+", failureDS: "+str(self.failureDS)+", counters: "+str(self.counters))
+		if(self.failureDS == None or len(self.failureDS)==0) :
+			logger.info("returning 1")
+			return None,None
+		replicaIndex = self.replicas.index(self.currentReplica)
+		if(self.configuration not in self.failureDS):
+			logger.info("returning 2")
+			return None,None
+		failureDsReplicaDict = self.failureDS[self.configuration]["replica"]
+		logger.info("failureDsReplicaDict the dictionary: ",failureDsReplicaDict)
+
+		if((failureDsReplicaDict is None) or (replicaIndex not in failureDsReplicaDict)):
+			logger.info("returning 3, =>"+str(self.failureDS[self.configuration])+", =>"+str(self.failureDS[self.configuration]["replica"]))
+			return None,None
+		failureLists = self.failureDS[self.configuration]["replica"][replicaIndex]
+		for obj in failureLists:
+			triggerName = obj["triggerName"]
+			messageNumber=obj["messageNumber"]
+			triggerFailure=obj["triggerFailure"]
+			triggerFailure_m=None
+			if("triggerFailure_m" in obj):
+				triggerFailure_m=obj["triggerFailure_m"]
+			if(triggerName not in validTriggerSet):
+				logger.debug("trigger name is not in the set:" +str(validTriggerSet))
+				continue
+			logger.debug("reached here!")
+			if(self.counters["wedge_requestCounter"] == messageNumber and triggerName=="wedge_request"):
+				return triggerFailure,triggerFailure_m
+			elif(triggerName=="new_configuration"): #because execution will only reach here if there is some failure for this configuration and one of it is new_configuration
+				return triggerFailure,triggerFailure_m
+			elif(self.counters["checkpointCounter"] == messageNumber and triggerName=="checkpoint"):
+				return triggerFailure,triggerFailure_m
+			elif(self.counters["completed_checkpointCounter"] == messageNumber and triggerName=="completed_checkpoint"):
+				return triggerFailure,triggerFailure_m
+			elif(self.counters["get_running_stateCounter"] == messageNumber and triggerName=="get_running_state"):
+				return triggerFailure,triggerFailure_m
+			elif(self.counters["catch_upCounter"] == messageNumber and triggerName=="catch_up"):
+				return triggerFailure,triggerFailure_m
+			logger.debug("before returning")
+		logger.info("returning 4")
+		return None,None
 
 	def change_operation(shuttle, requestId, slot, operation ):
 		#just before tsending the shuttle
@@ -768,25 +888,30 @@ class Replica(process):
 		# for i in Res
 
 	def drop_result_stmt(shuttle):
+		logger.info("Failure found. drop_result_stmt")
 		order, result = shuttle
 		result = result[1:]
 		return (order,result)
 
 	def crash():
 		logger.info("Inside the crash failure, killing the replica" + str(self.currentReplica))
-		os_exit(-1)
+		logger.shutdown() 
+		os._exit(-1)
 
 	def truncate_history(n):
+		logger.info("Failure found. truncate_history. n: "+str(n))
 		self.History = self.History[:len(self.History)- n]
 
-	def sleep(time): 
-		time.sleep(time)
+	def sleep(tim):
+		logger.info("Failure found. Sleep. time: "+str(tim))
+		time.sleep(int(tim))
 
 	def drop():
-		#you will have to check where all this can be usd and put a flag there
-		pass 
+		pass
+
 	def extra_op():
-		executeOperation("not required here", put('a','a'), self.dictionary_data)
+		logger.info("Failure found. extra_op")
+		config.executeOperation("extra_operation", "put('extra_operation_key','extra_operation_value')", self.dictionary_data)
 
 	def invalid_result_sig(shuttle, requestId, operation):
 		logger.info("invalid_result_sig function called ")
@@ -830,16 +955,23 @@ class Replica(process):
 
 		return shuttle
 
-	def drop_checkpt_stmts(chkStmt, t):
-		chkStmt = chkStmt[t+2:]
+	def drop_checkpt_stmts(chkptShuttle):
+		t = config.readProperty("t")
+		chkptShuttle = chkptShuttle[t+2:]
 
-	def increment_slot(s):
-		s = s+1
+	def increment_slot():
+		self.slot_number+=1
 
 	def executeCheckPointing(checkpoint):
-		logger.debug("inside executeCheckPointing function for creating the current checkpoint")
+		logger.info("inside executeCheckPointing function for creating the current checkpoint")
+		self.counters["checkpointCounter"]+=1
+		validTriggerSetPhase3=[]
+		validTriggerSetPhase3.append("checkpoint")
+		runPossibleFailure(validTriggerSetPhase3,None)
+		
 		checkpointproof = getCheckPointProof()
 		shuttle=[]
+
 		# tupl = self.getResult_Order_Proof(request_id,operation,self.slot_number)
 		shuttle = self.updateCheckpointShuttle(shuttle,checkpointproof,checkpoint)
 		logger.debug("checkpoint shuttle after update: "+str(shuttle))
@@ -873,14 +1005,16 @@ class Replica(process):
 		logger.info("Validating CheckPoint Proof function called  with shuttle : "+str(shuttle))
 		hashValues=[]
 		if(len(shuttle)==0):
+			print("1. returning from checkForCheckProofConsistency")
 			return False
 		print("okay till here")
 		if(len(shuttle) != len(self.replicas)):
-			print("its not okay  till here")
+			print("2. returning from checkForCheckProofConsistency")
 			return False
-		print("okay till here")
+
 		for i in range(0,len(shuttle)):
 			try:
+				print("value of i", i)
 				# Create a VerifyKey object from a hex serialized public key
 				verify_key = nacl.signing.VerifyKey(allReplicaVerifyKeysMap[i], encoder=nacl.encoding.HexEncoder)
 				# logger.debug("result number",i+1, "from result proof", resultproof[length-i-1])
@@ -894,15 +1028,18 @@ class Replica(process):
 			except nacl.exceptions.BadSignatureError:
 				print("there is an exception")
 				# logger.error("key mismatch failed for ", resultproof[length-i-1])
+				print("3. returning from checkForCheckProofConsistency")
 				return False
 			hashValues.append(actualResult)
 		flag = True
 		for i in range(len(hashValues)):
 			if(hashValues[0] != hashValues[i]):
 				flag = False
+				print("4. returning from checkForCheckProofConsistency")
 				return False
 			else:
 				continue
+		print("5. returning from checkForCheckProofConsistency")
 		return flag
 
 	def truncateHistory(checkpoint):

@@ -18,7 +18,10 @@ class Client(process):
 	request_sequence
 	replicaRetransmissionCounter;
 	def setup(configFilePath,reqList,olympus,replicas, currentClient,allReplicaVerifyKeysMap, clientSignKey):
+		print("1. Client configFilePath => ",configFilePath)
 		config.config_main(configFilePath)
+		print("setup_mainsetup_mainsetup_mainsetup_main => ",config.readProperty("t"))
+		print("2. Client configFilePath => ",configFilePath)
 		logger.basicConfig(
 		format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
 		handlers=[

@@ -11,20 +11,22 @@ import random
 config={}
 def readConfigFile(configFile):
 	with open(configFile,'r') as f:
-	    for line in f:
-	        if line[0] != '#':
-	          (key,sep,val) = line.partition('=')
-	          # if the line does not contain '=', it is invalid and hence ignored
-	          if len(sep) != 0:
-	              val = val.strip()
-	              if str.isdecimal(val):
-	              	config[key.strip()] = int(val);
-	              else: 
-	              	config[key.strip()] = val;
-	# print(config)
+		for line in f:
+			if line[0] != '#':
+				(key,sep,val) = line.partition('=')
+				# if the line does not contain '=', it is invalid and hence ignored
+				if len(sep) != 0:
+					val = val.strip()
+				if str.isdecimal(val):
+					config[key.strip()] = int(val);
+				else: 
+					config[key.strip()] = val;
+					# print(config)
 
+config={}
 
 def config_main(filePath):
+	print("HERE config_mainconfig_mainconfig_mainconfig_mainconfig_mainconfig_main")
 	readConfigFile(filePath);
 	logger.basicConfig(
 		format="%(asctime)s [%(threadName)-12.12s %(lineno)d] [%(levelname)-5.5s]  %(message)s",
@@ -137,7 +139,12 @@ def readFailures():
 				replicaOperation["client"]=clientNumber
 				replicaOperation["messageNumber"]=messageNumber
 				replicaOperation["triggerName"]=triggerName
-				replicaOperation["triggerFailure"]=failure.split("()")[0]
+				if("()" in failure):
+					replicaOperation["triggerFailure"]=failure.split("()")[0]
+				else:
+					replicaOperation["triggerFailure"]=failure.split("(")[0]
+					replicaOperation["triggerFailure_m"]=failure.split("(")[1].split(")")[0]
+				# print('failure.split("()")[0]: ',failure.split("()")[0],"===> ", failure)
 				failureDS[configurationNumber]["replica"][replicaNumber].append(replicaOperation)
 
 	logger.info("failures defined in config file failureDS :"+str(failureDS));#+", replicaNumber: "+str(replicaNumber)+", triggerName : "+triggerName+", clientNumber : "+str(clientNumber)+"=> messageNumber : "+str(messageNumber)+", failure : "+failure)
@@ -146,8 +153,6 @@ def readFailures():
 	# 	log.info("possible failures in config file failureDS :"+", replicaNumber: "+str(replicaNumber)+", triggerName : "+triggerName+", clientNumber : "+str(clientNumber)+"=> messageNumber : "+str(messageNumber)+", failure : "+failure)
 	#,", failureValueList : ",failureValueList)
 	return failureDS
-
-
 
 def calculateHash(message):
 	HASHER = nacl.hash.sha256
