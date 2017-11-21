@@ -167,7 +167,7 @@ class Client(process):
 			logger.info("running for index " + str(index))
 			operation = self.reqList[index]
 			counter=0
-			logger.info("*************************************")
+			logger.info("****************************************************************")
 			logger.info("process started for the operation : "+str(operation))
 			request_id = uuid.uuid4()
 			self.request_sequence[request_id]=operation
@@ -191,22 +191,23 @@ class Client(process):
 								# break
 							print(" ____________________waiting for reconfiguration to be completed____________")
 							counter = counter +1
-				elif self.resultFromOlympus==True :
-					logger.info("resultFromOlympus flag value   " + str(self.resultFromOlympus) )
-					# calling 
-					self.resultFromOlympus=False
-					logger.info("running for index before " + str(index))
-					res,oper,hashed,requestid =self.resultO
-					print("requestId:  "+ str(request_id) + " requestId: "+ str(requestid))
-					if(str(request_id) == str(requestid)):
-						print("the request IDS are same")
-						index = index - 1
-					logger.info("running for index after " + str(index))
 				else:
 					if(retransmissionCounter < maxRetransmissionCounter and not self.requestIdRecieved):
 						logger.info("Retransmission counter : "+str(retransmissionCounter))
 						retransmission(request_id,operation)
 						retransmissionCounter=retransmissionCounter+1
+			if self.resultFromOlympus==True :
+					logger.info("resultFromOlympus flag value   " + str(self.resultFromOlympus) )
+					# calling 
+					self.resultFromOlympus=False
+					logger.info("running for index before " + str(index))
+					print(self.resultO)
+					res,oper,hashed,requestid =self.resultO
+					print("request_id:  "+ str(request_id) + " requestId: "+ str(requestid))
+					if(str(request_id) == str(requestid) or str(requestid)==str(None) ):
+						print("the request IDS are same")
+						index = index - 1
+					logger.info("running for index after " + str(index))
 			index = index + 1
 			logger.info("running for index in the end " + str(index))
 

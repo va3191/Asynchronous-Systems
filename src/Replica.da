@@ -140,7 +140,7 @@ class Replica(process):
 			tupl = self.getResult_Order_Proof(request_id,operation,self.slot_number)
 			shuttle = self.updateShuttle(shuttle,tupl)
 			logger.debug("shuttle after update: "+str(shuttle))
-			self.UpdateHistory(self.slot_number,operation_en,operation,shuttle, client)
+			self.UpdateHistory(self.slot_number,operation_en,operation,shuttle, client, request_id)
 			self.updateOrder_Result_Proof(shuttle)
 			logger.debug("ResultProof: "+str(self.result_proof)+"\n"+"OrderProof: "+str(self.order_proof));
 			
@@ -149,11 +149,13 @@ class Replica(process):
 			triggerName = checkForPossibleFailure(client,validTriggerSet)
 			logger.info("TriggerName Found => "+str(triggerName))
 			if(triggerName!=None):
+				print("2")
 				shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
 
 			logger.info("PERFORM_OPERATION done at HeadReplica, transfering SHUTTLE to nextReplica : "+str(self.nextReplica))
-
+			orp, rpr = shuttle
 			# logger.info("checking for failure injection")
+			updateClientsLastResult(rpr,client,self.operation_result_internal[request_id], self.slot_number, request_id)
 			# shuttle = change_operation(shuttle, request_id, self.slot_number, operation)
 			send(('FORWARD_SHUTTLE', request_id_en,shuttle,operation_en,self.slot_number,client), to=self.nextReplica)
 			logger.info("checkpt_interval : " + str(config.readProperty("checkpt_interval")))
@@ -185,14 +187,17 @@ class Replica(process):
 				flow = True
 			if(flow):
 				if(validateOrderProof(shuttle,operation,slot,request_id,client)):
+
 					self.operation_result_internal[request_id] = config.executeOperation(request_id, operation,self.dictionary_data)
 					updateSlotOperation(request_id,slot,operation)
 					slot_number = slot
 					tupl = self.getResult_Order_Proof(request_id,operation,slot_number)
 					shuttle = self.updateShuttle(shuttle,tupl)
 					logger.debug("shuttle after update: "+str(shuttle))
-					self.UpdateHistory(self.slot_number,operation_en,operation,shuttle, client)
+					self.UpdateHistory(self.slot_number,operation_en,operation,shuttle, client,request_id)
 					self.updateOrder_Result_Proof(shuttle)
+					orp,rpr =shuttle
+					updateClientsLastResult(rpr,client,self.operation_result_internal[request_id], slot, request_id)
 					#validation successful now sending the shuttle forward
 					if(self.nextReplica == None):
 						
@@ -211,6 +216,7 @@ class Replica(process):
 						triggerName = checkForPossibleFailure(client,validTriggerSet)
 						logger.info("TriggerName Found => "+str(triggerName))
 						if(triggerName!=None):
+							print("3")
 							shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
 							orderproof,resultproof=shuttle
 						########################################################################################################
@@ -233,10 +239,11 @@ class Replica(process):
 							logger.debug("counters : "+str(self.counters))
 							logger.info("TriggerName Found => "+str(triggerName))
 							if(triggerName!=None):
+								print("4")
 								shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
 							########################################################################################################
 							orderproof,resultproof=shuttle
-							updateClientsLastResult(resultproof,client,self.operation_result_internal[request_id], slot)
+							
 							send(('REVERSE_SHUTTLE', request_id, resultproof, self.operation_result_internal[request_id],client), to=self.prevReplica)
 
 						else:
@@ -251,6 +258,7 @@ class Replica(process):
 						logger.info("TriggerName Found => "+str(triggerName))
 						orderproof,resultproof = shuttle
 						if(triggerName!=None):
+							print("5")
 							shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
 						send(('FORWARD_SHUTTLE',request_id_en,shuttle,operation_en,slot,client), to=self.nextReplica)
 				else:
@@ -331,7 +339,7 @@ class Replica(process):
 			validation = config.checkForResultConsistency(result_proof, res, self.allReplicaVerifyKeysMap,"replica")
 			logger.info("the result from validation is " + str(validation))
 			if(validation):
-				updateClientsLastResult(result_proof,client,self.operation_result_internal[request_id], self.requestIdToSoPair[request_id][0])
+				
 				self.cacheResult(request_id, result_proof)
 				if(self.prevReplica == None):
 					logger.info("SHUTTLE reached at HEAD")
@@ -345,7 +353,7 @@ class Replica(process):
 						shuttle=(None,result_proof)
 						slot_number=self.requestIdToSoPair[request_id][0]
 						operation=self.requestIdToSoPair[request_id][1]
-
+						print("1")
 						shuttle=callFailureFunctionBasedOnTrigger(triggerName,shuttle, request_id, slot_number, operation)
 						orderproof,result_proof= shuttle
 					logger.info("request_id : "+str(request_id)+", after caching result, forwarding to prevReplica : "+str(self.prevReplica))
@@ -435,7 +443,9 @@ class Replica(process):
 
 	def receive(msg=('WEDGE_REQUEST_STATEMENT',), from_=self.olympus):
 		logger.info("************Wedge Statement requested from Olympus******** Going into Immutable state")
-		time.sleep(2)
+		if(self.currentReplica == self.replicas[2]):
+			print("waiting for sleep")
+			# time.sleep(5)
 		self.replica_state = "IMMUTABLE"
 		# check if the replica is in immutable in all other cases
 		send(('WEDGE_STATEMENT',self.currentCheckPoint,self.History,), to=self.olympus)
@@ -447,14 +457,16 @@ class Replica(process):
 		print ("length of incoming order", orders, len(orders))
 		if len(orders)>0:
 			for i in  range(len(orders)):
-				slot_CU,operation_CU, client_CU= orders[i]
+				slot_CU,operation_CU, client_CU, req_CU = orders[i]
 				logger.info("Executing the order for slot : " + str(slot_CU))
 				oper = config.getUnsignedData(operation_CU,client_CU,self.clientVerifyKeys,self.clients)
-				result =config.executeOperation("not required in this case",oper,self.dictionary_data)
+				result =config.executeOperation(req_CU,oper,self.dictionary_data)
 				ehash = config.calculateHash(result)
-				resulpr = (result,oper,ehash)
+				resulpr = (result,oper,ehash,req_CU)
+				# logger.info("Client lasr statement perepared : " + str(client_CU)+ " ::::"+str(resultpr))
 				logger.info("Order Executed the order for slot : " + str(slot_CU))
 				#do we need request Id also
+				# self.self.requestIdToSoPair[request_id][0]
 				self.clientLastResult[client_CU] = resulpr
 				logger.info(" Client updated with the last result statement")
 		dict_hash = config.calculateHash(str(self.dictionary_data))
@@ -462,7 +474,7 @@ class Replica(process):
 		logger.info("************ CAUGHT_UP sent to Olympus******** ")
 
 	def receive(msg=('GET_RUNNING_STATE',), from_=self.olympus):
-		logger.info("************FINAL GET_RUNNING_STATE requested from Olympus********")
+		logger.info("************ FINAL GET_RUNNING_STATE requested from Olympus********")
 		# dict_hash = config.calculateHash(str(self.dictionary_data))
 		send(('RUNNING_STATE',self.dictionary_data,), to=self.olympus)
 		logger.info("************FINAL_RUNNING_STATE sent to Olympus********")
@@ -505,7 +517,7 @@ class Replica(process):
 					break
 				logger.debug("verified")
 			except nacl.exceptions.BadSignatureError:
-				logger.error("key mismatch failed for ", order[i])
+				logger.error("key mismatch failed for " + str(order[i]))
 				flag = False
 
 		if(flag):
@@ -619,24 +631,74 @@ class Replica(process):
 			return change_result(shuttle, request_id, operation)
 		if(triggerName == "drop_result_stmt"):
 			return drop_result_stmt(shuttle)
+		if(triggerName == "invalid_order_sig"):
+			return invalid_order_sig(shuttle)
+		if(triggerName == "invalid_result_sig"):
+			return invalid_result_sig(shuttle, request_id, operation)
+
+	# def checkForPossibleFailure(client,validTriggerSet):
+	# 	logger.info("CheckForPossibleFailure : "+str(self.counters)+", self.failureDS : "+str(self.failureDS)+", client : "+str(client))
+	# 	if(self.failureDS == None or len(self.failureDS)==0) :
+	# 		return
+	# 	replicaIndex = self.replicas.index(self.currentReplica)
+	# 	currentConfiguration = self.configuration
+	# 	failureDsReplicaDict = self.failureDS[currentConfiguration]["replica"]
+	# 	logger.debug("the dictionary: ",failureDsReplicaDict)
+	# 	if(replicaIndex not in failureDsReplicaDict):
+	# 		return None
+	# 	print("ended up here")
+	# 	failureLists = self.failureDS[currentConfiguration]["replica"][replicaIndex]
+	# 	for obj in failureLists:
+	# 		triggerName = obj["triggerName"]
+	# 		clientObj = obj["client"]
+	# 		if(clientObj == None):
+	# 			logger.debug("clientObj is empty")
+	# 			return None
+	# 		messageNumber=obj["messageNumber"]
+	# 		triggerFailure=obj["triggerFailure"]
+	# 		if(clientObj != self.clients.index(client)):
+	# 			logger.debug("client index is different")
+	# 			continue
+	# 		if(triggerName not in validTriggerSet):
+	# 			logger.debug("trigger name is not in the set:" +str(validTriggerSet))
+	# 			continue
+	# 		logger.debug("reached here!")
+	# 		if(self.counters[client]["directRequestCounter"] == messageNumber and triggerName=="client_request"):
+	# 			return triggerFailure
+	# 		elif(self.counters[client]["forwardRequestCounter"] == messageNumber and triggerName=="forwarded_request"):
+	# 			return triggerFailure
+	# 		elif(self.counters[client]["shuttleCounter"] == messageNumber and triggerName=="shuttle"):
+	# 			return triggerFailure
+	# 		elif(self.counters[client]["resultShuttleCounter"] == messageNumber and triggerName=="result_shuttle"):
+	# 			return triggerFailure
+	# 		logger.debug("before returning")
+	# 	return None
 
 	def checkForPossibleFailure(client,validTriggerSet):
 		logger.info("CheckForPossibleFailure : "+str(self.counters)+", self.failureDS : "+str(self.failureDS)+", client : "+str(client))
 		if(self.failureDS == None or len(self.failureDS)==0) :
-			return
+			print("CheckForPossibleFailure returning 1")
+			return None
 		replicaIndex = self.replicas.index(self.currentReplica)
-		currentConfiguration = 0
+		print("1. ended up here")
+		currentConfiguration = self.configuration
+		if(currentConfiguration not in self.failureDS):
+			print("CheckForPossibleFailure returning 1.1")
+			return None
 		failureDsReplicaDict = self.failureDS[currentConfiguration]["replica"]
+		print("2. ended up here")
 		logger.debug("the dictionary: ",failureDsReplicaDict)
 		if(replicaIndex not in failureDsReplicaDict):
+			print("CheckForPossibleFailure returning 2")
 			return None
-		print("ended up here")
+		print("3 ended up here")
 		failureLists = self.failureDS[currentConfiguration]["replica"][replicaIndex]
+		print("4. ended up here")
 		for obj in failureLists:
 			triggerName = obj["triggerName"]
 			clientObj = obj["client"]
 			if(clientObj == None):
-				logger.debug("clientObj is empty")
+				print("CheckForPossibleFailure returning 3")
 				return None
 			messageNumber=obj["messageNumber"]
 			triggerFailure=obj["triggerFailure"]
@@ -656,11 +718,13 @@ class Replica(process):
 			elif(self.counters[client]["resultShuttleCounter"] == messageNumber and triggerName=="result_shuttle"):
 				return triggerFailure
 			logger.debug("before returning")
+		print("CheckForPossibleFailure returning 4")
 		return None
+
 
 	def change_operation(shuttle, requestId, slot, operation ):
 		#just before tsending the shuttle
-		logger.info("Change operation called with shuttle" + "  requestId: "+ str(requestId) +"operation : "+ str(operation))
+		logger.info("Change operation called with shuttle, requestId: "+ str(requestId) +"operation : "+ str(operation))
 		order, result = shuttle
 		lorder = len(order)
 		lresult = len(result)
@@ -676,10 +740,10 @@ class Replica(process):
 		# print("length of oreder"+str(len(order)))
 		result.append(signedResultProof)
 		shuttle = (order,result)
-		logger.debug("change shuttle"+ str(shuttle))
-		slot , op,rep_op, client, order_p = self.History[len(self.History)-1]
+		logger.info("change shuttle"+ str(shuttle))
+		slot , op,rep_op, client, req_id , order_p = self.History[len(self.History)-1]
 		self.History = self.History[0:len(self.History)-1]
-		tempHist = (slot, op,"get('x')" , client ,order )
+		tempHist = (slot, op,"get('x')" , client ,req_id,order_p )
 		self.History.append(tempHist)
 
 		return shuttle
@@ -724,19 +788,47 @@ class Replica(process):
 	def extra_op():
 		executeOperation("not required here", put('a','a'), self.dictionary_data)
 
-	def invalid_result_sig(msg):
-		currentReplicaSigningKey = list(currentReplicaSigningKey)
-		currentReplicaSigningKey[0] = (currentReplicaSigningKey[0] +1)%256
-		newsigned = bytes(currentReplicaSigningKey)
-		signedMsg = newsigned.sign(str.encode(msg))
-		return signedMsg
+	def invalid_result_sig(shuttle, requestId, operation):
+		logger.info("invalid_result_sig function called ")
+		order, result = shuttle
+		lproof = len(result)
+		resultStmt = result[lproof-1]
+		# resultStmt = (operation_result_internal[requestId], operation, config.calculateHash(str(operation_result_internal[requestId])))
 
-	def invalid_order_sig(msg):
-		currentReplicaSigningKey = list(currentReplicaSigningKey)
-		currentReplicaSigningKey[0] = (currentReplicaSigningKey[0] +1)%256
-		newsigned = bytes(currentReplicaSigningKey)
-		signedMsg = newsigned.sign(str.encode(msg))
-		return signedMsg
+		# NewKey = currentReplicaSigningKey
+		signedlist = list(resultStmt)
+		signedlist[0] = (signedlist[0] + 1) % 256
+		newsigned=bytes(signedlist)
+		invalid_signed = nacl.signing.SignedMessage._from_parts(resultStmt._signature, resultStmt._message, newsigned)
+		# signedMsg = newsigned.sign(str.encode(str(resultStmt)))
+		result[lproof-1] = invalid_signed
+		# print("length of oreder"+str(len(order)))
+		# result.append(signedResultProof)
+		shuttle = (order,result)
+		return shuttle
+
+
+	def invalid_order_sig(shuttle):
+		logger.info("invalid_order_sig function called  at replica")
+		order, result = shuttle
+		lorder = len(order)
+		orderstmt = order[lorder-1]
+		signedlist = list(orderstmt)
+		signedlist[0] = (signedlist[0] + 1) % 256
+		newsigned=bytes(signedlist)
+
+		invalid_signed = nacl.signing.SignedMessage._from_parts(orderstmt._signature, orderstmt._message, newsigned)
+		order[lorder-1] =invalid_signed
+		# print("length of oreder"+str(len(order)))
+		# result.append(signedResultProof)
+		shuttle = (order,result)
+		logger.info("change shuttle"+ str(shuttle))
+		slot , op,rep_op, client, req_id , order_p = self.History[len(self.History)-1]
+		self.History = self.History[0:len(self.History)-1]
+		tempHist = (slot, op, rep_op,client ,req_id,order )
+		self.History.append(tempHist)
+
+		return shuttle
 
 	def drop_checkpt_stmts(chkStmt, t):
 		chkStmt = chkStmt[t+2:]
@@ -761,7 +853,7 @@ class Replica(process):
 		logger.debug("updateCheckpointShuttle at Replica : "+str(self.currentReplica))
 
 		if(len(shuttle)==0):
-			shuttle.append(slot)
+			# shuttle.append(slot)
 			shuttle.append(checkpointproof)
 			# shuttle=(order,result)
 		else:
@@ -778,16 +870,19 @@ class Replica(process):
 		return signedCheckPtProof
 
 	def checkForCheckProofConsistency(shuttle, allReplicaVerifyKeysMap):
-		logger.debug("Validating CheckPoint Proof function called  with shuttle : "+str(shuttle))
+		logger.info("Validating CheckPoint Proof function called  with shuttle : "+str(shuttle))
 		hashValues=[]
 		if(len(shuttle)==0):
 			return False
+		print("okay till here")
 		if(len(shuttle) != len(self.replicas)):
+			print("its not okay  till here")
 			return False
-		for i in range(1,len(shuttle)):
+		print("okay till here")
+		for i in range(0,len(shuttle)):
 			try:
 				# Create a VerifyKey object from a hex serialized public key
-				verify_key = nacl.signing.VerifyKey(allReplicaVerifyKeysMap[i-1], encoder=nacl.encoding.HexEncoder)
+				verify_key = nacl.signing.VerifyKey(allReplicaVerifyKeysMap[i], encoder=nacl.encoding.HexEncoder)
 				# logger.debug("result number",i+1, "from result proof", resultproof[length-i-1])
 				message = shuttle[i]
 				# Check the validity of a message's signature
@@ -797,6 +892,7 @@ class Replica(process):
 				# logger.debug("verified")
 				actualResult = ast.literal_eval(result.decode("utf-8"))
 			except nacl.exceptions.BadSignatureError:
+				print("there is an exception")
 				# logger.error("key mismatch failed for ", resultproof[length-i-1])
 				return False
 			hashValues.append(actualResult)
@@ -828,18 +924,19 @@ class Replica(process):
 		self.currentCheckPoint = checkpoint
 
 
-	def UpdateHistory(slot,op,rep_op,shuttle, client):
+	def UpdateHistory(slot,op,rep_op,shuttle, client,request_id):
 		temp = []
 		order, res = shuttle
-		temp.append(slot)
+		temp.append(slot)	
 		temp.append(op)
 		temp.append(rep_op)
 		temp.append(client)
+		temp.append(request_id)
 		temp.append(order)
 		self.History.append(temp)
 
-	def updateClientsLastResult(rProof,client,res, slot):
-		tupl = (slot,rProof,res)
+	def updateClientsLastResult(rProof,client,res, slot, req):
+		tupl = (slot,rProof,res, req)
 		self.clientLastResult[client] = tupl
 		logger.debug(" client dictionary after updatinf last result is :" + str(self.clientLastResult))
 

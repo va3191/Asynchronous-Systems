@@ -163,9 +163,10 @@ def calculateHash(message):
 def checkForResultConsistency(resultproof,res, allReplicaVerifyKeysMap, source):
 		delta= calculateHash(res)
 		quorum=0
+		print("inside here")
 		validCount=0
 		if(source == "replica"):
-			quorum=int(config['num_replica'])
+			quorum= (2*int(config['t'])) +1
 		elif(source=="client"):
 			quorum = int(config['t']) +1
 
@@ -186,7 +187,7 @@ def checkForResultConsistency(resultproof,res, allReplicaVerifyKeysMap, source):
 		
 		if(validCount>=quorum):
 			flag=True
-
+		print ("the flag returned is  ", flag)
 		return flag
 
 def validateResultProof(resultproof, allReplicaVerifyKeysMap):
@@ -314,7 +315,7 @@ def executeOperation(request_id,operation,dictionary_data):
 				result= 'fail'
 		else:
 			result= 'fail'
-		logger.info("slice operation successfully executed")
+		# logger.info("slice operation successfully executed")
 	return result
 
 
@@ -336,9 +337,9 @@ def validateResultProofClient(resultproof, allReplicaVerifyKeysMap):
 			length = len(resultproof)
 
 			# Create a VerifyKey object from a hex serialized public key
-			if(len(resultproof)==config['num_replica']):
+			if(len(resultproof)==   (2*int(config['t'])) +1):
 				verify_key = nacl.signing.VerifyKey(allReplicaVerifyKeysMap[length-i-1], encoder=nacl.encoding.HexEncoder)
-			elif(len(resultproof)<config['num_replica']):
+			elif(len(resultproof)<(2*int(config['t'])) +1):
 				verify_key = nacl.signing.VerifyKey(allReplicaVerifyKeysMap[length-i], encoder=nacl.encoding.HexEncoder)
 			# logger.debug("result number",i+1, "from result proof", resultproof[length-i-1])
 			message = resultproof[length-i-1]

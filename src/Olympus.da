@@ -184,10 +184,11 @@ class Olympus(process):
 					slot,operation,rep_op,client,req_id,order = i
 					op = config.getUnsignedData(operation, client, self.clientVerifyKeys,self.clients)
 					print(slot, op, " s o pairs")
-		if ( not self.isQuorumSatisfied):
+		if ( not self.isQuorumSatisfied  and len(self.wedge_statement)>= config.readProperty("t") + 1):
 			print("reached here ")
 			self.slotOpSuperset={}
 			checkForQuorum()
+		logger.info("not enough wedge statements recieved : ")
 
 	def checkForQuorum():
 		self.caughtUpStatements =[]
@@ -206,14 +207,29 @@ class Olympus(process):
 					logger.info("inside loop of self.wedge_statement ")
 					checkpoint, Hisotry, replica = repl
 					consistent = True
+					slots=[]
+					print("it should be fine till here")
+					# print(Hisotry[0])
+					for i in range(0,len(Hisotry)):
+						print("inside the func")
+						slot,operation,rep_op,client,req_id,order  = Hisotry[i]
+						slots.append(slot)
+					print("2.it should be fine till here")
 					for j in range(len(Hisotry)):
 						# logger.info("j: "+str(j)+", len(Hisotry): "+str(len(Hisotry)))
 						logger.info("relica " + str(replica) +"checking in history : length " + str(len(Hisotry))+"j :" + str(j))
 						slot,operation,rep_op,client,req_id,order = Hisotry[j]
 						op = config.getUnsignedData(operation, client,self.clientVerifyKeys,self.clients)
-						logger.info("contents for " + str(replica)+ "  wedge statement. slot:  " + str(slot) + ",  operation: "+ str(op)+ ",  client: " + str(client)+", j: "+str(j)+"\n")
+
+						logger.info("contents for " + str(replica)+ "  wedge statement. slot:  " + str(slot) + ",  operation: "+ str(op)+ ",  client: " + str(client)+", j: "+str(j))
+
 						print("contents of self.slotsuperset::", self.slotOpSuperset)
 						print("operations received from replica are op: ", op,"   rep_op : ", rep_op)
+						slotOk=True
+						for i in range (len(slots)-1):
+							if(slots[i+1] != slots[i] +1):
+								slotOk=False
+						logger.info("Are the slots consistent:::" + str(slotOk) +"\n")
 						if(op == rep_op):
 							if(slot not in self.slotOpSuperset.keys()):
 								self.slotOpSuperset[slot]=op
@@ -249,7 +265,7 @@ class Olympus(process):
 		maxHistory =0
 		maxHistoryReplica=''
 		slots=[]
-		temp=[]
+		temp=[]	
 		catchup_messages={}
 		for rep in quorum:
 			checkpoint,history, replica = rep
@@ -267,17 +283,19 @@ class Olympus(process):
 				slot,operation,rep_op,client,req_id,order  = i
 				slots.append(slot)
 			logger.info("slots present in the hostory of replica: " + str(replica) + ":: " + str(slots))
+			if(len(maxHistoryReplica)==0):
+				catchup_messages[replica] = temp
+			else:
+				rep, hist = maxHistoryReplica
+				for hist_item in hist:
+					slot_maxH,operation_maxH,rep_op_maxH,client_maxH,req_id_maxH,order_max_H = hist_item
+					# op = config.getUnsignedData(operation_maxH, client_maxH,self.clientVerifyKeys,self.clients)
+					if  (len(slots)==0) or ( slot_maxH not in slots and slot_maxH > max(slots)):
+						logger.info(" slot  "+ str(slot_maxH) + "  is not in hostory of replica " + str(replica))
 
-			rep, hist = maxHistoryReplica
-			for hist_item in hist:
-				slot_maxH,operation_maxH,rep_op_maxH,client_maxH,req_id_maxH,order_max_H = hist_item
-				# op = config.getUnsignedData(operation_maxH, client_maxH,self.clientVerifyKeys,self.clients)
-				if( slot_maxH not in slots and slot_maxH > max(slots)):
-					logger.info(" slot  "+ str(slot_maxH) + "  is not in hostory of replica " + str(replica))
-
-					tupl = (slot_maxH,operation_maxH,client_maxH,req_id_maxH)
-					temp.append(tupl)
-			catchup_messages[replica] = temp
+						tupl = (slot_maxH,operation_maxH,client_maxH,req_id_maxH)
+						temp.append(tupl)
+				catchup_messages[replica] = temp
 		# i have catchup messages for allt he replica sin the quorum
 		logger.info("catch up messages have been formed and will be sent to replicas :::" +str(catchup_messages))
 		callForCatchupToReplicas(catchup_messages)
@@ -331,6 +349,7 @@ class Olympus(process):
 			self.replicas = replicas
 			self.replicaVerifyKeys = replicaVerifyKeys
 			updateClient(replicas,replicaVerifyKeys)
+			self.reconfigIsCalled = False
 
 			# killOldReplicas()
 			#call new create replcias
@@ -349,9 +368,21 @@ class Olympus(process):
 		# time.sleep(6)
 		for i in self.clients:
 			logger.info("client: " + str(i) + "  updated")
-			
+
 		for client in self.clients:
-			send(('RESULT_FROM_OLYMPUS',self.clientLastResult[client],replicas,replicaVerifyKeys,), to=client)
+			logger.info("sending the last executed resukt to client : "+ str(client))
+
+			if(client in self.clientLastResult.keys()):
+				# temp =list(self.clientLastResult[client])
+				# for  i in temp:
+				# 	print(i ,"\n")
+
+				logger.info("sending the last executed resukt to client : "+ str(client)+"clientLastResult:  "+str(self.clientLastResult[client]))
+				send(('RESULT_FROM_OLYMPUS',self.clientLastResult[client],replicas,replicaVerifyKeys,), to=client)
+			else:
+				self.clientLastResult[client] = (None,None,None,None)
+				send(('RESULT_FROM_OLYMPUS',self.clientLastResult[client],replicas,replicaVerifyKeys,), to=client)
+
 
 	def updateClientForReconfiguration():
 		for client in self.clients:
