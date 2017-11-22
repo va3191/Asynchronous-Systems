@@ -45,14 +45,14 @@ RunSystem.da : name of the file
 Example:
 Commands 1 to 6 are used for running a sample program using config file system.config
 
-	1.) python3 -m da -n main RunSystem.da -i system.config 
+	1.) python3 -m da  --message-buffer-size 20000 -n onode  RunSystem.da -i ../config/ph3_9.wedge_extraop.config
 				-i parameter helps to define the particular config file. It contains properties specific to retransmission, like
 				sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
-	2.) python3 -m da -n client_0  -D RunSystem.da 
-	3.) python3 -m da -n client_1 -D RunSystem.da 
-	4.) python3 -m da -n replica_0 -D RunSystem.da  
-	5.) python3 -m da -n replica_1  -D RunSystem.da 
-	6.) python3 -m da -n replica_2 -D RunSystem.da 
+	2.) python3 -m da --message-buffer-size 20000  -n client_0  -D RunSystem.da 
+	3.) python3 -m da --message-buffer-size 20000  -n client_1 -D RunSystem.da 
+	4.) python3 -m da --message-buffer-size 20000  -n replica_0 -D RunSystem.da  
+	5.) python3 -m da --message-buffer-size 20000  -n replica_1  -D RunSystem.da 
+	6.) python3 -m da --message-buffer-size 20000  -n replica_2 -D RunSystem.da 
 Description:
 	Config file = system.config
 	t byzantine failure=1
@@ -86,9 +86,13 @@ adityatomer> python3.6 -m da -H 0.0.0.0 -n onode RunSystem.da ../config/system.c
 
 Starting 'replica_0', 'replica_1', 'replica_2' on host vagarwal, connecting the node on adityatomer  one by one
 
-vagarwal> python3.6 -m da -H 0.0.0.0 -R adityatomer -n replica_0 -D RunSystem.da ../config/system.config
-vagarwal> python3.6 -m da -H 0.0.0.0 -R adityatomer -n replica_1 -D RunSystem.da ../config/system.config
-vagarwal> python3.6 -m da -H 0.0.0.0 -R adityatomer -n replica_2 -D RunSystem.da ../config/system.config
+
+adityatomer$ python3.6 -m da  --message-buffer-size 20000 -H 172.24.224.156 -n onode RunSystem.da -i ../config/system.config
+adityatomer$ python3 -m da  --message-buffer-size 20000 -H 172.24.224.156 -n client_0 -D RunSystem.da
+adityatomer$ python3 -m da  --message-buffer-size 20000  -H 172.24.224.156 -n client_1 -D RunSystem.da
+vagarwal$ python3 -m da --message-buffer-size 20000 -H 172.24.225.83 -R 172.24.224.156 -n replica_0 -D RunSystem.da
+vagarwal$ python3 -m da --message-buffer-size 20000 -H 172.24.225.83 -R 172.24.224.156 -n replica_1 -D RunSystem.da
+vagarwal$ python3 -m da --message-buffer-size 20000 -H 172.24.225.83 -R 172.24.224.156 -n replica_2 -D RunSystem.da
 
 Starting 'client0' on host 'adityatomer', and connecting to the node on 'vagarwal'
 

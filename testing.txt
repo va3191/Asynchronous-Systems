@@ -542,3 +542,158 @@ log_file_name
 
 explaination:
 	Given a pseudorandom stress workload example seed 2300 and 1000 operation. 1000 deterministic random operations are generated. The key and values are random which will regenerated in the same sequence for a given seed. The client will send these operations to the replicas.
+
+*******************************************************************
+
+TESTCASE 18
+
+Pfailures[0,1] = shuttle(0,3),change_operation();wedge_request(-1,1),sleep(5)
+
+Failure when nonHead Replica changes the operation  while the shuttle is going from head to Tail, which then is detected by the next replica and causes
+reconfiguration, in reconfiguration when wedge request is sent to the replica it sleeps for the specified time forcing them to attain quorum without that
+replica or wait for it to come oput of sleep.
+
+workload[0] = put('movie','star'); append('movie','wars'); slice('movie':'4:7');get('movie')
+
+Description:
+	t failure=1
+	client=2
+	replica=3
+configuration_file_name
+	"ph3_1.wedge_Sleep.config"
+Commands(When all commands are executed from sourcefolder):
+	1.) python3 -m da --message-buffer-size 20000 -n main RunSystem.da -i ../config/ph3_1.wedge_Sleep.config
+				-i parameter helps to define the particular config file. It contains properties specific to retransmission, like
+				sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
+	2.) python3 -m da --message-buffer-size 20000 -n client_0 RunSystem.da 
+	3.) python3 -m da --message-buffer-size 20000 -n client_1 RunSystem.da 
+	4.) python3 -m da --message-buffer-size 20000 -n replica_0 RunSystem.da 
+	5.) python3 -m da --message-buffer-size 20000 -n replica_1 RunSystem.da 
+	6.) python3 -m da --message-buffer-size 20000 -n replica_2 RunSystem.da 
+log_file_name
+	run_system.log
+
+
+*******************************************************************
+
+TESTCASE 19
+
+failures[0,0] = checkpoint(-1,0),crash()
+failures[1,1] = new_configuration(-1,2),crash()
+
+Failure when Head  Replica crashes  as soon as first checkpoint message us recieved, after new congigurationis recieved again crash occurs at
+NonHead replica
+
+workload[0] = put('movie','star'); append('movie','wars'); slice('movie':'4:7');get('movie')
+
+Description:
+	t failure=1
+	client=2
+	replica=3
+configuration_file_name
+	"ph3_10.checkpoint_crash_new_configuration_crash_.config"
+Commands(When all commands are executed from sourcefolder):
+	1.) python3 -m da --message-buffer-size 20000 -n main RunSystem.da -i ../config/ph3_10.checkpoint_crash_new_configuration_crash_.config
+				-i parameter helps to define the particular config file. It contains properties specific to retransmission, like
+				sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
+	2.) python3 -m da --message-buffer-size 20000 -n client_0 RunSystem.da 
+	3.) python3 -m da --message-buffer-size 20000 -n client_1 RunSystem.da 
+	4.) python3 -m da --message-buffer-size 20000 -n replica_0 RunSystem.da 
+	5.) python3 -m da --message-buffer-size 20000 -n replica_1 RunSystem.da 
+	6.) python3 -m da --message-buffer-size 20000 -n replica_2 RunSystem.da 
+log_file_name
+	run_system.log
+
+
+*******************************************************************
+
+TESTCASE 20
+
+failures[0,1] = shuttle(0,3),change_operation()
+failures[0,0] = wedge_request(-1,1),extra_op(2)
+
+Failure when nonHead Replica changes the operation  while the shuttle is going from head to Tail, which then is detected by the next replica and causes
+reconfiguration, in reconfiguration when wedge request is sent to the replica it applies an extra operation to its dictionary. Now quorum needs to be found
+without this replica else the state will be inconsistent
+
+workload[0] = put('movie','star'); append('movie','wars'); slice('movie':'4:7');get('movie')
+
+Description:
+	t failure=1
+	client=2
+	replica=3
+configuration_file_name
+	"ph3_10.wedge_extraop.config"
+Commands(When all commands are executed from sourcefolder):
+	1.) python3 -m da --message-buffer-size 20000 -n main RunSystem.da -i ../config/ph3_10.wedge_extraop.config
+				-i parameter helps to define the particular config file. It contains properties specific to retransmission, like
+				sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
+	2.) python3 -m da --message-buffer-size 20000 -n client_0 RunSystem.da 
+	3.) python3 -m da --message-buffer-size 20000 -n client_1 RunSystem.da 
+	4.) python3 -m da --message-buffer-size 20000 -n replica_0 RunSystem.da 
+	5.) python3 -m da --message-buffer-size 20000 -n replica_1 RunSystem.da 
+	6.) python3 -m da --message-buffer-size 20000 -n replica_2 RunSystem.da 
+log_file_name
+	run_system.log
+
+*******************************************************************
+
+TESTCASE 21
+
+failures[0,1] = shuttle(0,2),change_operation();get_running_state(-1,1),sleep(12)
+failures[0,0] = get_running_state(-1,1),sleep(12)
+failures[0,2] = get_running_state(-1,1),sleep(12)
+
+Failure when nonHead Replica changes the operation  while the shuttle is going from head to Tail, which then is detected by the next replica and causes
+reconfiguration, in reconfiguration when running state request is sent to the replica it sleeps for a given time .the timeout occurs at the olympus
+it sends request to another replica for the runnign state and keeps doing that until a result is recieved from one of them.
+without this replica else the state will be inconsistent
+
+workload[0] = put('movie','star'); append('movie','wars'); slice('movie':'4:7');get('movie')
+
+Description:
+	t failure=1
+	client=2
+	replica=3
+configuration_file_name
+	"ph3_12.runningstate_sleep_.config"
+Commands(When all commands are executed from sourcefolder):
+	1.) python3 -m da --message-buffer-size 20000 -n main RunSystem.da -i ../config/ph3_12.runningstate_sleep_.config
+				-i parameter helps to define the particular config file. It contains properties specific to retransmission, like
+				sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
+	2.) python3 -m da --message-buffer-size 20000 -n client_0 RunSystem.da 
+	3.) python3 -m da --message-buffer-size 20000 -n client_1 RunSystem.da 
+	4.) python3 -m da --message-buffer-size 20000 -n replica_0 RunSystem.da 
+	5.) python3 -m da --message-buffer-size 20000 -n replica_1 RunSystem.da 
+	6.) python3 -m da --message-buffer-size 20000 -n replica_2 RunSystem.da 
+log_file_name
+	run_system.log
+
+*******************************************************************
+TESTCASE 21
+
+failures[0,0] = checkpoint(-1,1),increment_slot()
+
+Failure when nonHead Replica changes the slot when checkpoint statement is recieved, since this might cause slot inconsistency reconfiguration wil 
+be called
+
+workload[0] = put('movie','star'); append('movie','wars'); slice('movie':'4:7');get('movie');get('movie');get('movie')
+Description:
+	t failure=1
+	client=2
+	replica=3
+configuration_file_name
+	"ph3_3.checkpointing_incrment_slot.config"
+Commands(When all commands are executed from sourcefolder):
+	1.) python3 -m da --message-buffer-size 20000 -n main RunSystem.da -i ../config/pph3_3.checkpointing_incrment_slot.config
+				-i parameter helps to define the particular config file. It contains properties specific to retransmission, like
+				sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
+	2.) python3 -m da --message-buffer-size 20000 -n client_0 RunSystem.da 
+	3.) python3 -m da --message-buffer-size 20000 -n client_1 RunSystem.da 
+	4.) python3 -m da --message-buffer-size 20000 -n replica_0 RunSystem.da 
+	5.) python3 -m da --message-buffer-size 20000 -n replica_1 RunSystem.da 
+	6.) python3 -m da --message-buffer-size 20000 -n replica_2 RunSystem.da 
+log_file_name
+	run_system.log
+
+
