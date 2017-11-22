@@ -32,6 +32,7 @@ class Olympus(process):
 		self.reconfigIsCalled=False
 		self.QuorumList=[]
 		self.catchupFlag=False
+		self.runningStateFlag=False
 
 		# config.config_main(configFilePath);	# initialize configuration file
 	
@@ -160,6 +161,7 @@ class Olympus(process):
 				self.currentnumofConfiguration = self.currentnumofConfiguration + 1
 				self.wedge_statement = []	
 				self.slotOpSuperset={}
+				self.currentHash=''
 				self.caughtUpStatements =[]
 				self.runningStateReplicaHash=[]
 				self.isQuorumSatisfied=False
@@ -373,6 +375,7 @@ class Olympus(process):
 					allHashSame = False
 			if(allHashSame):
 				self.currentHash = self.runningStateReplicaHash[0]
+				print("the current hash is ::::" + str(self.currentHash))
 				getRunningState(self.caughtUpStatements)
 			else:
 				logger.info("Hash aren't consistent we need to find another quorum")
@@ -380,6 +383,24 @@ class Olympus(process):
 				self.slotOpSuperset={}
 				self.isQuorumSatisfied = False
 				checkForQuorum()
+
+	def receive(msg=('RUNNING_STATE', runningState,), from_=node):
+		print("running state recieved from replica:::"+ str(runningState))
+		runningStateHash = config.calculateHash(str(runningState))
+		print("the running state hash received is :::" + str(runningStateHash))
+		if(str(runningStateHash) == str(self.currentHash)):
+			self.initHist = runningState
+			logger.info("Creating new set of replicas with new running state")
+			(replicas,replicaSigningKeys,replicaVerifyKeys)=createReplicas(self.clients,self,self.clientVerifyKeys,self.initHist)
+			# (replicas,replicaSigningKeys,replicaVerifyKeys)=createReplicas(clients,self,clientVerifyKeys)
+			self.replicas = replicas
+			self.replicaVerifyKeys = replicaVerifyKeys
+			updateClient(replicas,replicaVerifyKeys)
+			self.reconfigIsCalled = False	
+			self.runningStateFlag = True			
+		else:
+			logger.error("running state hash do not match with current hash at olympus, calling running_state again, by timing out")
+			getRunningState(self.caughtUpStatements)
 
 	def getRunningState(caughtUpStatements):
 		logger.info("requesting one of the replicas in quorum at random to send their hash of running state")
@@ -395,20 +416,8 @@ class Olympus(process):
 		send(('GET_RUNNING_STATE',), to=replica)
 
 		running_state_timeout=2
-		if (await(some(received(('RUNNING_STATE', runningState,), from_=node)))):
-			runningStateHash = config.calculateHash(str(runningState))
-			if(runningStateHash == self.currentHash):
-				self.initHist = runningState
-				logger.info("Creating new set of replicas with new running state")
-				(replicas,replicaSigningKeys,replicaVerifyKeys)=createReplicas(self.clients,self,self.clientVerifyKeys,self.initHist)
-				# (replicas,replicaSigningKeys,replicaVerifyKeys)=createReplicas(clients,self,clientVerifyKeys)
-				self.replicas = replicas
-				self.replicaVerifyKeys = replicaVerifyKeys
-				updateClient(replicas,replicaVerifyKeys)
-				self.reconfigIsCalled = False				
-			else:
-				logger.error("running state hash do not match with current hash at olympus, calling running_state again")
-				getRunningState(self.caughtUpStatements)
+		if await(self.runningStateFlag==True):
+			self.runningStateFlag=False
 		elif(timeout(running_state_timeout)):
 			logger.error("RUNNING_STATE timeout, calling again, calling running_state again")
 			getRunningState(self.caughtUpStatements)

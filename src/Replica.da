@@ -498,8 +498,14 @@ class Replica(process):
 		else:
 			if len(orders)>0:
 				for i in  range(len(orders)):
+					print("okay till here")
+					# s=0
 					slot_CU,operation_CU, client_CU, req_CU = orders[i]
-					s,o,c,r = self.clientLastResult[client_CU]
+					if(client_CU  not in self.clientLastResult.keys()):
+						s=0
+					else:
+						s,o,c,r = self.clientLastResult[client_CU]
+					print("2. okay till here")
 					logger.info("incoming slot from catch up statement is :"+ str(slot_CU)+ " , last client slot : "+ str(s))
 					if(slot_CU > s):
 						logger.info("Executing the order for slot : " + str(slot_CU))
@@ -513,7 +519,9 @@ class Replica(process):
 						# self.self.requestIdToSoPair[request_id][0]
 						self.clientLastResult[client_CU] = resulpr
 						logger.info(" Client updated with the last result statement")
+			print(" the dictionary sending is ::" + str(self.dictionary_data))
 			dict_hash = config.calculateHash(str(self.dictionary_data))
+			print(" the dictionary  hash sending is ::" + str(dict_hash))
 			send(('CAUGHT_UP',dict_hash,self.clientLastResult,), to=self.olympus)
 			logger.info("************ CAUGHT_UP sent to Olympus******** ")
 
@@ -530,7 +538,7 @@ class Replica(process):
 			self.drop_failure_flag=False
 		else:
 
-			logger.info("sending to olympus. running state : "+str(self.dictionary_data))
+			logger.info("sending to olympus. running state : "+str(self.dictionary_data)+";:::::::::::::::::"+str(config.calculateHash(str(self.dictionary_data))))
 			send(('RUNNING_STATE',self.dictionary_data,), to=self.olympus)
 			
 		logger.info("************FINAL_RUNNING_STATE sent to Olympus********")
@@ -934,7 +942,7 @@ class Replica(process):
 
 	def extra_op():
 		logger.info("Failure found. extra_op")
-		timer.sleep(1)
+		time.sleep(1)
 		config.executeOperation("extra_operation", "put('extra_operation_key','extra_operation_value')", self.dictionary_data)
 
 	def invalid_result_sig(shuttle, requestId, operation):
