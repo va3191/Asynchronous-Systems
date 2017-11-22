@@ -19,10 +19,6 @@ class Replica(process):
 		logger.StreamHandler()
 		],
 		level=logger.INFO)
-
-		print("*************************************************************************")
-		logger.info("Replica SETUP done. client_request : "+str(clients)+", Olympus : "+str(olympus)+", Replica : "+str(currentReplica) +", ReplicaState : "+str(replica_state))
-		print("*************************************************************************")
 		self.replicas= replicas
 		self.clients=clients
 		self.olympus = olympus
@@ -76,7 +72,9 @@ class Replica(process):
 			self.counters[client]["shuttleCounter"]=0
 			self.counters[client]["resultShuttleCounter"]=0
 		self.failureDS = config.readFailures()
-		
+		print("**********************************************************************************************")
+		print("Replica SETUP done. clients : ",str(clients),", Olympus : ",str(olympus),", Replicas : ",str(currentReplica),", ReplicaState : ",str(replica_state))
+		print("**********************************************************************************************")
 	def main(): pass	
 
 	def incrementCounter(client,counter):
@@ -230,7 +228,7 @@ class Replica(process):
 						if(validation):
 							logger.info("************************REVERSE SHUTTLE***************")
 							#STARTING REVERSE SHUTTLE OPERATIONS
-							logger.info('REVERSE_SHUTTLE starting. Forwarding to prevReplica : '+str(self.prevReplica))
+							logger.info('REVERSE_SHUTTLE starting. Forwarding to prevReplica : '+str(self.prevReplica)+", Request_id : "+str(request_id))
 							########################################################################################################
 							#CHECKING FOR FAILURE : REVERSE SHUTTLE COUNTER : SENDING TO PREVIOUS REPLICA
 							########################################################################################################
@@ -453,13 +451,13 @@ class Replica(process):
 						logger.info("in retransmission unrecognised request. Shuttle reached to tail node : "+str(result_proof)+", sending to client : "+str(client))
 						send(('RETRANSMISSION', self.result_cache[requestId] ,self.currentReplica), to=client)
 					elif(timeout(timeout)):
-						logger.info("timer expired at tail replica : "+str(self.currentReplica))
+						logger.info("time expired at tail replica : "+str(self.currentReplica))
 				else:
 					if await(some(received(('REVERSE_SHUTTLE',requestId,result_proof,res,),from_=self.nextReplica),has=requestId in self.result_cache)):
 						logger.info("shuttle coming from next replica result_proof : "+str(result_proof)+", sending to client : "+str(client))
 						send(('RETRANSMISSION', self.result_cache[requestId] ,self.currentReplica), to=client)
 					elif(timeout(timeout)):
-						logger.info("timer expired at non head replica : "+str(self.currentReplica))
+						logger.info("time expired at non head replica : "+str(self.currentReplica))
 						callForReconfiguration(self.configuration)
 
 		elif self.replica_state=="IMMUTABLE":
@@ -467,11 +465,10 @@ class Replica(process):
 
 	def receive(msg=('WEDGE_REQUEST_STATEMENT',), from_=self.olympus):
 		self.counters["wedge_requestCounter"]+=1
-		logger.info('WEDGE_REQUEST_STATEMENT self.counters["wedge_requestCounter"]: '+str(self.counters["wedge_requestCounter"])+", currentConfiguration: "+str(self.configuration))
+		logger.info("************WEDGE STATEMENT requested from Olympus********")
 		validTriggerSet=[]
 		validTriggerSet.append("wedge_request")		
 		runPossibleFailure(validTriggerSet,None)
-		logger.info("************Wedge Statement requested from Olympus******** Going into Immutable state")
 		self.replica_state = "IMMUTABLE"
 	
 		if(self.drop_failure_flag==True):
@@ -483,7 +480,7 @@ class Replica(process):
 			# send(('WEDGE_STATEMENT',), to=self.olympus)
 
 	def receive(msg=('CATCH_UP',orders,), from_=self.olympus):
-		logger.info("************ CATCH_UP requested from Olympus******** Going to execute the orders ")
+		logger.info("************CATCH_UP requested from Olympus********")
 		# check if the replica is in immutable in all other cases
 		self.counters["catch_upCounter"]+=1
 		validTriggerSet=[]
@@ -526,7 +523,7 @@ class Replica(process):
 
 
 	def receive(msg=('GET_RUNNING_STATE',), from_=self.olympus):
-		logger.info("************FINAL GET_RUNNING_STATE requested from Olympus********"+str(self.drop_failure_flag))
+		logger.info("************FINAL GET_RUNNING_STATE requested from Olympus********")
 		# dict_hash = config.calculateHash(str(self.dictionary_data))
 		self.counters["get_running_stateCounter"] += 1
 		validTriggerSetPhase3=[]
@@ -536,10 +533,10 @@ class Replica(process):
 			logger.info("Dropping RUNNING_STATE message from sending to Olympus.")
 			self.drop_failure_flag=False
 		else:
-
-			logger.info("sending to olympus. running state : "+str(self.dictionary_data)+";:::::::::::::::::"+str(config.calculateHash(str(self.dictionary_data))))
-			send(('RUNNING_STATE',self.dictionary_data,), to=self.olympus)
 			
+			logger.debug("sending to olympus. running state : "+str(self.dictionary_data)+";:::::::::::::::::"+str(config.calculateHash(str(self.dictionary_data))))
+			send(('RUNNING_STATE',self.dictionary_data,), to=self.olympus)
+		logger.info("Sending Running state: "+str(self.dictionary_data))
 		logger.info("************FINAL_RUNNING_STATE sent to Olympus********")
 		
 	def receive(msg=('KILLING_REPLICAS',), from_=self.olympus):
@@ -596,9 +593,9 @@ class Replica(process):
 				flag = False
 
 		if(flag):
-			logger.info("validation success")
+			logger.info("validateOrderProof success !!")
 		else:
-			logger.error("validation failed")
+			logger.error("validateOrderProof failed !!")
 		return flag
 
 	# def validateResultProof(resultproof):
@@ -774,7 +771,7 @@ class Replica(process):
 		
 
 	def checkForPossibleFailure(client,validTriggerSet):
-		logger.info("CheckForPossibleFailure : "+str(self.counters)+", self.failureDS : "+str(self.failureDS)+", client : "+str(client))
+		logger.info("CheckForPossibleFailure : "+str(self.counters)+", client : "+str(client))
 		if(self.failureDS == None or len(self.failureDS)==0) :
 			# print("CheckForPossibleFailure returning 1")
 			return None
@@ -830,7 +827,7 @@ class Replica(process):
 		self.counters["catch_upCounter"]
 
 		'''
-		logger.info("checkForPossibleFailure_PHASE_3 called with configuration number: "+str(self.configuration)+",validTriggerSet : "+str(validTriggerSet)+", failureDS: "+str(self.failureDS)+", counters: "+str(self.counters))
+		logger.debug("checkForPossibleFailure_PHASE_3 called with configuration number: "+str(self.configuration)+",validTriggerSet : "+str(validTriggerSet)+", failureDS: "+str(self.failureDS)+", counters: "+str(self.counters))
 		if(self.failureDS == None or len(self.failureDS)==0) :
 			# logger.info("returning 1")
 			return None,None
@@ -839,7 +836,7 @@ class Replica(process):
 			# logger.info("returning 2")
 			return None,None
 		failureDsReplicaDict = self.failureDS[self.configuration]["replica"]
-		logger.info("failureDsReplicaDict the dictionary: ",failureDsReplicaDict)
+		logger.debug("failureDsReplicaDict the dictionary: ",failureDsReplicaDict)
 
 		if((failureDsReplicaDict is None) or (replicaIndex not in failureDsReplicaDict)):
 			logger.debug("returning 3, =>"+str(self.failureDS[self.configuration])+", =>"+str(self.failureDS[self.configuration]["replica"]))
@@ -890,7 +887,7 @@ class Replica(process):
 		# print("length of oreder"+str(len(order)))
 		result.append(signedResultProof)
 		shuttle = (order,result)
-		logger.info("change shuttle"+ str(shuttle))
+		logger.debug("change shuttle"+ str(shuttle))
 		slot , op,rep_op, client, req_id , order_p = self.History[len(self.History)-1]
 		self.History = self.History[0:len(self.History)-1]
 		tempHist = (slot, op,"get('x')" , client ,req_id,order_p )
@@ -978,7 +975,7 @@ class Replica(process):
 		# print("length of oreder"+str(len(order)))
 		# result.append(signedResultProof)
 		shuttle = (order,result)
-		logger.info("change shuttle"+ str(shuttle))
+		logger.debug("change shuttle"+ str(shuttle))
 		slot , op,rep_op, client, req_id , order_p = self.History[len(self.History)-1]
 		self.History = self.History[0:len(self.History)-1]
 		tempHist = (slot, op, rep_op,client ,req_id,order )

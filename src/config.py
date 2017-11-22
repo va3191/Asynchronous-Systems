@@ -147,7 +147,7 @@ def readFailures():
 				# print('failure.split("()")[0]: ',failure.split("()")[0],"===> ", failure)
 				failureDS[configurationNumber]["replica"][replicaNumber].append(replicaOperation)
 
-	logger.info("failures defined in config file failureDS :"+str(failureDS));#+", replicaNumber: "+str(replicaNumber)+", triggerName : "+triggerName+", clientNumber : "+str(clientNumber)+"=> messageNumber : "+str(messageNumber)+", failure : "+failure)
+	logger.info("====>> FAILURE DS :"+str(failureDS));#+", replicaNumber: "+str(replicaNumber)+", triggerName : "+triggerName+", clientNumber : "+str(clientNumber)+"=> messageNumber : "+str(messageNumber)+", failure : "+failure)
 	
 
 	# 	log.info("possible failures in config file failureDS :"+", replicaNumber: "+str(replicaNumber)+", triggerName : "+triggerName+", clientNumber : "+str(clientNumber)+"=> messageNumber : "+str(messageNumber)+", failure : "+failure)
@@ -166,9 +166,9 @@ def calculateHash(message):
 	return digest
 
 def checkForResultConsistency(resultproof,res, allReplicaVerifyKeysMap, source):
+		logger.debug("checkForResultConsistency function called  with resultProof : "+str(resultproof))
 		delta= calculateHash(res)
 		quorum=0
-		print("inside here")
 		validCount=0
 		if(source == "replica"):
 			quorum= (2*int(config['t'])) +1
@@ -181,7 +181,6 @@ def checkForResultConsistency(resultproof,res, allReplicaVerifyKeysMap, source):
 			validation, hashMaps = validateResultProofClient(resultproof,allReplicaVerifyKeysMap)
 		elif(source =="replica"):
 			validation, hashMaps = validateResultProof(resultproof,allReplicaVerifyKeysMap)
-		print("validation : ", validation)
 		# print("between this"+str(resultTuple[0])+"this the lenth od the returned tuple")
 		if(not validation):
 			return False
@@ -192,7 +191,6 @@ def checkForResultConsistency(resultproof,res, allReplicaVerifyKeysMap, source):
 		
 		if(validCount>=quorum):
 			flag=True
-		print ("the flag returned is  ", flag)
 		return flag
 
 def validateResultProof(resultproof, allReplicaVerifyKeysMap):

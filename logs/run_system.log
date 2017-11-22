@@ -1,552 +1,124 @@
-2017-11-21 02:15:19,603 [replica_0    74] [INFO ]  Replica SETUP done. Clients : [<Client:3c402#client_0>], Olympus : <Olympus:42402#onode>, Replica : <Replica:2dc02#replica_0>, ReplicaState : ACTIVE
-2017-11-21 02:15:19,605 [replica_0    150] [INFO ]  failures defined in config file failureDS :{0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}
-2017-11-21 02:15:19,609 [replica_1    74] [INFO ]  Replica SETUP done. Clients : [<Client:3c402#client_0>], Olympus : <Olympus:42402#onode>, Replica : <Replica:52c02#replica_1>, ReplicaState : ACTIVE
-2017-11-21 02:15:19,610 [replica_1    150] [INFO ]  failures defined in config file failureDS :{0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}
-2017-11-21 02:15:19,615 [replica_2    74] [INFO ]  Replica SETUP done. Clients : [<Client:3c402#client_0>], Olympus : <Olympus:42402#onode>, Replica : <Replica:27c02#replica_2>, ReplicaState : ACTIVE
-2017-11-21 02:15:19,616 [replica_2    150] [INFO ]  failures defined in config file failureDS :{0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}
-2017-11-21 02:15:19,620 [replica_0    119] [INFO ]  Starting replica in configuration number : 0
-2017-11-21 02:15:19,621 [replica_1    119] [INFO ]  Starting replica in configuration number : 0
-2017-11-21 02:15:19,623 [replica_2    119] [INFO ]  Starting replica in configuration number : 0
-2017-11-21 02:15:19,628 [client_0     46] [INFO ]  In Client SETUP
-2017-11-21 02:15:19,629 [client_0     59] [INFO ]  Client setup finished. Operations for client : <Client:3c402#client_0> => ["put('movie','star')", "append('movie','wars')", "slice('movie':'4:7')", "get('movie')", "get('movie')", "get('movie')"]
-2017-11-21 02:15:19,631 [client_0     62] [INFO ]  Client start called. Inside run()
-2017-11-21 02:15:19,632 [client_0     130] [INFO ]  The Client:<Client:3c402#client_0>. workload to be performed : ["put('movie','star')", "append('movie','wars')", "slice('movie':'4:7')", "get('movie')", "get('movie')", "get('movie')"]
-2017-11-21 02:15:19,632 [client_0     139] [INFO ]  *************************************
-2017-11-21 02:15:19,633 [client_0     140] [INFO ]  process started for the operation : put('movie','star')
-2017-11-21 02:15:19,633 [client_0     282] [INFO ]  Executing Operation in dictonary. operation : put('movie','star')
-2017-11-21 02:15:19,633 [client_0     76] [INFO ]  Sending operations at Replicas, requestId: 5a893e79-4407-4980-bf48-c2a1c55c699e, operation : put('movie','star')
-2017-11-21 02:15:19,636 [replica_0    568] [INFO ]  ************************FORWARD SHUTTLE***************
-2017-11-21 02:15:19,637 [replica_0    571] [INFO ]  PERFORM_OPERATION at HEAD Replica request_id : 5a893e79-4407-4980-bf48-c2a1c55c699e, operation : put('movie','star'), client : <Client:3c402#client_0>,  slot number: 1
-2017-11-21 02:15:19,637 [replica_0    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['new_configuration']
-2017-11-21 02:15:19,637 [replica_0    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['new_configuration'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 0, 'resultShuttleCounter': 0}}
-2017-11-21 02:15:19,638 [replica_0    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:19,638 [replica_0    361] [INFO ]  returning 3, =>{'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}, =>{1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}
-2017-11-21 02:15:19,638 [replica_0    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:19,639 [replica_0    282] [INFO ]  Executing Operation in dictonary. operation : put('movie','star')
-2017-11-21 02:15:19,639 [replica_0    243] [INFO ]  updating OrderProof and ResultProof !!
-2017-11-21 02:15:19,640 [replica_0    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 1, 'forwardRequestCounter': 0, 'shuttleCounter': 1, 'resultShuttleCounter': 0}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,640 [replica_0    589] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,640 [replica_0    592] [INFO ]  PERFORM_OPERATION done at HeadReplica, transfering SHUTTLE to nextReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:19,641 [replica_0    594] [INFO ]  checkpt_interval : 2
-2017-11-21 02:15:19,642 [replica_1    607] [INFO ]  ************************FORWARD SHUTTLE***************
-2017-11-21 02:15:19,643 [replica_1    609] [INFO ]  PERFORM_OPERATION called at NONHEAD Replica request_id : 5a893e79-4407-4980-bf48-c2a1c55c699e, slot_number: 1, operation : put('movie','star'), client : <Client:3c402#client_0>, from Replica : <Replica:2dc02#replica_0>
-2017-11-21 02:15:19,643 [replica_1    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['new_configuration']
-2017-11-21 02:15:19,644 [replica_1    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['new_configuration'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 0, 'resultShuttleCounter': 0}}
-2017-11-21 02:15:19,644 [replica_1    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:19,644 [replica_1    388] [INFO ]  returning 4
-2017-11-21 02:15:19,644 [replica_1    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:19,645 [replica_1    186] [INFO ]  request_id : 5a893e79-4407-4980-bf48-c2a1c55c699e, operation : put('movie','star'), client : <Client:3c402#client_0>, validateOrderProof
-2017-11-21 02:15:19,645 [replica_1    208] [INFO ]  validation success
-2017-11-21 02:15:19,645 [replica_1    282] [INFO ]  Executing Operation in dictonary. operation : put('movie','star')
-2017-11-21 02:15:19,646 [replica_1    243] [INFO ]  updating OrderProof and ResultProof !!
-2017-11-21 02:15:19,646 [replica_1    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 1, 'resultShuttleCounter': 0}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,647 [replica_1    668] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,650 [replica_2    607] [INFO ]  ************************FORWARD SHUTTLE***************
-2017-11-21 02:15:19,652 [replica_2    609] [INFO ]  PERFORM_OPERATION called at NONHEAD Replica request_id : 5a893e79-4407-4980-bf48-c2a1c55c699e, slot_number: 1, operation : put('movie','star'), client : <Client:3c402#client_0>, from Replica : <Replica:52c02#replica_1>
-2017-11-21 02:15:19,653 [replica_2    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['new_configuration']
-2017-11-21 02:15:19,653 [replica_2    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['new_configuration'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 0, 'resultShuttleCounter': 0}}
-2017-11-21 02:15:19,654 [replica_2    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:19,654 [replica_2    361] [INFO ]  returning 3, =>{'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}, =>{1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}
-2017-11-21 02:15:19,654 [replica_2    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:19,654 [replica_2    186] [INFO ]  request_id : 5a893e79-4407-4980-bf48-c2a1c55c699e, operation : put('movie','star'), client : <Client:3c402#client_0>, validateOrderProof
-2017-11-21 02:15:19,655 [replica_2    208] [INFO ]  validation success
-2017-11-21 02:15:19,656 [replica_2    282] [INFO ]  Executing Operation in dictonary. operation : put('movie','star')
-2017-11-21 02:15:19,657 [replica_2    243] [INFO ]  updating OrderProof and ResultProof !!
-2017-11-21 02:15:19,657 [replica_2    182] [INFO ]  caching result for request_id : 5a893e79-4407-4980-bf48-c2a1c55c699e
-2017-11-21 02:15:19,658 [replica_2    633] [INFO ]  request_id : 5a893e79-4407-4980-bf48-c2a1c55c699e, operation : put('movie','star'), client : <Client:3c402#client_0>SHUTTLE reached at Tail
-2017-11-21 02:15:19,658 [replica_2    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 1, 'resultShuttleCounter': 0}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,658 [replica_2    638] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,658 [replica_2    642] [INFO ]  sending reaponse to client
-2017-11-21 02:15:19,660 [replica_2    646] [INFO ]  ************************REVERSE SHUTTLE***************
-2017-11-21 02:15:19,660 [client_0     225] [INFO ]  Result SHUTTLE reached from tail Replica : <Replica:27c02#replica_2>, dictdata : {'movie': 'star'}, request_id : 5a893e79-4407-4980-bf48-c2a1c55c699e
-2017-11-21 02:15:19,660 [replica_2    647] [INFO ]  REVERSE_SHUTTLE starting. Forwarding to prevReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:19,660 [replica_2    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 1, 'resultShuttleCounter': 1}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,661 [replica_2    653] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,662 [replica_1    750] [INFO ]  ************************REVERSE SHUTTLE***************
-2017-11-21 02:15:19,662 [client_0     229] [INFO ]  client_dict_validation_flag => False
-2017-11-21 02:15:19,663 [replica_1    752] [INFO ]  REVERSE_SHUTTLE reached at replica request_id : 5a893e79-4407-4980-bf48-c2a1c55c699e, client : <Client:3c402#client_0>, from nextReplica : <Replica:27c02#replica_2>
-2017-11-21 02:15:19,663 [client_0     242] [INFO ]  Result proof correctly validated! SUCCESS !!
-2017-11-21 02:15:19,663 [client_0     154] [INFO ]  Operation executed : put('movie','star')
-2017-11-21 02:15:19,663 [client_0     139] [INFO ]  *************************************
-2017-11-21 02:15:19,664 [client_0     140] [INFO ]  process started for the operation : append('movie','wars')
-2017-11-21 02:15:19,664 [replica_1    754] [INFO ]  the result from validation is True
-2017-11-21 02:15:19,664 [client_0     282] [INFO ]  Executing Operation in dictonary. operation : append('movie','wars')
-2017-11-21 02:15:19,665 [client_0     76] [INFO ]  Sending operations at Replicas, requestId: 4ccffc31-c1f9-4bfc-88ee-8999073b6b8d, operation : append('movie','wars')
-2017-11-21 02:15:19,665 [replica_1    182] [INFO ]  caching result for request_id : 5a893e79-4407-4980-bf48-c2a1c55c699e
-2017-11-21 02:15:19,666 [replica_1    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 1, 'resultShuttleCounter': 1}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,666 [replica_1    765] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,667 [replica_1    772] [INFO ]  request_id : 5a893e79-4407-4980-bf48-c2a1c55c699e, after caching result, forwarding to prevReplica : <Replica:2dc02#replica_0>
-2017-11-21 02:15:19,668 [replica_0    568] [INFO ]  ************************FORWARD SHUTTLE***************
-2017-11-21 02:15:19,669 [replica_0    571] [INFO ]  PERFORM_OPERATION at HEAD Replica request_id : 4ccffc31-c1f9-4bfc-88ee-8999073b6b8d, operation : append('movie','wars'), client : <Client:3c402#client_0>,  slot number: 2
-2017-11-21 02:15:19,669 [replica_0    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['new_configuration']
-2017-11-21 02:15:19,670 [replica_0    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['new_configuration'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 1, 'forwardRequestCounter': 0, 'shuttleCounter': 1, 'resultShuttleCounter': 0}}
-2017-11-21 02:15:19,670 [replica_0    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:19,670 [replica_0    361] [INFO ]  returning 3, =>{'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}, =>{1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}
-2017-11-21 02:15:19,670 [replica_0    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:19,670 [replica_0    282] [INFO ]  Executing Operation in dictonary. operation : append('movie','wars')
-2017-11-21 02:15:19,671 [replica_0    243] [INFO ]  updating OrderProof and ResultProof !!
-2017-11-21 02:15:19,671 [replica_0    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 2, 'forwardRequestCounter': 0, 'shuttleCounter': 2, 'resultShuttleCounter': 0}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,672 [replica_0    589] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,672 [replica_0    592] [INFO ]  PERFORM_OPERATION done at HeadReplica, transfering SHUTTLE to nextReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:19,673 [replica_0    594] [INFO ]  checkpt_interval : 2
-2017-11-21 02:15:19,674 [replica_1    607] [INFO ]  ************************FORWARD SHUTTLE***************
-2017-11-21 02:15:19,674 [replica_0    750] [INFO ]  ************************REVERSE SHUTTLE***************
-2017-11-21 02:15:19,674 [replica_0    752] [INFO ]  REVERSE_SHUTTLE reached at replica request_id : 5a893e79-4407-4980-bf48-c2a1c55c699e, client : <Client:3c402#client_0>, from nextReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:19,675 [replica_1    609] [INFO ]  PERFORM_OPERATION called at NONHEAD Replica request_id : 4ccffc31-c1f9-4bfc-88ee-8999073b6b8d, slot_number: 2, operation : append('movie','wars'), client : <Client:3c402#client_0>, from Replica : <Replica:2dc02#replica_0>
-2017-11-21 02:15:19,675 [replica_1    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['new_configuration']
-2017-11-21 02:15:19,676 [replica_1    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['new_configuration'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 1, 'resultShuttleCounter': 1}}
-2017-11-21 02:15:19,676 [replica_0    754] [INFO ]  the result from validation is True
-2017-11-21 02:15:19,676 [replica_1    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:19,677 [replica_0    182] [INFO ]  caching result for request_id : 5a893e79-4407-4980-bf48-c2a1c55c699e
-2017-11-21 02:15:19,677 [replica_1    388] [INFO ]  returning 4
-2017-11-21 02:15:19,677 [replica_0    759] [INFO ]  SHUTTLE reached at HEAD
-2017-11-21 02:15:19,677 [replica_1    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:19,678 [replica_1    186] [INFO ]  request_id : 4ccffc31-c1f9-4bfc-88ee-8999073b6b8d, operation : append('movie','wars'), client : <Client:3c402#client_0>, validateOrderProof
-2017-11-21 02:15:19,678 [replica_1    208] [INFO ]  validation success
-2017-11-21 02:15:19,679 [replica_1    282] [INFO ]  Executing Operation in dictonary. operation : append('movie','wars')
-2017-11-21 02:15:19,679 [replica_1    243] [INFO ]  updating OrderProof and ResultProof !!
-2017-11-21 02:15:19,680 [replica_1    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 2, 'resultShuttleCounter': 1}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,680 [replica_1    668] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,682 [replica_2    607] [INFO ]  ************************FORWARD SHUTTLE***************
-2017-11-21 02:15:19,684 [replica_2    609] [INFO ]  PERFORM_OPERATION called at NONHEAD Replica request_id : 4ccffc31-c1f9-4bfc-88ee-8999073b6b8d, slot_number: 2, operation : append('movie','wars'), client : <Client:3c402#client_0>, from Replica : <Replica:52c02#replica_1>
-2017-11-21 02:15:19,685 [replica_2    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['new_configuration']
-2017-11-21 02:15:19,685 [replica_2    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['new_configuration'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 1, 'resultShuttleCounter': 1}}
-2017-11-21 02:15:19,686 [replica_2    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:19,686 [replica_2    361] [INFO ]  returning 3, =>{'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}, =>{1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}
-2017-11-21 02:15:19,687 [replica_2    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:19,687 [replica_2    186] [INFO ]  request_id : 4ccffc31-c1f9-4bfc-88ee-8999073b6b8d, operation : append('movie','wars'), client : <Client:3c402#client_0>, validateOrderProof
-2017-11-21 02:15:19,689 [replica_2    208] [INFO ]  validation success
-2017-11-21 02:15:19,689 [replica_2    282] [INFO ]  Executing Operation in dictonary. operation : append('movie','wars')
-2017-11-21 02:15:19,690 [replica_2    243] [INFO ]  updating OrderProof and ResultProof !!
-2017-11-21 02:15:19,690 [replica_2    182] [INFO ]  caching result for request_id : 4ccffc31-c1f9-4bfc-88ee-8999073b6b8d
-2017-11-21 02:15:19,691 [replica_2    633] [INFO ]  request_id : 4ccffc31-c1f9-4bfc-88ee-8999073b6b8d, operation : append('movie','wars'), client : <Client:3c402#client_0>SHUTTLE reached at Tail
-2017-11-21 02:15:19,691 [replica_2    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 2, 'resultShuttleCounter': 1}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,691 [replica_2    638] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,692 [replica_2    642] [INFO ]  sending reaponse to client
-2017-11-21 02:15:19,694 [client_0     225] [INFO ]  Result SHUTTLE reached from tail Replica : <Replica:27c02#replica_2>, dictdata : {'movie': 'star wars'}, request_id : 4ccffc31-c1f9-4bfc-88ee-8999073b6b8d
-2017-11-21 02:15:19,694 [replica_2    646] [INFO ]  ************************REVERSE SHUTTLE***************
-2017-11-21 02:15:19,695 [replica_2    647] [INFO ]  REVERSE_SHUTTLE starting. Forwarding to prevReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:19,695 [replica_2    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 2, 'resultShuttleCounter': 2}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,696 [replica_2    653] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,696 [client_0     229] [INFO ]  client_dict_validation_flag => False
-2017-11-21 02:15:19,696 [client_0     242] [INFO ]  Result proof correctly validated! SUCCESS !!
-2017-11-21 02:15:19,697 [client_0     154] [INFO ]  Operation executed : append('movie','wars')
-2017-11-21 02:15:19,697 [client_0     139] [INFO ]  *************************************
-2017-11-21 02:15:19,698 [client_0     140] [INFO ]  process started for the operation : slice('movie':'4:7')
-2017-11-21 02:15:19,698 [client_0     282] [INFO ]  Executing Operation in dictonary. operation : slice('movie':'4:7')
-2017-11-21 02:15:19,698 [client_0     322] [INFO ]  slice operation successfully executed
-2017-11-21 02:15:19,699 [replica_1    750] [INFO ]  ************************REVERSE SHUTTLE***************
-2017-11-21 02:15:19,699 [client_0     76] [INFO ]  Sending operations at Replicas, requestId: b318440d-6b88-40f7-b2d4-28b022f6ffdc, operation : slice('movie':'4:7')
-2017-11-21 02:15:19,699 [replica_1    752] [INFO ]  REVERSE_SHUTTLE reached at replica request_id : 4ccffc31-c1f9-4bfc-88ee-8999073b6b8d, client : <Client:3c402#client_0>, from nextReplica : <Replica:27c02#replica_2>
-2017-11-21 02:15:19,701 [replica_1    754] [INFO ]  the result from validation is True
-2017-11-21 02:15:19,701 [replica_1    182] [INFO ]  caching result for request_id : 4ccffc31-c1f9-4bfc-88ee-8999073b6b8d
-2017-11-21 02:15:19,701 [replica_0    568] [INFO ]  ************************FORWARD SHUTTLE***************
-2017-11-21 02:15:19,702 [replica_1    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 2, 'resultShuttleCounter': 2}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,702 [replica_1    765] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,703 [replica_1    772] [INFO ]  request_id : 4ccffc31-c1f9-4bfc-88ee-8999073b6b8d, after caching result, forwarding to prevReplica : <Replica:2dc02#replica_0>
-2017-11-21 02:15:19,703 [replica_0    571] [INFO ]  PERFORM_OPERATION at HEAD Replica request_id : b318440d-6b88-40f7-b2d4-28b022f6ffdc, operation : slice('movie':'4:7'), client : <Client:3c402#client_0>,  slot number: 3
-2017-11-21 02:15:19,703 [replica_0    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['new_configuration']
-2017-11-21 02:15:19,703 [replica_0    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['new_configuration'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 2, 'forwardRequestCounter': 0, 'shuttleCounter': 2, 'resultShuttleCounter': 1}}
-2017-11-21 02:15:19,704 [replica_0    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:19,704 [replica_0    361] [INFO ]  returning 3, =>{'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}, =>{1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}
-2017-11-21 02:15:19,705 [replica_0    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:19,705 [replica_0    282] [INFO ]  Executing Operation in dictonary. operation : slice('movie':'4:7')
-2017-11-21 02:15:19,705 [replica_0    322] [INFO ]  slice operation successfully executed
-2017-11-21 02:15:19,706 [replica_0    243] [INFO ]  updating OrderProof and ResultProof !!
-2017-11-21 02:15:19,706 [replica_0    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 3, 'forwardRequestCounter': 0, 'shuttleCounter': 3, 'resultShuttleCounter': 1}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,706 [replica_0    589] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,707 [replica_0    592] [INFO ]  PERFORM_OPERATION done at HeadReplica, transfering SHUTTLE to nextReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:19,707 [replica_0    594] [INFO ]  checkpt_interval : 2
-2017-11-21 02:15:19,708 [replica_1    607] [INFO ]  ************************FORWARD SHUTTLE***************
-2017-11-21 02:15:19,709 [replica_1    609] [INFO ]  PERFORM_OPERATION called at NONHEAD Replica request_id : b318440d-6b88-40f7-b2d4-28b022f6ffdc, slot_number: 3, operation : slice('movie':'4:7'), client : <Client:3c402#client_0>, from Replica : <Replica:2dc02#replica_0>
-2017-11-21 02:15:19,709 [replica_0    750] [INFO ]  ************************REVERSE SHUTTLE***************
-2017-11-21 02:15:19,709 [replica_0    752] [INFO ]  REVERSE_SHUTTLE reached at replica request_id : 4ccffc31-c1f9-4bfc-88ee-8999073b6b8d, client : <Client:3c402#client_0>, from nextReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:19,710 [replica_0    754] [INFO ]  the result from validation is True
-2017-11-21 02:15:19,710 [replica_0    182] [INFO ]  caching result for request_id : 4ccffc31-c1f9-4bfc-88ee-8999073b6b8d
-2017-11-21 02:15:19,711 [replica_0    759] [INFO ]  SHUTTLE reached at HEAD
-2017-11-21 02:15:19,711 [replica_1    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['new_configuration']
-2017-11-21 02:15:19,711 [replica_1    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['new_configuration'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 2, 'resultShuttleCounter': 2}}
-2017-11-21 02:15:19,711 [replica_1    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:19,712 [replica_1    388] [INFO ]  returning 4
-2017-11-21 02:15:19,712 [replica_1    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:19,713 [replica_1    186] [INFO ]  request_id : b318440d-6b88-40f7-b2d4-28b022f6ffdc, operation : slice('movie':'4:7'), client : <Client:3c402#client_0>, validateOrderProof
-2017-11-21 02:15:19,713 [replica_1    208] [INFO ]  validation success
-2017-11-21 02:15:19,715 [replica_1    282] [INFO ]  Executing Operation in dictonary. operation : slice('movie':'4:7')
-2017-11-21 02:15:19,715 [replica_1    322] [INFO ]  slice operation successfully executed
-2017-11-21 02:15:19,716 [replica_1    243] [INFO ]  updating OrderProof and ResultProof !!
-2017-11-21 02:15:19,717 [replica_1    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 3, 'resultShuttleCounter': 2}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,718 [replica_1    668] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,721 [replica_2    607] [INFO ]  ************************FORWARD SHUTTLE***************
-2017-11-21 02:15:19,722 [replica_2    609] [INFO ]  PERFORM_OPERATION called at NONHEAD Replica request_id : b318440d-6b88-40f7-b2d4-28b022f6ffdc, slot_number: 3, operation : slice('movie':'4:7'), client : <Client:3c402#client_0>, from Replica : <Replica:52c02#replica_1>
-2017-11-21 02:15:19,722 [replica_2    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['new_configuration']
-2017-11-21 02:15:19,722 [replica_2    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['new_configuration'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 2, 'resultShuttleCounter': 2}}
-2017-11-21 02:15:19,723 [replica_2    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:19,723 [replica_2    361] [INFO ]  returning 3, =>{'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}, =>{1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}
-2017-11-21 02:15:19,724 [replica_2    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:19,724 [replica_2    186] [INFO ]  request_id : b318440d-6b88-40f7-b2d4-28b022f6ffdc, operation : slice('movie':'4:7'), client : <Client:3c402#client_0>, validateOrderProof
-2017-11-21 02:15:19,725 [replica_2    208] [INFO ]  validation success
-2017-11-21 02:15:19,726 [replica_2    282] [INFO ]  Executing Operation in dictonary. operation : slice('movie':'4:7')
-2017-11-21 02:15:19,726 [replica_2    322] [INFO ]  slice operation successfully executed
-2017-11-21 02:15:19,727 [replica_2    243] [INFO ]  updating OrderProof and ResultProof !!
-2017-11-21 02:15:19,727 [replica_2    182] [INFO ]  caching result for request_id : b318440d-6b88-40f7-b2d4-28b022f6ffdc
-2017-11-21 02:15:19,727 [replica_2    633] [INFO ]  request_id : b318440d-6b88-40f7-b2d4-28b022f6ffdc, operation : slice('movie':'4:7'), client : <Client:3c402#client_0>SHUTTLE reached at Tail
-2017-11-21 02:15:19,728 [replica_2    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 3, 'resultShuttleCounter': 2}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,728 [replica_2    638] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,728 [replica_2    642] [INFO ]  sending reaponse to client
-2017-11-21 02:15:19,730 [client_0     225] [INFO ]  Result SHUTTLE reached from tail Replica : <Replica:27c02#replica_2>, dictdata : {'movie': ' wa'}, request_id : b318440d-6b88-40f7-b2d4-28b022f6ffdc
-2017-11-21 02:15:19,731 [replica_2    646] [INFO ]  ************************REVERSE SHUTTLE***************
-2017-11-21 02:15:19,731 [replica_2    647] [INFO ]  REVERSE_SHUTTLE starting. Forwarding to prevReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:19,732 [client_0     229] [INFO ]  client_dict_validation_flag => False
-2017-11-21 02:15:19,732 [replica_2    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 3, 'resultShuttleCounter': 3}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,732 [client_0     242] [INFO ]  Result proof correctly validated! SUCCESS !!
-2017-11-21 02:15:19,733 [replica_2    653] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,733 [client_0     154] [INFO ]  Operation executed : slice('movie':'4:7')
-2017-11-21 02:15:19,733 [client_0     139] [INFO ]  *************************************
-2017-11-21 02:15:19,734 [client_0     140] [INFO ]  process started for the operation : get('movie')
-2017-11-21 02:15:19,734 [client_0     282] [INFO ]  Executing Operation in dictonary. operation : get('movie')
-2017-11-21 02:15:19,734 [client_0     76] [INFO ]  Sending operations at Replicas, requestId: c7ab2542-53c0-4f74-a1f7-929216d51391, operation : get('movie')
-2017-11-21 02:15:19,734 [replica_1    750] [INFO ]  ************************REVERSE SHUTTLE***************
-2017-11-21 02:15:19,735 [replica_1    752] [INFO ]  REVERSE_SHUTTLE reached at replica request_id : b318440d-6b88-40f7-b2d4-28b022f6ffdc, client : <Client:3c402#client_0>, from nextReplica : <Replica:27c02#replica_2>
-2017-11-21 02:15:19,736 [replica_1    754] [INFO ]  the result from validation is True
-2017-11-21 02:15:19,736 [replica_0    568] [INFO ]  ************************FORWARD SHUTTLE***************
-2017-11-21 02:15:19,737 [replica_1    182] [INFO ]  caching result for request_id : b318440d-6b88-40f7-b2d4-28b022f6ffdc
-2017-11-21 02:15:19,737 [replica_1    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 3, 'resultShuttleCounter': 3}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,737 [replica_0    571] [INFO ]  PERFORM_OPERATION at HEAD Replica request_id : c7ab2542-53c0-4f74-a1f7-929216d51391, operation : get('movie'), client : <Client:3c402#client_0>,  slot number: 4
-2017-11-21 02:15:19,737 [replica_1    765] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,737 [replica_0    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['new_configuration']
-2017-11-21 02:15:19,738 [replica_1    772] [INFO ]  request_id : b318440d-6b88-40f7-b2d4-28b022f6ffdc, after caching result, forwarding to prevReplica : <Replica:2dc02#replica_0>
-2017-11-21 02:15:19,738 [replica_0    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['new_configuration'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 3, 'forwardRequestCounter': 0, 'shuttleCounter': 3, 'resultShuttleCounter': 2}}
-2017-11-21 02:15:19,738 [replica_0    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:19,739 [replica_0    361] [INFO ]  returning 3, =>{'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}, =>{1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}
-2017-11-21 02:15:19,739 [replica_0    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:19,739 [replica_0    282] [INFO ]  Executing Operation in dictonary. operation : get('movie')
-2017-11-21 02:15:19,740 [replica_0    243] [INFO ]  updating OrderProof and ResultProof !!
-2017-11-21 02:15:19,740 [replica_0    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 4, 'forwardRequestCounter': 0, 'shuttleCounter': 4, 'resultShuttleCounter': 2}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,741 [replica_0    589] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,741 [replica_0    592] [INFO ]  PERFORM_OPERATION done at HeadReplica, transfering SHUTTLE to nextReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:19,742 [replica_0    594] [INFO ]  checkpt_interval : 2
-2017-11-21 02:15:19,742 [replica_0    597] [INFO ]  CheckPoint function being called at HEAD
-2017-11-21 02:15:19,742 [replica_0    472] [INFO ]  inside executeCheckPointing function for creating the current checkpoint
-2017-11-21 02:15:19,743 [replica_1    607] [INFO ]  ************************FORWARD SHUTTLE***************
-2017-11-21 02:15:19,743 [replica_0    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['checkpoint']
-2017-11-21 02:15:19,743 [replica_0    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['checkpoint'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 4, 'forwardRequestCounter': 0, 'shuttleCounter': 4, 'resultShuttleCounter': 2}}
-2017-11-21 02:15:19,744 [replica_0    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:19,744 [replica_1    609] [INFO ]  PERFORM_OPERATION called at NONHEAD Replica request_id : c7ab2542-53c0-4f74-a1f7-929216d51391, slot_number: 4, operation : get('movie'), client : <Client:3c402#client_0>, from Replica : <Replica:2dc02#replica_0>
-2017-11-21 02:15:19,744 [replica_0    361] [INFO ]  returning 3, =>{'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}, =>{1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}
-2017-11-21 02:15:19,744 [replica_1    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['new_configuration']
-2017-11-21 02:15:19,744 [replica_0    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:19,744 [replica_1    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['new_configuration'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 3, 'resultShuttleCounter': 3}}
-2017-11-21 02:15:19,745 [replica_1    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:19,745 [replica_0    481] [INFO ]  CHECKPOINTING SHUTTLE done at HeadReplica, transfering SHUTTLE to nextReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:19,745 [replica_1    388] [INFO ]  returning 4
-2017-11-21 02:15:19,745 [replica_1    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:19,746 [replica_0    750] [INFO ]  ************************REVERSE SHUTTLE***************
-2017-11-21 02:15:19,746 [replica_1    186] [INFO ]  request_id : c7ab2542-53c0-4f74-a1f7-929216d51391, operation : get('movie'), client : <Client:3c402#client_0>, validateOrderProof
-2017-11-21 02:15:19,747 [replica_0    752] [INFO ]  REVERSE_SHUTTLE reached at replica request_id : b318440d-6b88-40f7-b2d4-28b022f6ffdc, client : <Client:3c402#client_0>, from nextReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:19,747 [replica_1    208] [INFO ]  validation success
-2017-11-21 02:15:19,747 [replica_1    282] [INFO ]  Executing Operation in dictonary. operation : get('movie')
-2017-11-21 02:15:19,748 [replica_0    754] [INFO ]  the result from validation is True
-2017-11-21 02:15:19,748 [replica_1    243] [INFO ]  updating OrderProof and ResultProof !!
-2017-11-21 02:15:19,748 [replica_0    182] [INFO ]  caching result for request_id : b318440d-6b88-40f7-b2d4-28b022f6ffdc
-2017-11-21 02:15:19,749 [replica_1    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 4, 'resultShuttleCounter': 3}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,749 [replica_0    759] [INFO ]  SHUTTLE reached at HEAD
-2017-11-21 02:15:19,749 [replica_1    668] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,751 [replica_1    687] [INFO ]  FORWARD_SHUTTLE_CHECKPOINTING called at NONHEAD Replica  , checkpoint : 2, self.slot_number: 4, from Replica : <Replica:2dc02#replica_0>
-2017-11-21 02:15:19,751 [replica_2    607] [INFO ]  ************************FORWARD SHUTTLE***************
-2017-11-21 02:15:19,752 [replica_1    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['checkpoint']
-2017-11-21 02:15:19,752 [replica_1    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['checkpoint'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 4, 'resultShuttleCounter': 3}}
-2017-11-21 02:15:19,752 [replica_1    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:19,753 [replica_2    609] [INFO ]  PERFORM_OPERATION called at NONHEAD Replica request_id : c7ab2542-53c0-4f74-a1f7-929216d51391, slot_number: 4, operation : get('movie'), client : <Client:3c402#client_0>, from Replica : <Replica:52c02#replica_1>
-2017-11-21 02:15:19,753 [replica_1    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => sleep
-2017-11-21 02:15:19,753 [replica_2    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['new_configuration']
-2017-11-21 02:15:19,753 [replica_1    285] [INFO ]  callFailureFunctionBasedOnTrigger triggerName: sleep, trigger_n: 12
-2017-11-21 02:15:19,753 [replica_2    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['new_configuration'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 3, 'resultShuttleCounter': 3}}
-2017-11-21 02:15:19,754 [replica_1    440] [INFO ]  Failure found. Sleep. time: 12
-2017-11-21 02:15:19,754 [replica_2    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:19,754 [replica_2    361] [INFO ]  returning 3, =>{'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}, =>{1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}
-2017-11-21 02:15:19,755 [replica_2    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:19,755 [replica_2    186] [INFO ]  request_id : c7ab2542-53c0-4f74-a1f7-929216d51391, operation : get('movie'), client : <Client:3c402#client_0>, validateOrderProof
-2017-11-21 02:15:19,757 [replica_2    208] [INFO ]  validation success
-2017-11-21 02:15:19,757 [replica_2    282] [INFO ]  Executing Operation in dictonary. operation : get('movie')
-2017-11-21 02:15:19,758 [replica_2    243] [INFO ]  updating OrderProof and ResultProof !!
-2017-11-21 02:15:19,758 [replica_2    182] [INFO ]  caching result for request_id : c7ab2542-53c0-4f74-a1f7-929216d51391
-2017-11-21 02:15:19,759 [replica_2    633] [INFO ]  request_id : c7ab2542-53c0-4f74-a1f7-929216d51391, operation : get('movie'), client : <Client:3c402#client_0>SHUTTLE reached at Tail
-2017-11-21 02:15:19,759 [replica_2    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 4, 'resultShuttleCounter': 3}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,759 [replica_2    638] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,759 [replica_2    642] [INFO ]  sending reaponse to client
-2017-11-21 02:15:19,761 [client_0     225] [INFO ]  Result SHUTTLE reached from tail Replica : <Replica:27c02#replica_2>, dictdata : {'movie': ' wa'}, request_id : c7ab2542-53c0-4f74-a1f7-929216d51391
-2017-11-21 02:15:19,761 [replica_2    646] [INFO ]  ************************REVERSE SHUTTLE***************
-2017-11-21 02:15:19,761 [replica_2    647] [INFO ]  REVERSE_SHUTTLE starting. Forwarding to prevReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:19,762 [replica_2    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 4, 'resultShuttleCounter': 4}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,762 [replica_2    653] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,763 [client_0     229] [INFO ]  client_dict_validation_flag => False
-2017-11-21 02:15:19,763 [client_0     242] [INFO ]  Result proof correctly validated! SUCCESS !!
-2017-11-21 02:15:19,763 [client_0     154] [INFO ]  Operation executed : get('movie')
-2017-11-21 02:15:19,764 [client_0     139] [INFO ]  *************************************
-2017-11-21 02:15:19,764 [client_0     140] [INFO ]  process started for the operation : get('movie')
-2017-11-21 02:15:19,764 [client_0     282] [INFO ]  Executing Operation in dictonary. operation : get('movie')
-2017-11-21 02:15:19,764 [client_0     76] [INFO ]  Sending operations at Replicas, requestId: 32425541-e18b-4193-bdef-1dfc7b94735f, operation : get('movie')
-2017-11-21 02:15:19,767 [replica_0    568] [INFO ]  ************************FORWARD SHUTTLE***************
-2017-11-21 02:15:19,768 [replica_0    571] [INFO ]  PERFORM_OPERATION at HEAD Replica request_id : 32425541-e18b-4193-bdef-1dfc7b94735f, operation : get('movie'), client : <Client:3c402#client_0>,  slot number: 5
-2017-11-21 02:15:19,768 [replica_0    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['new_configuration']
-2017-11-21 02:15:19,769 [replica_0    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['new_configuration'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 4, 'forwardRequestCounter': 0, 'shuttleCounter': 4, 'resultShuttleCounter': 3}}
-2017-11-21 02:15:19,769 [replica_0    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:19,770 [replica_0    361] [INFO ]  returning 3, =>{'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}, =>{1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}
-2017-11-21 02:15:19,770 [replica_0    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:19,771 [replica_0    282] [INFO ]  Executing Operation in dictonary. operation : get('movie')
-2017-11-21 02:15:19,771 [replica_0    243] [INFO ]  updating OrderProof and ResultProof !!
-2017-11-21 02:15:19,772 [replica_0    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 5, 'forwardRequestCounter': 0, 'shuttleCounter': 5, 'resultShuttleCounter': 3}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:19,772 [replica_0    589] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:19,773 [replica_0    592] [INFO ]  PERFORM_OPERATION done at HeadReplica, transfering SHUTTLE to nextReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:19,774 [replica_0    594] [INFO ]  checkpt_interval : 2
-2017-11-21 02:15:29,766 [client_0     157] [ERROR]  Client Timed out!!, request_id : 32425541-e18b-4193-bdef-1dfc7b94735f, operation : get('movie')
-2017-11-21 02:15:29,767 [client_0     158] [INFO ]  reconfigFlag : False, resultFromOlympus: False
-2017-11-21 02:15:29,767 [client_0     192] [INFO ]  Retransmission counter : 0
-2017-11-21 02:15:29,768 [client_0     93] [INFO ]  Retransmission for request_id : 32425541-e18b-4193-bdef-1dfc7b94735f, operation : get('movie')
-2017-11-21 02:15:29,768 [client_0     76] [INFO ]  Sending operations at Replicas, requestId: 32425541-e18b-4193-bdef-1dfc7b94735f, operation : get('movie')
-2017-11-21 02:15:29,769 [client_0     76] [INFO ]  Sending operations at Replicas, requestId: 32425541-e18b-4193-bdef-1dfc7b94735f, operation : get('movie')
-2017-11-21 02:15:29,771 [client_0     76] [INFO ]  Sending operations at Replicas, requestId: 32425541-e18b-4193-bdef-1dfc7b94735f, operation : get('movie')
-2017-11-21 02:15:29,772 [replica_0    832] [INFO ]  RETRANSMISSION received at <Replica:2dc02#replica_0>, requestId : 32425541-e18b-4193-bdef-1dfc7b94735f, operation : get('movie'), from client : <Client:3c402#client_0>
-2017-11-21 02:15:29,773 [replica_0    840] [INFO ]  Operation is not recognized. Forwarding to HEAD REPLICA. From currentReplica : <Replica:2dc02#replica_0>, client : <Client:3c402#client_0>
-2017-11-21 02:15:29,774 [replica_2    832] [INFO ]  RETRANSMISSION received at <Replica:27c02#replica_2>, requestId : 32425541-e18b-4193-bdef-1dfc7b94735f, operation : get('movie'), from client : <Client:3c402#client_0>
-2017-11-21 02:15:29,775 [replica_2    840] [INFO ]  Operation is not recognized. Forwarding to HEAD REPLICA. From currentReplica : <Replica:27c02#replica_2>, client : <Client:3c402#client_0>
-2017-11-21 02:15:29,776 [replica_0    784] [INFO ]  RETRANSMISSION_HEAD to HEAD Replica
-2017-11-21 02:15:29,778 [replica_0    787] [INFO ]  RETRANSMISSION_HEAD request received from<Replica:2dc02#replica_0>
-2017-11-21 02:15:29,778 [replica_0    794] [INFO ]  Result shuttle is yet to receive at the head, waiting for it!! fromReplica : <Replica:2dc02#replica_0>
-2017-11-21 02:15:29,779 [replica_0    784] [INFO ]  RETRANSMISSION_HEAD to HEAD Replica
-2017-11-21 02:15:29,779 [replica_0    787] [INFO ]  RETRANSMISSION_HEAD request received from<Replica:27c02#replica_2>
-2017-11-21 02:15:29,780 [replica_0    794] [INFO ]  Result shuttle is yet to receive at the head, waiting for it!! fromReplica : <Replica:27c02#replica_2>
-2017-11-21 02:15:31,755 [replica_1    698] [INFO ]  CHECKPOINTING SHUTTLE done at NONHEAD Replica, transfering SHUTTLE to nextReplica : <Replica:27c02#replica_2>
-2017-11-21 02:15:31,758 [replica_1    750] [INFO ]  ************************REVERSE SHUTTLE***************
-2017-11-21 02:15:31,758 [replica_2    687] [INFO ]  FORWARD_SHUTTLE_CHECKPOINTING called at NONHEAD Replica  , checkpoint : 2, self.slot_number: 4, from Replica : <Replica:52c02#replica_1>
-2017-11-21 02:15:31,758 [replica_1    752] [INFO ]  REVERSE_SHUTTLE reached at replica request_id : c7ab2542-53c0-4f74-a1f7-929216d51391, client : <Client:3c402#client_0>, from nextReplica : <Replica:27c02#replica_2>
-2017-11-21 02:15:31,759 [replica_2    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['checkpoint']
-2017-11-21 02:15:31,759 [replica_2    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['checkpoint'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 4, 'resultShuttleCounter': 4}}
-2017-11-21 02:15:31,760 [replica_2    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:31,760 [replica_2    361] [INFO ]  returning 3, =>{'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}, =>{1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}
-2017-11-21 02:15:31,760 [replica_1    754] [INFO ]  the result from validation is True
-2017-11-21 02:15:31,760 [replica_2    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:31,761 [replica_1    182] [INFO ]  caching result for request_id : c7ab2542-53c0-4f74-a1f7-929216d51391
-2017-11-21 02:15:31,761 [replica_2    698] [INFO ]  CHECKPOINTING SHUTTLE done at NONHEAD Replica, transfering SHUTTLE to nextReplica : None
-2017-11-21 02:15:31,761 [replica_1    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 4, 'resultShuttleCounter': 4}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:31,761 [replica_2    700] [INFO ]  SHUTTLE : [b"9\xd8\xf3L1\xba\xe6\xa5sfi\xb3\x88t\x08L/]\xa9?\xc154\xda3\xee\x90\x7f\xec\x9e|\xde\xaad\xaf\xf3N\xf1%U\xadW(A\x90r[\xb9\xac\x8d\xdb\xd2/\x1a\x0c\xa3\x98iW\xe6]\x0c\xfc\x0fb'f88270afd7f2628009171278fa697cc0be61ccde7dce0eb16175be0fd21801ac'", b"7\xb09\x9a\xddzfG\x99\x8f\xaa]6wN\xca\xcd\x13\xd5\xff\xcc\x19\xd9\x94\xca\x00<4\xcejN\x1a\xd9\\LV$\xab\xa5\xda$%\x9f\xf4\xdfl\x8c\xcc\xb1Xb\x05j\xf1\x04\xcceFd\x13\xb7\x03'\x03b'f88270afd7f2628009171278fa697cc0be61ccde7dce0eb16175be0fd21801ac'", b'\xaa\x12\x86639\xe8\x0f\xe6v\xab\xb3@\xb6\xf8*\xe1\xc2\x7f#\x9aL\xcb\xb5C\x83\x84\x8a\xc6d\x8ezj\xd1\xf2\xcb\xb9\x99\xf6\xa7>\xb0\x07\xa2VY\x05"\xb04a\xedv\x1f\x88c\xcd\xf7\xcb\xbd\xec\x1b\x88\x00b\'f88270afd7f2628009171278fa697cc0be61ccde7dce0eb16175be0fd21801ac\''], checkpoint : 2CHECKPOINT SHUTTLE reached at Tail
-2017-11-21 02:15:31,762 [replica_2    499] [INFO ]  Validating CheckPoint Proof function called  with shuttle : [b"9\xd8\xf3L1\xba\xe6\xa5sfi\xb3\x88t\x08L/]\xa9?\xc154\xda3\xee\x90\x7f\xec\x9e|\xde\xaad\xaf\xf3N\xf1%U\xadW(A\x90r[\xb9\xac\x8d\xdb\xd2/\x1a\x0c\xa3\x98iW\xe6]\x0c\xfc\x0fb'f88270afd7f2628009171278fa697cc0be61ccde7dce0eb16175be0fd21801ac'", b"7\xb09\x9a\xddzfG\x99\x8f\xaa]6wN\xca\xcd\x13\xd5\xff\xcc\x19\xd9\x94\xca\x00<4\xcejN\x1a\xd9\\LV$\xab\xa5\xda$%\x9f\xf4\xdfl\x8c\xcc\xb1Xb\x05j\xf1\x04\xcceFd\x13\xb7\x03'\x03b'f88270afd7f2628009171278fa697cc0be61ccde7dce0eb16175be0fd21801ac'", b'\xaa\x12\x86639\xe8\x0f\xe6v\xab\xb3@\xb6\xf8*\xe1\xc2\x7f#\x9aL\xcb\xb5C\x83\x84\x8a\xc6d\x8ezj\xd1\xf2\xcb\xb9\x99\xf6\xa7>\xb0\x07\xa2VY\x05"\xb04a\xedv\x1f\x88c\xcd\xf7\xcb\xbd\xec\x1b\x88\x00b\'f88270afd7f2628009171278fa697cc0be61ccde7dce0eb16175be0fd21801ac\'']
-2017-11-21 02:15:31,762 [replica_1    765] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:31,762 [replica_1    772] [INFO ]  request_id : c7ab2542-53c0-4f74-a1f7-929216d51391, after caching result, forwarding to prevReplica : <Replica:2dc02#replica_0>
-2017-11-21 02:15:31,763 [replica_2    704] [INFO ]  CHECKPOINT_SHUTTLE_PROOF successfully veried at Tail
-2017-11-21 02:15:31,764 [replica_2    531] [INFO ]  TRUNCATE HISTORY function called at replica  : <Replica:27c02#replica_2>
-2017-11-21 02:15:31,764 [replica_2    541] [INFO ]  history length after truncation:2
-2017-11-21 02:15:31,764 [replica_1    607] [INFO ]  ************************FORWARD SHUTTLE***************
-2017-11-21 02:15:31,765 [replica_0    750] [INFO ]  ************************REVERSE SHUTTLE***************
-2017-11-21 02:15:31,765 [replica_2    706] [INFO ]  CHECKPOINT_REVERSE_SHUTTLE starting. Forwarding to prevReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:31,765 [replica_0    752] [INFO ]  REVERSE_SHUTTLE reached at replica request_id : c7ab2542-53c0-4f74-a1f7-929216d51391, client : <Client:3c402#client_0>, from nextReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:31,766 [replica_2    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['completed_checkpoint']
-2017-11-21 02:15:31,766 [replica_1    609] [INFO ]  PERFORM_OPERATION called at NONHEAD Replica request_id : 32425541-e18b-4193-bdef-1dfc7b94735f, slot_number: 5, operation : get('movie'), client : <Client:3c402#client_0>, from Replica : <Replica:2dc02#replica_0>
-2017-11-21 02:15:31,766 [replica_2    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['completed_checkpoint'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 1, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 4, 'resultShuttleCounter': 4}}
-2017-11-21 02:15:31,766 [replica_1    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['new_configuration']
-2017-11-21 02:15:31,767 [replica_2    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:31,767 [replica_1    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['new_configuration'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 4, 'resultShuttleCounter': 4}}
-2017-11-21 02:15:31,767 [replica_2    361] [INFO ]  returning 3, =>{'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}, =>{1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}
-2017-11-21 02:15:31,767 [replica_0    754] [INFO ]  the result from validation is True
-2017-11-21 02:15:31,768 [replica_2    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:31,768 [replica_1    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:31,768 [replica_0    182] [INFO ]  caching result for request_id : c7ab2542-53c0-4f74-a1f7-929216d51391
-2017-11-21 02:15:31,768 [replica_1    388] [INFO ]  returning 4
-2017-11-21 02:15:31,768 [replica_0    759] [INFO ]  SHUTTLE reached at HEAD
-2017-11-21 02:15:31,769 [replica_1    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:31,770 [replica_2    713] [ERROR]  , checkpoint : 2    ******************Validating checkpoint proof failed at replica : <Replica:27c02#replica_2>
-2017-11-21 02:15:31,770 [replica_1    186] [INFO ]  request_id : 32425541-e18b-4193-bdef-1dfc7b94735f, operation : get('movie'), client : <Client:3c402#client_0>, validateOrderProof
-2017-11-21 02:15:31,770 [replica_1    208] [INFO ]  validation success
-2017-11-21 02:15:31,771 [replica_1    282] [INFO ]  Executing Operation in dictonary. operation : get('movie')
-2017-11-21 02:15:31,771 [replica_1    243] [INFO ]  updating OrderProof and ResultProof !!
-2017-11-21 02:15:31,772 [replica_1    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 5, 'resultShuttleCounter': 4}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:31,772 [replica_1    668] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:31,774 [replica_2    607] [INFO ]  ************************FORWARD SHUTTLE***************
-2017-11-21 02:15:31,774 [replica_1    832] [INFO ]  RETRANSMISSION received at <Replica:52c02#replica_1>, requestId : 32425541-e18b-4193-bdef-1dfc7b94735f, operation : get('movie'), from client : <Client:3c402#client_0>
-2017-11-21 02:15:31,774 [replica_1    840] [INFO ]  Operation is not recognized. Forwarding to HEAD REPLICA. From currentReplica : <Replica:52c02#replica_1>, client : <Client:3c402#client_0>
-2017-11-21 02:15:31,775 [replica_2    609] [INFO ]  PERFORM_OPERATION called at NONHEAD Replica request_id : 32425541-e18b-4193-bdef-1dfc7b94735f, slot_number: 5, operation : get('movie'), client : <Client:3c402#client_0>, from Replica : <Replica:52c02#replica_1>
-2017-11-21 02:15:31,775 [replica_2    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['new_configuration']
-2017-11-21 02:15:31,775 [replica_2    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['new_configuration'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 1, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 4, 'resultShuttleCounter': 4}}
-2017-11-21 02:15:31,776 [replica_2    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:31,776 [replica_1    725] [INFO ]  CHECKPOINT_REVERSE_SHUTTLE reached at replica<Replica:52c02#replica_1>,  shuttle : [b"9\xd8\xf3L1\xba\xe6\xa5sfi\xb3\x88t\x08L/]\xa9?\xc154\xda3\xee\x90\x7f\xec\x9e|\xde\xaad\xaf\xf3N\xf1%U\xadW(A\x90r[\xb9\xac\x8d\xdb\xd2/\x1a\x0c\xa3\x98iW\xe6]\x0c\xfc\x0fb'f88270afd7f2628009171278fa697cc0be61ccde7dce0eb16175be0fd21801ac'", b"7\xb09\x9a\xddzfG\x99\x8f\xaa]6wN\xca\xcd\x13\xd5\xff\xcc\x19\xd9\x94\xca\x00<4\xcejN\x1a\xd9\\LV$\xab\xa5\xda$%\x9f\xf4\xdfl\x8c\xcc\xb1Xb\x05j\xf1\x04\xcceFd\x13\xb7\x03'\x03b'f88270afd7f2628009171278fa697cc0be61ccde7dce0eb16175be0fd21801ac'", b'\xaa\x12\x86639\xe8\x0f\xe6v\xab\xb3@\xb6\xf8*\xe1\xc2\x7f#\x9aL\xcb\xb5C\x83\x84\x8a\xc6d\x8ezj\xd1\xf2\xcb\xb9\x99\xf6\xa7>\xb0\x07\xa2VY\x05"\xb04a\xedv\x1f\x88c\xcd\xf7\xcb\xbd\xec\x1b\x88\x00b\'f88270afd7f2628009171278fa697cc0be61ccde7dce0eb16175be0fd21801ac\''], checkpoint : 2, from nextReplica : <Replica:27c02#replica_2>
-2017-11-21 02:15:31,776 [replica_2    361] [INFO ]  returning 3, =>{'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}, =>{1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}
-2017-11-21 02:15:31,776 [replica_0    784] [INFO ]  RETRANSMISSION_HEAD to HEAD Replica
-2017-11-21 02:15:31,777 [replica_2    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:31,777 [replica_1    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['completed_checkpoint']
-2017-11-21 02:15:31,777 [replica_2    186] [INFO ]  request_id : 32425541-e18b-4193-bdef-1dfc7b94735f, operation : get('movie'), client : <Client:3c402#client_0>, validateOrderProof
-2017-11-21 02:15:31,778 [replica_1    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['completed_checkpoint'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 5, 'resultShuttleCounter': 4}}
-2017-11-21 02:15:31,778 [replica_0    787] [INFO ]  RETRANSMISSION_HEAD request received from<Replica:52c02#replica_1>
-2017-11-21 02:15:31,778 [replica_1    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:31,778 [replica_0    794] [INFO ]  Result shuttle is yet to receive at the head, waiting for it!! fromReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:31,778 [replica_1    388] [INFO ]  returning 4
-2017-11-21 02:15:31,779 [replica_2    208] [INFO ]  validation success
-2017-11-21 02:15:31,779 [replica_1    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:31,779 [replica_2    282] [INFO ]  Executing Operation in dictonary. operation : get('movie')
-2017-11-21 02:15:31,779 [replica_1    499] [INFO ]  Validating CheckPoint Proof function called  with shuttle : [b"9\xd8\xf3L1\xba\xe6\xa5sfi\xb3\x88t\x08L/]\xa9?\xc154\xda3\xee\x90\x7f\xec\x9e|\xde\xaad\xaf\xf3N\xf1%U\xadW(A\x90r[\xb9\xac\x8d\xdb\xd2/\x1a\x0c\xa3\x98iW\xe6]\x0c\xfc\x0fb'f88270afd7f2628009171278fa697cc0be61ccde7dce0eb16175be0fd21801ac'", b"7\xb09\x9a\xddzfG\x99\x8f\xaa]6wN\xca\xcd\x13\xd5\xff\xcc\x19\xd9\x94\xca\x00<4\xcejN\x1a\xd9\\LV$\xab\xa5\xda$%\x9f\xf4\xdfl\x8c\xcc\xb1Xb\x05j\xf1\x04\xcceFd\x13\xb7\x03'\x03b'f88270afd7f2628009171278fa697cc0be61ccde7dce0eb16175be0fd21801ac'", b'\xaa\x12\x86639\xe8\x0f\xe6v\xab\xb3@\xb6\xf8*\xe1\xc2\x7f#\x9aL\xcb\xb5C\x83\x84\x8a\xc6d\x8ezj\xd1\xf2\xcb\xb9\x99\xf6\xa7>\xb0\x07\xa2VY\x05"\xb04a\xedv\x1f\x88c\xcd\xf7\xcb\xbd\xec\x1b\x88\x00b\'f88270afd7f2628009171278fa697cc0be61ccde7dce0eb16175be0fd21801ac\'']
-2017-11-21 02:15:31,780 [replica_2    243] [INFO ]  updating OrderProof and ResultProof !!
-2017-11-21 02:15:31,780 [replica_2    182] [INFO ]  caching result for request_id : 32425541-e18b-4193-bdef-1dfc7b94735f
-2017-11-21 02:15:31,781 [replica_2    633] [INFO ]  request_id : 32425541-e18b-4193-bdef-1dfc7b94735f, operation : get('movie'), client : <Client:3c402#client_0>SHUTTLE reached at Tail
-2017-11-21 02:15:31,781 [replica_1    732] [INFO ]   Result from checkpoint  validation is True
-2017-11-21 02:15:31,781 [replica_2    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 1, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 5, 'resultShuttleCounter': 4}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:31,781 [replica_1    531] [INFO ]  TRUNCATE HISTORY function called at replica  : <Replica:52c02#replica_1>
-2017-11-21 02:15:31,781 [replica_2    638] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:31,782 [replica_2    642] [INFO ]  sending reaponse to client
-2017-11-21 02:15:31,782 [replica_1    541] [INFO ]  history length after truncation:3
-2017-11-21 02:15:31,782 [replica_1    738] [INFO ]  checkpoint : 2, after caching result, forwarding to prevReplica : <Replica:2dc02#replica_0>
-2017-11-21 02:15:31,783 [client_0     225] [INFO ]  Result SHUTTLE reached from tail Replica : <Replica:27c02#replica_2>, dictdata : {'movie': ' wa'}, request_id : 32425541-e18b-4193-bdef-1dfc7b94735f
-2017-11-21 02:15:31,784 [replica_2    646] [INFO ]  ************************REVERSE SHUTTLE***************
-2017-11-21 02:15:31,784 [replica_0    725] [INFO ]  CHECKPOINT_REVERSE_SHUTTLE reached at replica<Replica:2dc02#replica_0>,  shuttle : [b"9\xd8\xf3L1\xba\xe6\xa5sfi\xb3\x88t\x08L/]\xa9?\xc154\xda3\xee\x90\x7f\xec\x9e|\xde\xaad\xaf\xf3N\xf1%U\xadW(A\x90r[\xb9\xac\x8d\xdb\xd2/\x1a\x0c\xa3\x98iW\xe6]\x0c\xfc\x0fb'f88270afd7f2628009171278fa697cc0be61ccde7dce0eb16175be0fd21801ac'", b"7\xb09\x9a\xddzfG\x99\x8f\xaa]6wN\xca\xcd\x13\xd5\xff\xcc\x19\xd9\x94\xca\x00<4\xcejN\x1a\xd9\\LV$\xab\xa5\xda$%\x9f\xf4\xdfl\x8c\xcc\xb1Xb\x05j\xf1\x04\xcceFd\x13\xb7\x03'\x03b'f88270afd7f2628009171278fa697cc0be61ccde7dce0eb16175be0fd21801ac'", b'\xaa\x12\x86639\xe8\x0f\xe6v\xab\xb3@\xb6\xf8*\xe1\xc2\x7f#\x9aL\xcb\xb5C\x83\x84\x8a\xc6d\x8ezj\xd1\xf2\xcb\xb9\x99\xf6\xa7>\xb0\x07\xa2VY\x05"\xb04a\xedv\x1f\x88c\xcd\xf7\xcb\xbd\xec\x1b\x88\x00b\'f88270afd7f2628009171278fa697cc0be61ccde7dce0eb16175be0fd21801ac\''], checkpoint : 2, from nextReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:31,784 [replica_2    647] [INFO ]  REVERSE_SHUTTLE starting. Forwarding to prevReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:31,785 [replica_0    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['completed_checkpoint']
-2017-11-21 02:15:31,785 [replica_2    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 1, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 5, 'resultShuttleCounter': 5}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:31,785 [client_0     229] [INFO ]  client_dict_validation_flag => False
-2017-11-21 02:15:31,785 [replica_0    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['completed_checkpoint'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 5, 'forwardRequestCounter': 3, 'shuttleCounter': 5, 'resultShuttleCounter': 4}}
-2017-11-21 02:15:31,785 [client_0     242] [INFO ]  Result proof correctly validated! SUCCESS !!
-2017-11-21 02:15:31,785 [replica_2    653] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:31,786 [replica_0    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:31,786 [replica_0    361] [INFO ]  returning 3, =>{'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}, =>{1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}
-2017-11-21 02:15:31,787 [replica_0    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:31,787 [replica_0    499] [INFO ]  Validating CheckPoint Proof function called  with shuttle : [b"9\xd8\xf3L1\xba\xe6\xa5sfi\xb3\x88t\x08L/]\xa9?\xc154\xda3\xee\x90\x7f\xec\x9e|\xde\xaad\xaf\xf3N\xf1%U\xadW(A\x90r[\xb9\xac\x8d\xdb\xd2/\x1a\x0c\xa3\x98iW\xe6]\x0c\xfc\x0fb'f88270afd7f2628009171278fa697cc0be61ccde7dce0eb16175be0fd21801ac'", b"7\xb09\x9a\xddzfG\x99\x8f\xaa]6wN\xca\xcd\x13\xd5\xff\xcc\x19\xd9\x94\xca\x00<4\xcejN\x1a\xd9\\LV$\xab\xa5\xda$%\x9f\xf4\xdfl\x8c\xcc\xb1Xb\x05j\xf1\x04\xcceFd\x13\xb7\x03'\x03b'f88270afd7f2628009171278fa697cc0be61ccde7dce0eb16175be0fd21801ac'", b'\xaa\x12\x86639\xe8\x0f\xe6v\xab\xb3@\xb6\xf8*\xe1\xc2\x7f#\x9aL\xcb\xb5C\x83\x84\x8a\xc6d\x8ezj\xd1\xf2\xcb\xb9\x99\xf6\xa7>\xb0\x07\xa2VY\x05"\xb04a\xedv\x1f\x88c\xcd\xf7\xcb\xbd\xec\x1b\x88\x00b\'f88270afd7f2628009171278fa697cc0be61ccde7dce0eb16175be0fd21801ac\'']
-2017-11-21 02:15:31,788 [replica_1    750] [INFO ]  ************************REVERSE SHUTTLE***************
-2017-11-21 02:15:31,788 [replica_1    752] [INFO ]  REVERSE_SHUTTLE reached at replica request_id : 32425541-e18b-4193-bdef-1dfc7b94735f, client : <Client:3c402#client_0>, from nextReplica : <Replica:27c02#replica_2>
-2017-11-21 02:15:31,788 [replica_0    732] [INFO ]   Result from checkpoint  validation is True
-2017-11-21 02:15:31,789 [replica_0    531] [INFO ]  TRUNCATE HISTORY function called at replica  : <Replica:2dc02#replica_0>
-2017-11-21 02:15:31,789 [replica_1    754] [INFO ]  the result from validation is True
-2017-11-21 02:15:31,789 [replica_0    541] [INFO ]  history length after truncation:3
-2017-11-21 02:15:31,790 [replica_1    182] [INFO ]  caching result for request_id : 32425541-e18b-4193-bdef-1dfc7b94735f
-2017-11-21 02:15:31,790 [replica_0    736] [INFO ]   CHECKPOINT  REVERSE SHUTTLE reached at HEAD
-2017-11-21 02:15:31,790 [replica_1    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 5, 'resultShuttleCounter': 5}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:31,790 [replica_1    765] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:31,791 [replica_1    772] [INFO ]  request_id : 32425541-e18b-4193-bdef-1dfc7b94735f, after caching result, forwarding to prevReplica : <Replica:2dc02#replica_0>
-2017-11-21 02:15:31,792 [replica_0    750] [INFO ]  ************************REVERSE SHUTTLE***************
-2017-11-21 02:15:31,793 [replica_0    752] [INFO ]  REVERSE_SHUTTLE reached at replica request_id : 32425541-e18b-4193-bdef-1dfc7b94735f, client : <Client:3c402#client_0>, from nextReplica : <Replica:52c02#replica_1>
-2017-11-21 02:15:31,794 [replica_0    754] [INFO ]  the result from validation is True
-2017-11-21 02:15:31,794 [replica_0    182] [INFO ]  caching result for request_id : 32425541-e18b-4193-bdef-1dfc7b94735f
-2017-11-21 02:15:31,795 [replica_0    759] [INFO ]  SHUTTLE reached at HEAD
-2017-11-21 02:15:34,777 [replica_2    866] [INFO ]  timer expired at tail replica : <Replica:27c02#replica_2>
-2017-11-21 02:15:36,779 [replica_0    814] [INFO ]  TIMEOUT at Replica : <Replica:2dc02#replica_0> sending RECONFIGURATION request to Olympus!!!!
-2017-11-21 02:15:36,779 [replica_0    814] [INFO ]  TIMEOUT at Replica : <Replica:2dc02#replica_0> sending RECONFIGURATION request to Olympus!!!!
-2017-11-21 02:15:36,784 [replica_1    892] [INFO ]  timer expired at non head replica : <Replica:52c02#replica_1>
-2017-11-21 02:15:36,785 [replica_1    562] [INFO ]  reconfiguration called from Replcia
-2017-11-21 02:15:36,788 [client_0     263] [INFO ]  Replicas are undergoing Configuration********* Waiting.........
+2017-11-22 06:13:08,174 [replica_0    150] [INFO ]  ====>> FAILURE DS :{0: {'replica': {1: [{'client': 0, 'messageNumber': 2, 'triggerName': 'shuttle', 'triggerFailure': 'change_operation'}]}}, 1: {'replica': {1: [{'client': -1, 'messageNumber': 3, 'triggerName': 'new_configuration', 'triggerFailure': 'crash'}]}}}
+2017-11-22 06:13:08,181 [replica_1    150] [INFO ]  ====>> FAILURE DS :{0: {'replica': {1: [{'client': 0, 'messageNumber': 2, 'triggerName': 'shuttle', 'triggerFailure': 'change_operation'}]}}, 1: {'replica': {1: [{'client': -1, 'messageNumber': 3, 'triggerName': 'new_configuration', 'triggerFailure': 'crash'}]}}}
+2017-11-22 06:13:08,186 [replica_2    150] [INFO ]  ====>> FAILURE DS :{0: {'replica': {1: [{'client': 0, 'messageNumber': 2, 'triggerName': 'shuttle', 'triggerFailure': 'change_operation'}]}}, 1: {'replica': {1: [{'client': -1, 'messageNumber': 3, 'triggerName': 'new_configuration', 'triggerFailure': 'crash'}]}}}
+2017-11-22 06:13:08,189 [replica_0    119] [INFO ]  Starting replica in configuration number : 0
+2017-11-22 06:13:08,191 [replica_1    119] [INFO ]  Starting replica in configuration number : 0
+2017-11-22 06:13:08,192 [replica_2    119] [INFO ]  Starting replica in configuration number : 0
+2017-11-22 06:13:08,197 [client_0     56] [INFO ]  ******** Finished Client setup: <Client:b4402#client_0> => ["put('movie','star')", "append('movie','wars')", "slice('movie':'4:7')", "get('movie')", "get('movie')"] *********
+2017-11-22 06:13:08,200 [client_0     59] [INFO ]  Client start called. Inside run()
+2017-11-22 06:13:08,201 [client_0     128] [INFO ]  The Client:<Client:b4402#client_0>. workload to be performed : ["put('movie','star')", "append('movie','wars')", "slice('movie':'4:7')", "get('movie')", "get('movie')"]
+2017-11-22 06:13:08,202 [client_0     137] [INFO ]  running for index 0
+2017-11-22 06:13:08,202 [client_0     140] [INFO ]  ****************************************************************
+2017-11-22 06:13:08,202 [client_0     141] [INFO ]  process started for the operation : put('movie','star')
+2017-11-22 06:13:08,203 [client_0     281] [INFO ]  Executing Operation in dictonary. operation : put('movie','star')
+2017-11-22 06:13:08,203 [client_0     73] [INFO ]  Sending operations at Replicas, requestId: 34ce661b-fe03-4bb8-809b-5cf183c8598a, operation : put('movie','star')
+2017-11-22 06:13:08,206 [replica_0    570] [INFO ]  ************************FORWARD SHUTTLE***************
+2017-11-22 06:13:08,207 [replica_0    573] [INFO ]  PERFORM_OPERATION at HEAD Replica request_id : 34ce661b-fe03-4bb8-809b-5cf183c8598a, operation : put('movie','star'), client : <Client:b4402#client_0>,  slot number: 1
+2017-11-22 06:13:08,207 [replica_0    174] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
+2017-11-22 06:13:08,207 [replica_0    281] [INFO ]  Executing Operation in dictonary. operation : put('movie','star')
+2017-11-22 06:13:08,208 [replica_0    243] [INFO ]  updating OrderProof and ResultProof !!
+2017-11-22 06:13:08,208 [replica_0    306] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:b4402#client_0>: {'directRequestCounter': 1, 'forwardRequestCounter': 0, 'shuttleCounter': 1, 'resultShuttleCounter': 0}}, client : <Client:b4402#client_0>
+2017-11-22 06:13:08,209 [replica_0    591] [INFO ]  TriggerName Found => None
+2017-11-22 06:13:08,209 [replica_0    594] [INFO ]  PERFORM_OPERATION done at HeadReplica, transfering SHUTTLE to nextReplica : <Replica:5b002#replica_1>
+2017-11-22 06:13:08,211 [replica_1    611] [INFO ]  ************************FORWARD SHUTTLE***************
+2017-11-22 06:13:08,213 [replica_1    613] [INFO ]  PERFORM_OPERATION called at NONHEAD Replica request_id : 34ce661b-fe03-4bb8-809b-5cf183c8598a, slot_number: 1, operation : put('movie','star'), client : <Client:b4402#client_0>, from Replica : <Replica:55802#replica_0>
+2017-11-22 06:13:08,214 [replica_1    174] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
+2017-11-22 06:13:08,215 [replica_1    186] [INFO ]  request_id : 34ce661b-fe03-4bb8-809b-5cf183c8598a, operation : put('movie','star'), client : <Client:b4402#client_0>, validateOrderProof
+2017-11-22 06:13:08,216 [replica_1    208] [INFO ]  validateOrderProof success !!
+2017-11-22 06:13:08,217 [replica_1    281] [INFO ]  Executing Operation in dictonary. operation : put('movie','star')
+2017-11-22 06:13:08,218 [replica_1    243] [INFO ]  updating OrderProof and ResultProof !!
+2017-11-22 06:13:08,218 [replica_1    306] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:b4402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 1, 'resultShuttleCounter': 0}}, client : <Client:b4402#client_0>
+2017-11-22 06:13:08,219 [replica_1    673] [INFO ]  TriggerName Found => None
+2017-11-22 06:13:08,221 [replica_2    611] [INFO ]  ************************FORWARD SHUTTLE***************
+2017-11-22 06:13:08,223 [replica_2    613] [INFO ]  PERFORM_OPERATION called at NONHEAD Replica request_id : 34ce661b-fe03-4bb8-809b-5cf183c8598a, slot_number: 1, operation : put('movie','star'), client : <Client:b4402#client_0>, from Replica : <Replica:5b002#replica_1>
+2017-11-22 06:13:08,223 [replica_2    174] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
+2017-11-22 06:13:08,224 [replica_2    186] [INFO ]  request_id : 34ce661b-fe03-4bb8-809b-5cf183c8598a, operation : put('movie','star'), client : <Client:b4402#client_0>, validateOrderProof
+2017-11-22 06:13:08,224 [replica_2    208] [INFO ]  validateOrderProof success !!
+2017-11-22 06:13:08,225 [replica_2    281] [INFO ]  Executing Operation in dictonary. operation : put('movie','star')
+2017-11-22 06:13:08,225 [replica_2    243] [INFO ]  updating OrderProof and ResultProof !!
+2017-11-22 06:13:08,226 [replica_2    182] [INFO ]  caching result for request_id : 34ce661b-fe03-4bb8-809b-5cf183c8598a
+2017-11-22 06:13:08,226 [replica_2    639] [INFO ]  request_id : 34ce661b-fe03-4bb8-809b-5cf183c8598a, operation : put('movie','star'), client : <Client:b4402#client_0>SHUTTLE reached at Tail
+2017-11-22 06:13:08,227 [replica_2    306] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:b4402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 1, 'resultShuttleCounter': 0}}, client : <Client:b4402#client_0>
+2017-11-22 06:13:08,227 [replica_2    644] [INFO ]  TriggerName Found => None
+2017-11-22 06:13:08,229 [client_0     236] [INFO ]  Result SHUTTLE reached from tail Replica : <Replica:e2802#replica_2>, dictdata : {'movie': 'star'}, request_id : 34ce661b-fe03-4bb8-809b-5cf183c8598a
+2017-11-22 06:13:08,229 [replica_2    652] [INFO ]  ************************REVERSE SHUTTLE***************
+2017-11-22 06:13:08,230 [replica_2    653] [INFO ]  REVERSE_SHUTTLE starting. Forwarding to prevReplica : <Replica:5b002#replica_1>, Request_id : 34ce661b-fe03-4bb8-809b-5cf183c8598a
+2017-11-22 06:13:08,230 [replica_2    306] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:b4402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 1, 'resultShuttleCounter': 1}}, client : <Client:b4402#client_0>
+2017-11-22 06:13:08,230 [replica_2    659] [INFO ]  TriggerName Found => None
+2017-11-22 06:13:08,231 [client_0     240] [INFO ]  client_dict_validation_flag => False
+2017-11-22 06:13:08,231 [client_0     253] [INFO ]  Result proof correctly validated! SUCCESS !!
+2017-11-22 06:13:08,232 [client_0     155] [INFO ]  Operation executed : put('movie','star')
+2017-11-22 06:13:08,232 [client_0     214] [INFO ]  running for index in the end 1
+2017-11-22 06:13:08,232 [client_0     137] [INFO ]  running for index 1
+2017-11-22 06:13:08,232 [client_0     140] [INFO ]  ****************************************************************
+2017-11-22 06:13:08,233 [client_0     141] [INFO ]  process started for the operation : append('movie','wars')
+2017-11-22 06:13:08,233 [replica_1    751] [INFO ]  ************************REVERSE SHUTTLE***************
+2017-11-22 06:13:08,233 [client_0     281] [INFO ]  Executing Operation in dictonary. operation : append('movie','wars')
+2017-11-22 06:13:08,233 [client_0     73] [INFO ]  Sending operations at Replicas, requestId: de803223-725f-4ae4-83f4-d73086877f87, operation : append('movie','wars')
+2017-11-22 06:13:08,233 [replica_1    753] [INFO ]  REVERSE_SHUTTLE reached at replica request_id : 34ce661b-fe03-4bb8-809b-5cf183c8598a, client : <Client:b4402#client_0>, from nextReplica : <Replica:e2802#replica_2>
+2017-11-22 06:13:08,235 [replica_1    182] [INFO ]  caching result for request_id : 34ce661b-fe03-4bb8-809b-5cf183c8598a
+2017-11-22 06:13:08,236 [replica_1    306] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:b4402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 1, 'resultShuttleCounter': 1}}, client : <Client:b4402#client_0>
+2017-11-22 06:13:08,236 [replica_0    570] [INFO ]  ************************FORWARD SHUTTLE***************
+2017-11-22 06:13:08,236 [replica_1    765] [INFO ]  TriggerName Found => None
+2017-11-22 06:13:08,237 [replica_1    772] [INFO ]  request_id : 34ce661b-fe03-4bb8-809b-5cf183c8598a, after caching result, forwarding to prevReplica : <Replica:55802#replica_0>
+2017-11-22 06:13:08,237 [replica_0    573] [INFO ]  PERFORM_OPERATION at HEAD Replica request_id : de803223-725f-4ae4-83f4-d73086877f87, operation : append('movie','wars'), client : <Client:b4402#client_0>,  slot number: 2
+2017-11-22 06:13:08,238 [replica_0    174] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
+2017-11-22 06:13:08,238 [replica_0    281] [INFO ]  Executing Operation in dictonary. operation : append('movie','wars')
+2017-11-22 06:13:08,239 [replica_0    243] [INFO ]  updating OrderProof and ResultProof !!
+2017-11-22 06:13:08,240 [replica_0    306] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:b4402#client_0>: {'directRequestCounter': 2, 'forwardRequestCounter': 0, 'shuttleCounter': 2, 'resultShuttleCounter': 0}}, client : <Client:b4402#client_0>
+2017-11-22 06:13:08,240 [replica_0    591] [INFO ]  TriggerName Found => None
+2017-11-22 06:13:08,241 [replica_0    594] [INFO ]  PERFORM_OPERATION done at HeadReplica, transfering SHUTTLE to nextReplica : <Replica:5b002#replica_1>
+2017-11-22 06:13:08,243 [replica_1    611] [INFO ]  ************************FORWARD SHUTTLE***************
+2017-11-22 06:13:08,243 [replica_0    751] [INFO ]  ************************REVERSE SHUTTLE***************
+2017-11-22 06:13:08,244 [replica_0    753] [INFO ]  REVERSE_SHUTTLE reached at replica request_id : 34ce661b-fe03-4bb8-809b-5cf183c8598a, client : <Client:b4402#client_0>, from nextReplica : <Replica:5b002#replica_1>
+2017-11-22 06:13:08,244 [replica_1    613] [INFO ]  PERFORM_OPERATION called at NONHEAD Replica request_id : de803223-725f-4ae4-83f4-d73086877f87, slot_number: 2, operation : append('movie','wars'), client : <Client:b4402#client_0>, from Replica : <Replica:55802#replica_0>
+2017-11-22 06:13:08,245 [replica_1    174] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
+2017-11-22 06:13:08,246 [replica_0    182] [INFO ]  caching result for request_id : 34ce661b-fe03-4bb8-809b-5cf183c8598a
+2017-11-22 06:13:08,246 [replica_0    759] [INFO ]  SHUTTLE reached at HEAD for slot : 2
+2017-11-22 06:13:08,246 [replica_1    186] [INFO ]  request_id : de803223-725f-4ae4-83f4-d73086877f87, operation : append('movie','wars'), client : <Client:b4402#client_0>, validateOrderProof
+2017-11-22 06:13:08,247 [replica_1    208] [INFO ]  validateOrderProof success !!
+2017-11-22 06:13:08,247 [replica_1    281] [INFO ]  Executing Operation in dictonary. operation : append('movie','wars')
+2017-11-22 06:13:08,248 [replica_1    243] [INFO ]  updating OrderProof and ResultProof !!
+2017-11-22 06:13:08,249 [replica_1    306] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 0, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:b4402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 2, 'resultShuttleCounter': 1}}, client : <Client:b4402#client_0>
+2017-11-22 06:13:08,249 [replica_1    673] [INFO ]  TriggerName Found => change_operation
+2017-11-22 06:13:08,250 [replica_1    276] [INFO ]  request_id : de803223-725f-4ae4-83f4-d73086877f87, operation : append('movie','wars'), triggerName : change_operation, callFailureFunctionBasedOnTrigger
+2017-11-22 06:13:08,250 [replica_1    384] [INFO ]  Change operation called with shuttle, requestId: de803223-725f-4ae4-83f4-d73086877f87operation : append('movie','wars')
+2017-11-22 06:13:08,253 [replica_2    611] [INFO ]  ************************FORWARD SHUTTLE***************
+2017-11-22 06:13:08,254 [replica_2    613] [INFO ]  PERFORM_OPERATION called at NONHEAD Replica request_id : de803223-725f-4ae4-83f4-d73086877f87, slot_number: 2, operation : append('movie','wars'), client : <Client:b4402#client_0>, from Replica : <Replica:5b002#replica_1>
+2017-11-22 06:13:08,255 [replica_2    174] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
+2017-11-22 06:13:08,255 [replica_2    186] [INFO ]  request_id : de803223-725f-4ae4-83f4-d73086877f87, operation : append('movie','wars'), client : <Client:b4402#client_0>, validateOrderProof
+2017-11-22 06:13:08,256 [replica_2    210] [ERROR]  validateOrderProof failed !!
+2017-11-22 06:13:08,256 [replica_2    679] [ERROR]  ************************Validating order proof failed at replica : <Replica:e2802#replica_2>, request_id : de803223-725f-4ae4-83f4-d73086877f87
+2017-11-22 06:13:08,256 [replica_2    680] [INFO ]  calling for reconfiguration from replica  :: <Replica:e2802#replica_2>
+2017-11-22 06:13:08,257 [replica_2    564] [INFO ]  reconfiguration called from Replcia
+2017-11-22 06:13:08,259 [client_0     275] [INFO ]  Replicas are undergoing Configuration !! Waiting.........
 
-2017-11-21 02:15:36,789 [replica_0    905] [INFO ]  WEDGE_REQUEST_STATEMENT self.counters["wedge_requestCounter"]: 1, currentConfiguration: 0
-2017-11-21 02:15:36,790 [replica_1    905] [INFO ]  WEDGE_REQUEST_STATEMENT self.counters["wedge_requestCounter"]: 1, currentConfiguration: 0
-2017-11-21 02:15:36,790 [replica_0    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['wedge_request']
-2017-11-21 02:15:36,791 [replica_0    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['wedge_request'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 1, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 5, 'forwardRequestCounter': 3, 'shuttleCounter': 5, 'resultShuttleCounter': 5}}
-2017-11-21 02:15:36,791 [replica_1    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['wedge_request']
-2017-11-21 02:15:36,791 [replica_0    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:36,792 [replica_1    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['wedge_request'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 1, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 5, 'resultShuttleCounter': 5}}
-2017-11-21 02:15:36,792 [replica_0    361] [INFO ]  returning 3, =>{'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}, =>{1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}
-2017-11-21 02:15:36,792 [replica_2    905] [INFO ]  WEDGE_REQUEST_STATEMENT self.counters["wedge_requestCounter"]: 1, currentConfiguration: 0
-2017-11-21 02:15:36,792 [replica_1    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:36,792 [replica_0    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:36,793 [replica_1    388] [INFO ]  returning 4
-2017-11-21 02:15:36,793 [replica_2    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['wedge_request']
-2017-11-21 02:15:36,793 [replica_0    909] [INFO ]  ************Wedge Statement requested from Olympus******** Going into Immutable state
-2017-11-21 02:15:36,793 [replica_1    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:36,793 [replica_2    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['wedge_request'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 1, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 1, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 5, 'resultShuttleCounter': 5}}
-2017-11-21 02:15:36,794 [replica_1    909] [INFO ]  ************Wedge Statement requested from Olympus******** Going into Immutable state
-2017-11-21 02:15:36,794 [replica_2    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:36,794 [replica_2    361] [INFO ]  returning 3, =>{'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}, =>{1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}
-2017-11-21 02:15:36,795 [replica_2    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:36,795 [replica_2    909] [INFO ]  ************Wedge Statement requested from Olympus******** Going into Immutable state
-2017-11-21 02:15:36,808 [replica_0    916] [INFO ]  ************ CATCH_UP requested from Olympus******** Going to execute the orders 
-2017-11-21 02:15:36,808 [replica_0    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['catch_up']
-2017-11-21 02:15:36,809 [replica_0    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['catch_up'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 1, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 1, <Client:3c402#client_0>: {'directRequestCounter': 5, 'forwardRequestCounter': 3, 'shuttleCounter': 5, 'resultShuttleCounter': 5}}
-2017-11-21 02:15:36,809 [replica_1    916] [INFO ]  ************ CATCH_UP requested from Olympus******** Going to execute the orders 
-2017-11-21 02:15:36,809 [replica_0    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:36,809 [replica_1    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['catch_up']
-2017-11-21 02:15:36,810 [replica_0    361] [INFO ]  returning 3, =>{'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}, =>{1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}
-2017-11-21 02:15:36,810 [replica_1    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['catch_up'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 1, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 1, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 5, 'resultShuttleCounter': 5}}
-2017-11-21 02:15:36,810 [replica_0    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:36,810 [replica_1    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:36,811 [replica_1    388] [INFO ]  returning 4
-2017-11-21 02:15:36,811 [replica_1    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:36,812 [replica_0    935] [INFO ]  ************ CAUGHT_UP sent to Olympus******** 
-2017-11-21 02:15:36,813 [replica_1    935] [INFO ]  ************ CAUGHT_UP sent to Olympus******** 
-2017-11-21 02:15:36,817 [replica_1    940] [INFO ]  ************FINAL GET_RUNNING_STATE requested from Olympus********False
-2017-11-21 02:15:36,817 [replica_1    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['get_running_state']
-2017-11-21 02:15:36,817 [replica_1    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 0,validTriggerSet : ['get_running_state'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 1, 'new_configurationCounter': 0, 'checkpointCounter': 1, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 1, 'catch_upCounter': 1, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 5, 'resultShuttleCounter': 5}}
-2017-11-21 02:15:36,818 [replica_1    359] [INFO ]  failureDsReplicaDict the dictionary: 
-2017-11-21 02:15:36,818 [replica_1    388] [INFO ]  returning 4
-2017-11-21 02:15:36,818 [replica_1    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:36,819 [replica_1    950] [INFO ]  ************FINAL_RUNNING_STATE sent to Olympus********
-2017-11-21 02:15:36,822 [replica_0    955] [INFO ]  Killing Myself: This is replica: <Replica:2dc02#replica_0>
-2017-11-21 02:15:36,822 [replica_1    955] [INFO ]  Killing Myself: This is replica: <Replica:52c02#replica_1>
-2017-11-21 02:15:36,823 [replica_2    955] [INFO ]  Killing Myself: This is replica: <Replica:27c02#replica_2>
-2017-11-21 02:15:36,886 [replica_0    74] [INFO ]  Replica SETUP done. Clients : [<Client:3c402#client_0>], Olympus : <Olympus:42402#onode>, Replica : <Replica:2dc03#replica_0>, ReplicaState : ACTIVE
-2017-11-21 02:15:36,887 [replica_0    150] [INFO ]  failures defined in config file failureDS :{0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}
-2017-11-21 02:15:36,891 [replica_1    74] [INFO ]  Replica SETUP done. Clients : [<Client:3c402#client_0>], Olympus : <Olympus:42402#onode>, Replica : <Replica:52c03#replica_1>, ReplicaState : ACTIVE
-2017-11-21 02:15:36,892 [replica_1    150] [INFO ]  failures defined in config file failureDS :{0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}
-2017-11-21 02:15:36,897 [replica_2    74] [INFO ]  Replica SETUP done. Clients : [<Client:3c402#client_0>], Olympus : <Olympus:42402#onode>, Replica : <Replica:27c03#replica_2>, ReplicaState : ACTIVE
-2017-11-21 02:15:36,898 [replica_2    150] [INFO ]  failures defined in config file failureDS :{0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}
-2017-11-21 02:15:36,900 [replica_0    119] [INFO ]  Starting replica in configuration number : 1
-2017-11-21 02:15:36,901 [replica_1    119] [INFO ]  Starting replica in configuration number : 1
-2017-11-21 02:15:36,903 [replica_2    119] [INFO ]  Starting replica in configuration number : 1
-2017-11-21 02:15:36,905 [client_0     253] [INFO ]  FINAL UPDATED RESULT WITH NEW REPLICAS RECEIVED BY THE CLIENT FROM OLYMPUS
+2017-11-22 06:13:08,260 [replica_0    906] [INFO ]  ************WEDGE STATEMENT requested from Olympus********
+2017-11-22 06:13:08,261 [replica_0    174] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
+2017-11-22 06:13:08,262 [replica_1    906] [INFO ]  ************WEDGE STATEMENT requested from Olympus********
+2017-11-22 06:13:08,262 [replica_1    174] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
+2017-11-22 06:13:08,263 [replica_2    906] [INFO ]  ************WEDGE STATEMENT requested from Olympus********
+2017-11-22 06:13:08,264 [replica_2    174] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
+2017-11-22 06:13:08,283 [replica_0    920] [INFO ]  ************CATCH_UP requested from Olympus********
+2017-11-22 06:13:08,284 [replica_0    174] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
+2017-11-22 06:13:08,285 [replica_0    948] [INFO ]  ************ CAUGHT_UP sent to Olympus******** 
+2017-11-22 06:13:08,285 [replica_2    920] [INFO ]  ************CATCH_UP requested from Olympus********
+2017-11-22 06:13:08,285 [replica_2    174] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
+2017-11-22 06:13:08,286 [replica_2    936] [INFO ]  incoming slot from catch up statement is :2 , last client slot : 1
+2017-11-22 06:13:08,287 [replica_2    281] [INFO ]  Executing Operation in dictonary. operation : append('movie','wars')
+2017-11-22 06:13:08,289 [replica_2    948] [INFO ]  ************ CAUGHT_UP sent to Olympus******** 
+2017-11-22 06:13:08,294 [replica_0    953] [INFO ]  ************FINAL GET_RUNNING_STATE requested from Olympus********
+2017-11-22 06:13:08,295 [replica_0    174] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
+2017-11-22 06:13:08,297 [replica_0    964] [INFO ]  Sending Running state: {'movie': 'star wars'}
+2017-11-22 06:13:08,297 [replica_0    965] [INFO ]  ************FINAL_RUNNING_STATE sent to Olympus********
+2017-11-22 06:13:08,300 [replica_0    970] [INFO ]  Killing Myself: This is replica: <Replica:55802#replica_0>
+2017-11-22 06:13:08,302 [replica_1    970] [INFO ]  Killing Myself: This is replica: <Replica:5b002#replica_1>
+2017-11-22 06:13:08,303 [replica_2    970] [INFO ]  Killing Myself: This is replica: <Replica:e2802#replica_2>
+2017-11-22 06:13:08,368 [replica_0    150] [INFO ]  ====>> FAILURE DS :{0: {'replica': {1: [{'client': 0, 'messageNumber': 2, 'triggerName': 'shuttle', 'triggerFailure': 'change_operation'}]}}, 1: {'replica': {1: [{'client': -1, 'messageNumber': 3, 'triggerName': 'new_configuration', 'triggerFailure': 'crash'}]}}}
+2017-11-22 06:13:08,373 [replica_1    150] [INFO ]  ====>> FAILURE DS :{0: {'replica': {1: [{'client': 0, 'messageNumber': 2, 'triggerName': 'shuttle', 'triggerFailure': 'change_operation'}]}}, 1: {'replica': {1: [{'client': -1, 'messageNumber': 3, 'triggerName': 'new_configuration', 'triggerFailure': 'crash'}]}}}
+2017-11-22 06:13:08,378 [replica_2    150] [INFO ]  ====>> FAILURE DS :{0: {'replica': {1: [{'client': 0, 'messageNumber': 2, 'triggerName': 'shuttle', 'triggerFailure': 'change_operation'}]}}, 1: {'replica': {1: [{'client': -1, 'messageNumber': 3, 'triggerName': 'new_configuration', 'triggerFailure': 'crash'}]}}}
+2017-11-22 06:13:08,380 [replica_0    119] [INFO ]  Starting replica in configuration number : 1
+2017-11-22 06:13:08,382 [replica_1    119] [INFO ]  Starting replica in configuration number : 1
+2017-11-22 06:13:08,383 [replica_2    119] [INFO ]  Starting replica in configuration number : 1
+2017-11-22 06:13:08,385 [client_0     264] [INFO ]  *************FINAL NEW REPLICAS RECEIVED FROM OLYMPUS*************
 
-2017-11-21 02:15:39,773 [client_0     117] [ERROR]  RETRANSMISSION request Timed out!
-2017-11-21 02:15:39,774 [client_0     139] [INFO ]  *************************************
-2017-11-21 02:15:39,774 [client_0     140] [INFO ]  process started for the operation : get('movie')
-2017-11-21 02:15:39,775 [client_0     282] [INFO ]  Executing Operation in dictonary. operation : get('movie')
-2017-11-21 02:15:39,776 [client_0     76] [INFO ]  Sending operations at Replicas, requestId: 621dadf9-54e0-4344-8a55-718b90a4ea15, operation : get('movie')
-2017-11-21 02:15:39,778 [replica_0    568] [INFO ]  ************************FORWARD SHUTTLE***************
-2017-11-21 02:15:39,780 [replica_0    571] [INFO ]  PERFORM_OPERATION at HEAD Replica request_id : 621dadf9-54e0-4344-8a55-718b90a4ea15, operation : get('movie'), client : <Client:3c402#client_0>,  slot number: 1
-2017-11-21 02:15:39,780 [replica_0    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['new_configuration']
-2017-11-21 02:15:39,781 [replica_0    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 1,validTriggerSet : ['new_configuration'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 1, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 0, 'resultShuttleCounter': 0}}
-2017-11-21 02:15:39,781 [replica_0    356] [INFO ]  returning 2
-2017-11-21 02:15:39,781 [replica_0    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:39,782 [replica_0    282] [INFO ]  Executing Operation in dictonary. operation : get('movie')
-2017-11-21 02:15:39,783 [replica_0    243] [INFO ]  updating OrderProof and ResultProof !!
-2017-11-21 02:15:39,784 [replica_0    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 1, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 1, 'forwardRequestCounter': 0, 'shuttleCounter': 1, 'resultShuttleCounter': 0}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:39,784 [replica_0    589] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:39,784 [replica_0    592] [INFO ]  PERFORM_OPERATION done at HeadReplica, transfering SHUTTLE to nextReplica : <Replica:52c03#replica_1>
-2017-11-21 02:15:39,785 [replica_0    594] [INFO ]  checkpt_interval : 2
-2017-11-21 02:15:39,787 [replica_1    607] [INFO ]  ************************FORWARD SHUTTLE***************
-2017-11-21 02:15:39,789 [replica_1    609] [INFO ]  PERFORM_OPERATION called at NONHEAD Replica request_id : 621dadf9-54e0-4344-8a55-718b90a4ea15, slot_number: 1, operation : get('movie'), client : <Client:3c402#client_0>, from Replica : <Replica:2dc03#replica_0>
-2017-11-21 02:15:39,789 [replica_1    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['new_configuration']
-2017-11-21 02:15:39,790 [replica_1    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 1,validTriggerSet : ['new_configuration'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 1, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 0, 'resultShuttleCounter': 0}}
-2017-11-21 02:15:39,790 [replica_1    356] [INFO ]  returning 2
-2017-11-21 02:15:39,791 [replica_1    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:39,791 [replica_1    186] [INFO ]  request_id : 621dadf9-54e0-4344-8a55-718b90a4ea15, operation : get('movie'), client : <Client:3c402#client_0>, validateOrderProof
-2017-11-21 02:15:39,792 [replica_1    208] [INFO ]  validation success
-2017-11-21 02:15:39,792 [replica_1    282] [INFO ]  Executing Operation in dictonary. operation : get('movie')
-2017-11-21 02:15:39,794 [replica_1    243] [INFO ]  updating OrderProof and ResultProof !!
-2017-11-21 02:15:39,794 [replica_1    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 1, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 1, 'resultShuttleCounter': 0}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:39,795 [replica_1    668] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:39,797 [replica_2    607] [INFO ]  ************************FORWARD SHUTTLE***************
-2017-11-21 02:15:39,800 [replica_2    609] [INFO ]  PERFORM_OPERATION called at NONHEAD Replica request_id : 621dadf9-54e0-4344-8a55-718b90a4ea15, slot_number: 1, operation : get('movie'), client : <Client:3c402#client_0>, from Replica : <Replica:52c03#replica_1>
-2017-11-21 02:15:39,800 [replica_2    173] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure => ['new_configuration']
-2017-11-21 02:15:39,801 [replica_2    350] [INFO ]  checkForPossibleFailure_PHASE_3 called with configuration number: 1,validTriggerSet : ['new_configuration'], failureDS: {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, counters: {'wedge_requestCounter': 0, 'new_configurationCounter': 1, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 0, 'resultShuttleCounter': 0}}
-2017-11-21 02:15:39,801 [replica_2    356] [INFO ]  returning 2
-2017-11-21 02:15:39,801 [replica_2    175] [INFO ]  checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => None
-2017-11-21 02:15:39,802 [replica_2    186] [INFO ]  request_id : 621dadf9-54e0-4344-8a55-718b90a4ea15, operation : get('movie'), client : <Client:3c402#client_0>, validateOrderProof
-2017-11-21 02:15:39,803 [replica_2    208] [INFO ]  validation success
-2017-11-21 02:15:39,803 [replica_2    282] [INFO ]  Executing Operation in dictonary. operation : get('movie')
-2017-11-21 02:15:39,804 [replica_2    243] [INFO ]  updating OrderProof and ResultProof !!
-2017-11-21 02:15:39,804 [replica_2    182] [INFO ]  caching result for request_id : 621dadf9-54e0-4344-8a55-718b90a4ea15
-2017-11-21 02:15:39,805 [replica_2    633] [INFO ]  request_id : 621dadf9-54e0-4344-8a55-718b90a4ea15, operation : get('movie'), client : <Client:3c402#client_0>SHUTTLE reached at Tail
-2017-11-21 02:15:39,805 [replica_2    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 1, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 1, 'resultShuttleCounter': 0}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:39,805 [replica_2    638] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:39,806 [replica_2    642] [INFO ]  sending reaponse to client
-2017-11-21 02:15:39,807 [client_0     225] [INFO ]  Result SHUTTLE reached from tail Replica : <Replica:27c03#replica_2>, dictdata : {'movie': ' wa'}, request_id : 621dadf9-54e0-4344-8a55-718b90a4ea15
-2017-11-21 02:15:39,808 [replica_2    646] [INFO ]  ************************REVERSE SHUTTLE***************
-2017-11-21 02:15:39,808 [replica_2    647] [INFO ]  REVERSE_SHUTTLE starting. Forwarding to prevReplica : <Replica:52c03#replica_1>
-2017-11-21 02:15:39,808 [replica_2    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 1, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 1, 'resultShuttleCounter': 1}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:39,808 [replica_2    653] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:39,809 [client_0     229] [INFO ]  client_dict_validation_flag => False
-2017-11-21 02:15:39,809 [client_0     242] [INFO ]  Result proof correctly validated! SUCCESS !!
-2017-11-21 02:15:39,810 [client_0     154] [INFO ]  Operation executed : get('movie')
-2017-11-21 02:15:39,810 [replica_1    750] [INFO ]  ************************REVERSE SHUTTLE***************
-2017-11-21 02:15:39,810 [replica_1    752] [INFO ]  REVERSE_SHUTTLE reached at replica request_id : 621dadf9-54e0-4344-8a55-718b90a4ea15, client : <Client:3c402#client_0>, from nextReplica : <Replica:27c03#replica_2>
-2017-11-21 02:15:39,811 [replica_1    754] [INFO ]  the result from validation is True
-2017-11-21 02:15:39,812 [replica_1    182] [INFO ]  caching result for request_id : 621dadf9-54e0-4344-8a55-718b90a4ea15
-2017-11-21 02:15:39,812 [replica_1    302] [INFO ]  CheckForPossibleFailure : {'wedge_requestCounter': 0, 'new_configurationCounter': 1, 'checkpointCounter': 0, 'completed_checkpointCounter': 0, 'get_running_stateCounter': 0, 'catch_upCounter': 0, <Client:3c402#client_0>: {'directRequestCounter': 0, 'forwardRequestCounter': 0, 'shuttleCounter': 1, 'resultShuttleCounter': 1}}, self.failureDS : {0: {'replica': {1: [{'client': -1, 'messageNumber': 1, 'triggerName': 'checkpoint', 'triggerFailure': 'sleep', 'triggerFailure_m': '12'}]}}}, client : <Client:3c402#client_0>
-2017-11-21 02:15:39,812 [replica_1    765] [INFO ]  TriggerName Found => None
-2017-11-21 02:15:39,813 [replica_1    772] [INFO ]  request_id : 621dadf9-54e0-4344-8a55-718b90a4ea15, after caching result, forwarding to prevReplica : <Replica:2dc03#replica_0>
-2017-11-21 02:15:39,814 [replica_0    750] [INFO ]  ************************REVERSE SHUTTLE***************
-2017-11-21 02:15:39,815 [replica_0    752] [INFO ]  REVERSE_SHUTTLE reached at replica request_id : 621dadf9-54e0-4344-8a55-718b90a4ea15, client : <Client:3c402#client_0>, from nextReplica : <Replica:52c03#replica_1>
-2017-11-21 02:15:39,816 [replica_0    754] [INFO ]  the result from validation is True
-2017-11-21 02:15:39,817 [replica_0    182] [INFO ]  caching result for request_id : 621dadf9-54e0-4344-8a55-718b90a4ea15
-2017-11-21 02:15:39,818 [replica_0    759] [INFO ]  SHUTTLE reached at HEAD
