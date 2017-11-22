@@ -696,4 +696,164 @@ Commands(When all commands are executed from sourcefolder):
 log_file_name
 	run_system.log
 
+*******************************************************************
+TESTCASE 22
+
+failures[0,0] = checkpoint(-1,1),increment_slot()
+
+Failure when nonHead Replica changes the slot when checkpoint statement is recieved, since this might cause slot inconsistency reconfiguration wil 
+be called
+
+workload[0] = put('movie','star'); append('movie','wars'); slice('movie':'4:7');get('movie');get('movie');get('movie')
+Description:
+	t failure=1
+	client=2
+	replica=3
+configuration_file_name
+	"ph3_3.checkpointing_incrment_slot.config"
+Commands(When all commands are executed from sourcefolder):
+	1.) python3 -m da --message-buffer-size 20000 -n main RunSystem.da -i ../config/pph3_3.checkpointing_incrment_slot.config
+				-i parameter helps to define the particular config file. It contains properties specific to retransmission, like
+				sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
+	2.) python3 -m da --message-buffer-size 20000 -n client_0 RunSystem.da 
+	3.) python3 -m da --message-buffer-size 20000 -n client_1 RunSystem.da 
+	4.) python3 -m da --message-buffer-size 20000 -n replica_0 RunSystem.da 
+	5.) python3 -m da --message-buffer-size 20000 -n replica_1 RunSystem.da 
+	6.) python3 -m da --message-buffer-size 20000 -n replica_2 RunSystem.da 
+log_file_name
+	run_system.log
+*******************************************************************
+TESTCASE 23
+
+failures[0,1] = shuttle(0,2),change_operation();get_running_state(-1,1),extra_op()
+failures[0,0] = get_running_state(-1,1),extra_op()
+failures[0,2] = get_running_state(-1,1),extra_op()
+
+Failure when nonHead Replica changes the operation  while the shuttle is going from head to Tail, which then is detected by the next replica and causes
+reconfiguration, in reconfiguration when running state request is sent to the replica it applies an extraoperation .the running state diesnt match with 
+it sends request to another replica for the runnign state and keeps doing that until a result is recieved from one of them.
+
+
+workload[0] = put('movie','star'); append('movie','wars'); slice('movie':'4:7');get('movie');get('movie');get('movie')
+Description:
+	t failure=1
+	client=2
+	replica=3
+configuration_file_name
+	"ph3_4.running_state_extra_op_.config"
+Commands(When all commands are executed from sourcefolder):
+	1.) python3 -m da --message-buffer-size 20000 -n main RunSystem.da -i ../config/ph3_4.running_state_extra_op_.config
+				-i parameter helps to define the particular config file. It contains properties specific to retransmission, like
+				sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
+	2.) python3 -m da --message-buffer-size 20000 -n client_0 RunSystem.da 
+	3.) python3 -m da --message-buffer-size 20000 -n client_1 RunSystem.da 
+	4.) python3 -m da --message-buffer-size 20000 -n replica_0 RunSystem.da 
+	5.) python3 -m da --message-buffer-size 20000 -n replica_1 RunSystem.da 
+	6.) python3 -m da --message-buffer-size 20000 -n replica_2 RunSystem.da 
+log_file_name
+	run_system.log
+
+*******************************************************************
+TESTCASE 25
+
+failures[0,1] = shuttle(0,2),change_operation();get_running_state(-1,1),drop()
+failures[0,0] = get_running_state(-1,1),drop()
+failures[0,2] = get_running_state(-1,1),drop()
+
+Failure when nonHead Replica changes the operation  while the shuttle is going from head to Tail, which then is detected by the next replica and causes
+reconfiguration, in reconfiguration when wedge request is sent to the replica it applies an extraoperation .the running state diesnt match with 
+it sends request to another replica for the runnign state and keeps doing that until a result is recieved from one of them.
+
+
+workload[0] = put('movie','star'); append('movie','wars'); slice('movie':'4:7');get('movie');get('movie');get('movie')
+Description:
+	t failure=1
+	client=2
+	replica=3
+configuration_file_name
+	"ph3_4.wedge_extra_op_.config"
+Commands(When all commands are executed from sourcefolder):
+	1.) python3 -m da --message-buffer-size 20000 -n main RunSystem.da -i ../config/ph3_4.running_state_extra_op_.config
+				-i parameter helps to define the particular config file. It contains properties specific to retransmission, like
+				sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
+	2.) python3 -m da --message-buffer-size 20000 -n client_0 RunSystem.da 
+	3.) python3 -m da --message-buffer-size 20000 -n client_1 RunSystem.da 
+	4.) python3 -m da --message-buffer-size 20000 -n replica_0 RunSystem.da 
+	5.) python3 -m da --message-buffer-size 20000 -n replica_1 RunSystem.da 
+	6.) python3 -m da --message-buffer-size 20000 -n replica_2 RunSystem.da 
+log_file_name
+	run_system.log
+
+*******************************************************************
+
+TESTCASE 26
+
+failures[0,1] = shuttle(0,2),change_operation()
+# failures[0,1] = wedge_request(-1,1),drop()
+failures[0,2] = catch_up(-1,1),drop()
+
+Failure when nonHead Replica changes the operation  while the shuttle is going from head to Tail, which then is detected by the next replica and causes
+reconfiguration, in reconfiguration when cath up  is sent to the replica it drops th request . the timer expires at olympus and new quorum is looked for
+
+
+workload[0] = put('movie','star'); append('movie','wars'); slice('movie':'4:7');get('movie');get('movie');get('movie')
+Description:
+	t failure=1
+	client=2
+	replica=3
+configuration_file_name
+	"phase3_catch_up_drop.config"
+Commands(When all commands are executed from sourcefolder):
+	1.) python3 -m da --message-buffer-size 20000 -n main RunSystem.da -i ../config/phase3_catch_up_drop.config
+				-i parameter helps to define the particular config file. It contains properties specific to retransmission, like
+				sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
+	2.) python3 -m da --message-buffer-size 20000 -n client_0 RunSystem.da 
+	3.) python3 -m da --message-buffer-size 20000 -n client_1 RunSystem.da 
+	4.) python3 -m da --message-buffer-size 20000 -n replica_0 RunSystem.da 
+	5.) python3 -m da --message-buffer-size 20000 -n replica_1 RunSystem.da 
+	6.) python3 -m da --message-buffer-size 20000 -n replica_2 RunSystem.da 
+log_file_name
+	run_system.log
+
+*******************************************************************
+TESTCASE 27
+
+failures[0,0] = shuttle(0,1),invalid_order_sig();shuttle(0,5),change_operation()
+
+
+In case of shuttle when the given message is recieved the signature is forge into invslid which then is checked at next replica causing reconfiguration
+
+
+workload[0] = put('movie','star'); append('movie','wars'); slice('movie':'4:7');get('movie');get('movie');get('movie')
+Description:
+	t failure=1
+	client=2
+	replica=3
+configuration_file_name
+	"phase3_invalid_order_sign.config"
+Commands(When all commands are executed from sourcefolder):
+	1.) python3 -m da --message-buffer-size 20000 -n main RunSystem.da -i ../config/phase3_invalid_order_sign.config
+				-i parameter helps to define the particular config file. It contains properties specific to retransmission, like
+				sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
+	2.) python3 -m da --message-buffer-size 20000 -n client_0 RunSystem.da 
+	3.) python3 -m da --message-buffer-size 20000 -n client_1 RunSystem.da 
+	4.) python3 -m da --message-buffer-size 20000 -n replica_0 RunSystem.da 
+	5.) python3 -m da --message-buffer-size 20000 -n replica_1 RunSystem.da 
+	6.) python3 -m da --message-buffer-size 20000 -n replica_2 RunSystem.da 
+log_file_name
+	run_system.log
+
+*******************************************************************
+
+PERFORMANCE EVALUATION COMPARED WITH RAFT ON SINGLE HOST:
+RAFT : 9 seconds
+BCR: : 31 seconds
+
+PERFORMANCE EVALUATION COMPARED WITH RAFT ON MULTIPLE HOST:
+RAFT : 9 seconds
+BCR: : 39 seconds
+
+
+
+
 
