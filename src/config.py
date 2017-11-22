@@ -26,7 +26,6 @@ def readConfigFile(configFile):
 config={}
 
 def config_main(filePath):
-	print("HERE config_mainconfig_mainconfig_mainconfig_mainconfig_mainconfig_main")
 	readConfigFile(filePath);
 	logger.basicConfig(
 		format="%(asctime)s [%(threadName)-12.12s %(lineno)d] [%(levelname)-5.5s]  %(message)s",
