@@ -21,7 +21,7 @@ class Replica(process):
 		level=logger.INFO)
 
 		print("*************************************************************************")
-		logger.info("Replica SETUP done. Clients : "+str(clients)+", Olympus : "+str(olympus)+", Replica : "+str(currentReplica) +", ReplicaState : "+str(replica_state))
+		logger.info("Replica SETUP done. client_request : "+str(clients)+", Olympus : "+str(olympus)+", Replica : "+str(currentReplica) +", ReplicaState : "+str(replica_state))
 		print("*************************************************************************")
 		self.replicas= replicas
 		self.clients=clients
@@ -75,7 +75,6 @@ class Replica(process):
 			self.counters[client]["shuttleCounter"]=0
 			self.counters[client]["resultShuttleCounter"]=0
 		self.failureDS = config.readFailures()
-		logger.debug("REPLICA SETUP DONE!!")
 		
 	def main(): pass	
 
@@ -326,11 +325,13 @@ class Replica(process):
 	def receive(msg=('CHECKPOINT_REVERSE_SHUTTLE',shuttle,checkpoint,), from_=self.nextReplica):
 		if(self.replica_state == 'ACTIVE'):
 			logger.info("CHECKPOINT_REVERSE_SHUTTLE reached at replica" +str(self.currentReplica)+",  shuttle : "+str(shuttle)+", checkpoint : "+str(checkpoint)+", from nextReplica : "+str(self.nextReplica))
+			self.counters["completed_checkpointCounter"]+=1
 			validTriggerSetPhase3=[]
 			print("size of checkPt shuttle before failure => ",len(shuttle))
 			validTriggerSetPhase3.append("completed_checkpoint")
+			shuttle=runPossibleFailure(validTriggerSetPhase3,shuttle)
 			print("size of checkPt shuttle after failure => ",len(shuttle))
-			runPossibleFailure(validTriggerSetPhase3,shuttle)
+			
 
 			validation = checkForCheckProofConsistency(shuttle, self.allReplicaVerifyKeysMap)
 			logger.info(" Result from checkpoint  validation is " + str(validation))
@@ -525,9 +526,10 @@ class Replica(process):
 		triggerName,triggerFailure_m = checkForPossibleFailure_PHASE_3(validTriggerSet)
 		logger.info("checkForPossibleFailure_PHASE_3 runPossibleFailure Trigger Found => "+str(triggerName))
 		if(triggerName!=None):
+			rv=None
+			rv=callFailureFunctionBasedOnTrigger_PHASE_3(triggerName,triggerFailure_m,chkptShuttle)
 			if(triggerName == "drop_checkpt_stmts"):
-				t=config.readProperty("t")+1
-			callFailureFunctionBasedOnTrigger_PHASE_3(triggerName,triggerFailure_m,chkptShuttle)
+				return rv
 
 	def run():
 		logger.info("Starting replica in configuration number : "+str(self.configuration))
@@ -900,7 +902,7 @@ class Replica(process):
 
 	def truncate_history(n):
 		logger.info("Failure found. truncate_history. n: "+str(n))
-		self.History = self.History[:len(self.History)- n]
+		self.History = self.History[:(len(self.History)- int(n))]
 
 	def sleep(tim):
 		logger.info("Failure found. Sleep. time: "+str(tim))
@@ -957,13 +959,14 @@ class Replica(process):
 
 	def drop_checkpt_stmts(chkptShuttle):
 		t = config.readProperty("t")
-		chkptShuttle = chkptShuttle[t+2:]
+		chkptShuttle = chkptShuttle[(t+1):]
+		return chkptShuttle
 
 	def increment_slot():
 		self.slot_number+=1
 
 	def executeCheckPointing(checkpoint):
-		logger.info("inside executeCheckPointing function for creating the current checkpoint")
+		logger.info("inside executeCheckPointing function for creating the current checkpoint : "+str(checkpoint))
 		self.counters["checkpointCounter"]+=1
 		validTriggerSetPhase3=[]
 		validTriggerSetPhase3.append("checkpoint")

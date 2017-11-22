@@ -30,6 +30,7 @@ class Olympus(process):
 		self.replicaVerifyKeys = []
 		self.initHist ={}
 		self.reconfigIsCalled=False
+		self.catchupFlag=False
 
 		# config.config_main(configFilePath);	# initialize configuration file
 	
@@ -304,10 +305,22 @@ class Olympus(process):
 			# send(('WEDGE_REQUEST_STATEMENT',), to=rep)
 			send(('CATCH_UP',catchup_messages[rep],), to=rep)
 
+		timeout=2
+		self.catchupFlag=False
+		if await(self.catchupFlag==True):
+			logger.info("catch_up requests successfully received from all replicas")
+		elif(timeout(timeout)):
+			self.catchupFlag=False
+			logger.info("catchup request timeout")
+			self.wedge_statement= self.wedge_statement[1:] + self.wedge_statement[:1]
+			self.slotOpSuperset={}
+			self.isQuorumSatisfied = False
+			checkForQuorum()
+
+
 	def receive(msg=('CAUGHT_UP', runningStateHash, clientLastResult), from_=node):
 		logger.info("caught up received from replica :"+ str(node))
 		#ASSUMING ALL REPLICAS SEND THE CAUGHTUP
-
 		allHashSame=True
 		self.clientLastResult = clientLastResult
 		self.runningStateReplicaHash.append(runningStateHash)
@@ -316,6 +329,7 @@ class Olympus(process):
 		num_replica_for_quorum = config.readProperty("t") + 1 
 		if(num_replica_for_quorum == len(self.caughtUpStatements)):
 			for i in range(len(self.runningStateReplicaHash)):
+				self.catchupFlag=True
 				if(self.runningStateReplicaHash[0] !=  self.runningStateReplicaHash[i]):
 					allHashSame = False
 			if(allHashSame):
@@ -422,10 +436,6 @@ class Olympus(process):
 				self.isQuorumSatisfied=False
 			else:
 				logger.info("already reconfiguration in progress")
-
-
-
-
 
 
 
