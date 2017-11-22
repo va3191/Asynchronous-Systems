@@ -127,7 +127,7 @@ def readFailures():
 
 			# print("replicaNumber : ",replicaNumber, ", failureDS : ",failureDS," failureDS[configurationNumber][replica]: ",failureDS[configurationNumber]["replica"][replicaNumber])
 			failureValueList = value.split(";")
-			
+			# print("okayyyyyysssss")
 			for failureValue in failureValueList:
 				replicaOperation={}
 				trigger,failure = failureValue.split("),")

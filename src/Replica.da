@@ -59,6 +59,7 @@ class Replica(process):
 		self.configuration = configuration
 		self.counters={}
 		self.drop_failure_flag=False
+		self.drop_wedge_failure=False
 		#Initializing counter for mocking failures
 		self.counters["wedge_requestCounter"]=0
 		self.counters["new_configurationCounter"]=0
@@ -385,6 +386,7 @@ class Replica(process):
 			else:
 				logger.error("the validation failed at" + str(self.currentReplica))
 				logger.error("************************Validating order proof failed at replica : "+str(self.currentReplica)+", request_id : "+str(request_id))
+				callForReconfiguration(self.configuration)
 		elif self.replica_state=="IMMUTABLE":
 			logger.info("REPLICA is in IMMUTABLE state, wont be performing any functions now")
 
@@ -472,9 +474,14 @@ class Replica(process):
 		runPossibleFailure(validTriggerSet,None)
 		logger.info("************Wedge Statement requested from Olympus******** Going into Immutable state")
 		self.replica_state = "IMMUTABLE"
-		# check if the replica is in immutable in all other cases
-		send(('WEDGE_STATEMENT',self.currentCheckPoint,self.History,), to=self.olympus)
-		# send(('WEDGE_STATEMENT',), to=self.olympus)
+	
+		if(self.drop_failure_flag==True):
+			logger.info("Dropping WEDGE_STATEMENT message from sending to Olympus.")
+			self.drop_failure_flag=False
+		else:
+			# check if the replica is in immutable in all other retransmission_case_replica_sleep_time
+			send(('WEDGE_STATEMENT',self.currentCheckPoint,self.History,), to=self.olympus)
+			# send(('WEDGE_STATEMENT',), to=self.olympus)
 
 	def receive(msg=('CATCH_UP',orders,), from_=self.olympus):
 		logger.info("************ CATCH_UP requested from Olympus******** Going to execute the orders ")
@@ -484,24 +491,32 @@ class Replica(process):
 		validTriggerSet.append("catch_up")		
 		runPossibleFailure(validTriggerSet,None)
 		print ("length of incoming order", orders, len(orders))
-		if len(orders)>0:
-			for i in  range(len(orders)):
-				slot_CU,operation_CU, client_CU, req_CU = orders[i]
-				logger.info("Executing the order for slot : " + str(slot_CU))
-				oper = config.getUnsignedData(operation_CU,client_CU,self.clientVerifyKeys,self.clients)
-				result =config.executeOperation(req_CU,oper,self.dictionary_data)
-				ehash = config.calculateHash(result)
-				resulpr = (result,oper,ehash,req_CU)
-				# logger.info("Client lasr statement perepared : " + str(client_CU)+ " ::::"+str(resultpr))
-				logger.info("Order Executed the order for slot : " + str(slot_CU))
-				#do we need request Id also
-				# self.self.requestIdToSoPair[request_id][0]
-				self.clientLastResult[client_CU] = resulpr
-				logger.info(" Client updated with the last result statement")
-		logger.info("sending data in caughtup str(self.dictionary_data) : "+str(self.dictionary_data))
-		dict_hash = config.calculateHash(str(self.dictionary_data))
-		send(('CAUGHT_UP',dict_hash,self.clientLastResult,), to=self.olympus)
-		logger.info("************ CAUGHT_UP sent to Olympus******** ")
+
+		if(self.drop_failure_flag==True):
+			logger.info("Dropping WEDGE_STATEMENT message from sending to Olympus.")
+			self.drop_failure_flag=False
+		else:
+			if len(orders)>0:
+				for i in  range(len(orders)):
+					slot_CU,operation_CU, client_CU, req_CU = orders[i]
+					s,o,c,r = self.clientLastResult[client_CU]
+					logger.info("incoming slot from catch up statement is :"+ str(slot_CU)+ " , last client slot : "+ str(s))
+					if(slot_CU > s):
+						logger.info("Executing the order for slot : " + str(slot_CU))
+						oper = config.getUnsignedData(operation_CU,client_CU,self.clientVerifyKeys,self.clients)
+						result =config.executeOperation(req_CU,oper,self.dictionary_data)
+						ehash = config.calculateHash(result)
+						resulpr = (slot_CU,oper,ehash,req_CU)
+						# logger.info("Client lasr statement perepared : " + str(client_CU)+ " ::::"+str(resultpr))
+						logger.info("Order Executed the order for slot : " + str(slot_CU)+" , req_CU :"+str(req_CU))
+						#do we need request Id also
+						# self.self.requestIdToSoPair[request_id][0]
+						self.clientLastResult[client_CU] = resulpr
+						logger.info(" Client updated with the last result statement")
+			dict_hash = config.calculateHash(str(self.dictionary_data))
+			send(('CAUGHT_UP',dict_hash,self.clientLastResult,), to=self.olympus)
+			logger.info("************ CAUGHT_UP sent to Olympus******** ")
+
 
 	def receive(msg=('GET_RUNNING_STATE',), from_=self.olympus):
 		logger.info("************FINAL GET_RUNNING_STATE requested from Olympus********"+str(self.drop_failure_flag))
@@ -511,9 +526,10 @@ class Replica(process):
 		validTriggerSetPhase3.append("get_running_state")
 		runPossibleFailure(validTriggerSetPhase3,None)
 		if(self.drop_failure_flag==True):
-			logger.info("Droping RUNNING_STATE message from sending to Olympus.")
+			logger.info("Dropping RUNNING_STATE message from sending to Olympus.")
 			self.drop_failure_flag=False
 		else:
+
 			logger.info("sending to olympus. running state : "+str(self.dictionary_data))
 			send(('RUNNING_STATE',self.dictionary_data,), to=self.olympus)
 			
@@ -747,6 +763,7 @@ class Replica(process):
 		# 	return drop_result_stmt(shuttle)
 		if(triggerName == "drop_checkpt_stmts"):
 			return drop_checkpt_stmts(chkptShuttle)
+		# if(triggerName ==  "")
 		
 
 	def checkForPossibleFailure(client,validTriggerSet):
@@ -917,6 +934,7 @@ class Replica(process):
 
 	def extra_op():
 		logger.info("Failure found. extra_op")
+		timer.sleep(1)
 		config.executeOperation("extra_operation", "put('extra_operation_key','extra_operation_value')", self.dictionary_data)
 
 	def invalid_result_sig(shuttle, requestId, operation):
@@ -1014,7 +1032,7 @@ class Replica(process):
 		if(len(shuttle)==0):
 			print("1. returning from checkForCheckProofConsistency")
 			return False
-		print("okay till here")
+		# print("okay till here")
 		if(len(shuttle) != len(self.replicas)):
 			print("2. returning from checkForCheckProofConsistency")
 			return False

@@ -30,6 +30,10 @@ class Olympus(process):
 		self.replicaVerifyKeys = []
 		self.initHist ={}
 		self.reconfigIsCalled=False
+<<<<<<< Updated upstream
+=======
+		self.QuorumList=[]
+>>>>>>> Stashed changes
 		self.catchupFlag=False
 
 		# config.config_main(configFilePath);	# initialize configuration file
@@ -187,11 +191,14 @@ class Olympus(process):
 			self.slotOpSuperset={}
 			checkForQuorum()
 		# logger.info("not enough wedge statements recieved : ")
+		logger.info("not enough wedge statements recieved : ")
+
 
 	def checkForQuorum():
 		self.caughtUpStatements =[]
 		self.clientLastResult = {}
 		self.runningStateReplicaHash=[]
+		self.QuorumList=[]
 		quorumCount =0 
 		consistent = True
 		counter = 1 
@@ -202,7 +209,7 @@ class Olympus(process):
 			logger.info("quorum is not satisfied checking......")
 			if(len(self.wedge_statement)>=num_replica_for_quorum):
 				for repl in self.wedge_statement:
-					if(not isQuorumSatisfied):
+					if( not self.isQuorumSatisfied):
 						logger.info("inside loop of self.wedge_statement ")
 						checkpoint, Hisotry, replica = repl
 						consistent = True
@@ -244,6 +251,8 @@ class Olympus(process):
 						if(quorumCount >= num_replica_for_quorum ):
 							self.isQuorumSatisfied=True
 							logger.info("**************quorum reached****************")
+							self.QuorumList = quorum
+
 							checkForLongestHistory(quorum)
 					counter = counter +1
 			if(not self.isQuorumSatisfied):
@@ -299,6 +308,38 @@ class Olympus(process):
 		logger.info("catch up messages have been formed and will be sent to replicas :::" +str(catchup_messages))
 		callForCatchupToReplicas(catchup_messages)
 
+	# def callForCatchupToReplicas( catchup_messages):
+	# 	self.caughtUpStatements=[]
+	# 	for rep in catchup_messages.keys():
+	# 		logger.info("sending CATCH_UP up message to replica" + str(rep) + "length od content is :" + str(len(catchup_messages[rep])))
+	# 		# send(('WEDGE_REQUEST_STATEMENT',), to=rep)
+	# 		send(('CATCH_UP',catchup_messages[rep],), to=rep)
+
+	# def receive(msg=('CAUGHT_UP', runningStateHash, clientLastResult), from_=node):
+	# 	logger.info("caught up received from replica :"+ str(node))
+	# 	#ASSUMING ALL REPLICAS SEND THE CAUGHTUP
+
+	# 	allHashSame=True
+	# 	self.clientLastResult = clientLastResult
+	# 	self.runningStateReplicaHash.append(runningStateHash)
+	# 	tupl=(runningStateHash,clientLastResult,node)
+	# 	self.caughtUpStatements.append(tupl)
+	# 	catch_up_timeout=2
+	# 	num_replica_for_quorum = config.readProperty("t") + 1 
+	# 	if(num_replica_for_quorum == len(self.caughtUpStatements)):
+	# 		for i in range(len(self.runningStateReplicaHash)):
+	# 			if(self.runningStateReplicaHash[0] !=  self.runningStateReplicaHash[i]):
+	# 				allHashSame = False
+	# 		if(allHashSame):
+	# 			self.currentHash = self.runningStateReplicaHash[0]
+	# 			getRunningState(self.caughtUpStatements)
+	# 		else:
+	# 			logger.info("Hash aren't consistent we need to find another quorum")
+	# 			self.wedge_statement= self.wedge_statement[1:] + self.wedge_statement[:1]
+	# 			self.slotOpSuperset={}
+	# 			self.isQuorumSatisfied = False
+	# 			checkForQuorum()
+
 	def callForCatchupToReplicas( catchup_messages):
 		self.caughtUpStatements=[]
 		for rep in catchup_messages.keys():
@@ -345,12 +386,17 @@ class Olympus(process):
 
 	def getRunningState(caughtUpStatements):
 		logger.info("requesting one of the replicas in quorum at random to send their hash of running state")
-		num = len(caughtUpStatements)
+		num = len(self.QuorumList)
+
 		# print("1. getRunningState =>"+str(num))
 		rand = random.randint(0,num)
+		rand = rand%num
 		# print("2. getRunningState =>"+str(rand))
-		logger.info("requesting replica"+str(self.replicas[rand])+"  to send  hash of it's running state len(caughtUpStatements) : "+str(len(caughtUpStatements))+", replica number : "+str(rand))
-		send(('GET_RUNNING_STATE',), to=self.replicas[rand])
+		checkpoint, Hisotry, replica = self.QuorumList[rand]
+		# print("2. getRunningState =>"+str(rand))
+		logger.info("requesting replica"+str(replica)+"  to send  hash of it's running state")
+		send(('GET_RUNNING_STATE',), to=replica)
+
 		running_state_timeout=2
 		if (await(some(received(('RUNNING_STATE', runningState,), from_=node)))):
 			runningStateHash = config.calculateHash(str(runningState))

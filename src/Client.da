@@ -140,7 +140,7 @@ class Client(process):
 		send(('PROOF_OF_MISBEHAVIOUR',result_proof,result,), to=self.olympus)
 
 	def receive(msg=('RESULT_FROM_OLYMPUS',clientResult,replicas,replicaVerifyKeys,),from_=self.olympus):
-		logger.info("FINAL UPDATED RESULT WITH NEW REPLICAS RECEIVED BY THE CLIENT FROM OLYMPUS\n")
+		logger.info("*************FINAL UPDATED RESULT WITH NEW REPLICAS RECEIVED BY THE CLIENT FROM OLYMPUS*************\n")
 		self.resultFromOlympus=True
 		self.reconfigFlag = False
 		self.requestIdRecieved=True
