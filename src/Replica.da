@@ -329,7 +329,9 @@ class Replica(process):
 			validTriggerSetPhase3=[]
 			print("size of checkPt shuttle before failure => ",len(shuttle))
 			validTriggerSetPhase3.append("completed_checkpoint")
-			shuttle=runPossibleFailure(validTriggerSetPhase3,shuttle)
+			shuttle_v1=runPossibleFailure(validTriggerSetPhase3,shuttle)
+			if(shuttle_v1!=None and len(shuttle_v1) >0):
+				shuttle=shuttle_v1
 			print("size of checkPt shuttle after failure => ",len(shuttle))
 			
 
@@ -496,6 +498,7 @@ class Replica(process):
 				# self.self.requestIdToSoPair[request_id][0]
 				self.clientLastResult[client_CU] = resulpr
 				logger.info(" Client updated with the last result statement")
+		logger.info("sending data in caughtup str(self.dictionary_data) : "+str(self.dictionary_data))
 		dict_hash = config.calculateHash(str(self.dictionary_data))
 		send(('CAUGHT_UP',dict_hash,self.clientLastResult,), to=self.olympus)
 		logger.info("************ CAUGHT_UP sent to Olympus******** ")
@@ -511,6 +514,7 @@ class Replica(process):
 			logger.info("Droping RUNNING_STATE message from sending to Olympus.")
 			self.drop_failure_flag=False
 		else:
+			logger.info("sending to olympus. running state : "+str(self.dictionary_data))
 			send(('RUNNING_STATE',self.dictionary_data,), to=self.olympus)
 			
 		logger.info("************FINAL_RUNNING_STATE sent to Olympus********")

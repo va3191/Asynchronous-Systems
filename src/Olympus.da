@@ -182,11 +182,11 @@ class Olympus(process):
 					slot,operation,rep_op,client,req_id,order = i
 					op = config.getUnsignedData(operation, client, self.clientVerifyKeys,self.clients)
 					print(slot, op, " s o pairs")
-		if ( not self.isQuorumSatisfied  and len(self.wedge_statement)>= config.readProperty("t") + 1):
+		if (not self.isQuorumSatisfied  and len(self.wedge_statement)>= config.readProperty("t") + 1):
 			print("reached here ")
 			self.slotOpSuperset={}
 			checkForQuorum()
-		logger.info("not enough wedge statements recieved : ")
+		# logger.info("not enough wedge statements recieved : ")
 
 	def checkForQuorum():
 		self.caughtUpStatements =[]
@@ -202,48 +202,49 @@ class Olympus(process):
 			logger.info("quorum is not satisfied checking......")
 			if(len(self.wedge_statement)>=num_replica_for_quorum):
 				for repl in self.wedge_statement:
-					logger.info("inside loop of self.wedge_statement ")
-					checkpoint, Hisotry, replica = repl
-					consistent = True
-					slots=[]
-					print("it should be fine till here")
-					# print(Hisotry[0])
-					for i in range(0,len(Hisotry)):
-						print("inside the func")
-						slot,operation,rep_op,client,req_id,order  = Hisotry[i]
-						slots.append(slot)
-					print("2.it should be fine till here")
-					for j in range(len(Hisotry)):
-						# logger.info("j: "+str(j)+", len(Hisotry): "+str(len(Hisotry)))
-						logger.info("relica " + str(replica) +"checking in history : length " + str(len(Hisotry))+"j :" + str(j))
-						slot,operation,rep_op,client,req_id,order = Hisotry[j]
-						op = config.getUnsignedData(operation, client,self.clientVerifyKeys,self.clients)
+					if(not isQuorumSatisfied):
+						logger.info("inside loop of self.wedge_statement ")
+						checkpoint, Hisotry, replica = repl
+						consistent = True
+						slots=[]
+						print("it should be fine till here")
+						# print(Hisotry[0])
+						for i in range(0,len(Hisotry)):
+							print("inside the func")
+							slot,operation,rep_op,client,req_id,order  = Hisotry[i]
+							slots.append(slot)
+						print("2.it should be fine till here")
+						for j in range(len(Hisotry)):
+							# logger.info("j: "+str(j)+", len(Hisotry): "+str(len(Hisotry)))
+							logger.info("relica " + str(replica) +", checking in history : length " + str(len(Hisotry))+", j :" + str(j))
+							slot,operation,rep_op,client,req_id,order = Hisotry[j]
+							op = config.getUnsignedData(operation, client,self.clientVerifyKeys,self.clients)
 
-						logger.info("contents for " + str(replica)+ "  wedge statement. slot:  " + str(slot) + ",  operation: "+ str(op)+ ",  client: " + str(client)+", j: "+str(j))
+							logger.info("contents for " + str(replica)+ "  wedge statement. slot:  " + str(slot) + ",  operation: "+ str(op)+ ",  client: " + str(client)+", j: "+str(j))
 
-						print("contents of self.slotsuperset::", self.slotOpSuperset)
-						print("operations received from replica are op: ", op,"   rep_op : ", rep_op)
-						slotOk=True
-						for i in range (len(slots)-1):
-							if(slots[i+1] != slots[i] +1):
-								slotOk=False
-						logger.info("Are the slots consistent:::" + str(slotOk) +"\n")
-						if(op == rep_op):
-							if(slot not in self.slotOpSuperset.keys()):
-								self.slotOpSuperset[slot]=op
-							else:
-								if(self.slotOpSuperset[slot] != op):
-									consistent = False
-									break
-						else: 
-							consistent = False
-					if(consistent):
-						quorum.append(repl)
-						quorumCount = quorumCount + 1
-					if(quorumCount >= num_replica_for_quorum ):
-						self.isQuorumSatisfied=True
-						logger.info("**************quorum reached****************")
-						checkForLongestHistory(quorum)
+							print("contents of self.slotsuperset::", self.slotOpSuperset)
+							print("operations received from replica are op: ", op,"   rep_op : ", rep_op)
+							slotOk=True
+							for i in range (len(slots)-1):
+								if(slots[i+1] != slots[i] +1):
+									slotOk=False
+							logger.info("Are the slots consistent:::" + str(slotOk) +"\n")
+							if(op == rep_op):
+								if(slot not in self.slotOpSuperset.keys()):
+									self.slotOpSuperset[slot]=op
+								else:
+									if(self.slotOpSuperset[slot] != op):
+										consistent = False
+										break
+							else: 
+								consistent = False
+						if(consistent):
+							quorum.append(repl)
+							quorumCount = quorumCount + 1
+						if(quorumCount >= num_replica_for_quorum ):
+							self.isQuorumSatisfied=True
+							logger.info("**************quorum reached****************")
+							checkForLongestHistory(quorum)
 					counter = counter +1
 			if(not self.isQuorumSatisfied):
 				logger.debug("shifting the wedge statement by 1 bit to maintain the superslot for next item")
@@ -348,7 +349,7 @@ class Olympus(process):
 		# print("1. getRunningState =>"+str(num))
 		rand = random.randint(0,num)
 		# print("2. getRunningState =>"+str(rand))
-		logger.info("requesting replica"+str(self.replicas[rand])+"  to send  hash of it's running state")
+		logger.info("requesting replica"+str(self.replicas[rand])+"  to send  hash of it's running state len(caughtUpStatements) : "+str(len(caughtUpStatements))+", replica number : "+str(rand))
 		send(('GET_RUNNING_STATE',), to=self.replicas[rand])
 		running_state_timeout=2
 		if (await(some(received(('RUNNING_STATE', runningState,), from_=node)))):
