@@ -30,10 +30,7 @@ class Olympus(process):
 		self.replicaVerifyKeys = []
 		self.initHist ={}
 		self.reconfigIsCalled=False
-<<<<<<< Updated upstream
-=======
 		self.QuorumList=[]
->>>>>>> Stashed changes
 		self.catchupFlag=False
 
 		# config.config_main(configFilePath);	# initialize configuration file
