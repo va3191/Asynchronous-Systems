@@ -135,7 +135,7 @@ To run olympus open terminal and run the given command
 
 ##### Running Client
 To run client open a new terminal and make sure that the olympus is running
-![alt text](olympus.gif)
+![alt text](client.gif)
 
 ##### Running Replicas
 to run replicas open a new terminal for each replicas and make sure that the client and olympus are running.
