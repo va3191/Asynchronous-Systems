@@ -128,11 +128,11 @@ Commands 1 to 6 are used for running a sample program using config file system.c
 	-i parameter helps to define the particular config file. It contains properties specific to retransmission, lik sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
 	
 #### Description:
-	* __Config file__ = system.config
-	* __t byzantine failure__= 1
-	* __client__ = 2
-	* __replica__ = 3
-	* __configuration_file_name__ = system.config 
+	Config file = system.config
+	t byzantine failure = 1
+	client = 2
+	replica = 3
+	configuration_file_name = system.config 
 * __NOTE:__ -D is specifically added to avoid that particular replica to run its Main
 
 
