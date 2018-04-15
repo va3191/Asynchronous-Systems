@@ -157,14 +157,14 @@ adityatomer> python3.6 -m da -H 0.0.0.0 -n onode RunSystem.da ../config/system.c
 
 Starting 'replica_0', 'replica_1', 'replica_2' on host vagarwal, connecting the node on adityatomer  one by one
 
-
+```
 adityatomer$ python3.6 -m da  --message-buffer-size 20000 -H 172.24.225.182 -n onode RunSystem.da -i ../config/system.config
 adityatomer$ python3 -m da  --message-buffer-size 20000 -H 172.24.225.182 -n client_0 -D RunSystem.da
 adityatomer$ python3 -m da  --message-buffer-size 20000  -H 172.24.225.182 -n client_1 -D RunSystem.da
 vagarwal$ python3 -m da --message-buffer-size 20000 -H 172.24.225.83 -R 172.24.225.182 -n replica_0 -D RunSystem.da
 vagarwal$ python3 -m da --message-buffer-size 20000 -H 172.24.225.83 -R 172.24.225.182 -n replica_1 -D RunSystem.da
 vagarwal$ python3 -m da --message-buffer-size 20000 -H 172.24.225.83 -R 172.24.225.182 -n replica_2 -D RunSystem.da
-
+```
 Starting 'client0' on host 'adityatomer', and connecting to the node on 'vagarwal'
 
 adityatomer> python3 -m da -H 0.0.0.0 -R vagarwal -n client_0 -D RunSystem.da ../config/system.config
