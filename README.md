@@ -129,7 +129,7 @@ Commands 1 to 6 are used for running a sample program using config file system.c
 	
 	-i parameter helps to define the particular config file. It contains properties specific to retransmission, lik sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
 
-![alt text](olympus-final.gif)
+![alt text](olympus.gif)
 
 #### Description:
 	Config file = system.config
