@@ -1,4 +1,4 @@
-## Distributed Data Replication
+## Distributed Key Value Store
 
 ### Replication of data in Byzantine environment to enhance fault tolerance
 
