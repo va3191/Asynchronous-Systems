@@ -9,7 +9,7 @@ in an asynchronous environment.
 
 ### Features
 
-* __Fault_Tolerance :-__ System can bear up to t faulty nodes, still function smoothly
+* __Fault_Tolerance :-__ System has 2t+1 total nodes and can bear up to t faulty nodes, still function smoothly
 * __Reconfigurable_protocols :-__ protocols that are easily reconfigurable, do not require accurate failure detection, and
 are able to tolerate Byzantine failures.
 * __Shuttle_Protocol :-__ two simple implementations of Shuttle: one that can
@@ -119,7 +119,7 @@ python3 -m da -n main RunSystem.da -i system.config
 #### Example:
 Commands 1 to 6 are used for running a sample program using config file system.config
 
-	1.) python3 -m da  --message-buffer-size 20000 -n onode  RunSystem.da -i ../config/ph3_9.wedge_extraop.config
+	1.) python3 -m da  --message-buffer-size 20000 -n onode  RunSystem.da -i ../config/system.config
 				
 	2.) python3 -m da --message-buffer-size 20000  -n client_0  -D RunSystem.da 
 	3.) python3 -m da --message-buffer-size 20000  -n client_1 -D RunSystem.da 
@@ -137,7 +137,7 @@ Commands 1 to 6 are used for running a sample program using config file system.c
 
 
 ##### Running Client
-##### To run client open a new terminal and make sure that the olympus is running
+##### To run client open a new terminal and make sure that the olympus is running, client picks up workload from the config and executes them on the dictionary as seen below.
 ![alt text](client.gif)
 
 ##### Client asks olympus for new configuration of replicas to start executing the operations.
