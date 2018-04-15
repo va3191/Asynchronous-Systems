@@ -1,11 +1,12 @@
-#Asynchronous-Systems CSE 535
-Byzantine Chain Replication HMAC
+## Distributed Data Replication
 
+### Replication of data in Byzantine environment to enhance fault tolerance
+
+### What is Byzantine Chain Replication? 
 
 System Requirements:	
 DistAlgo - 
 pyDistAlgo. Version: 1.0.9
-
 
 Python
 Version 3.4 or above
