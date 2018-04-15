@@ -94,7 +94,7 @@ The following command installs DistAlgo as system-wide package:
    The `<DAROOT>` directory installed using this method takes precedence
    over any DistAlgo packages installed by `pip` or `setup.py`.
 
-### INSTRUCTIONS
+### Instructions
 #### How to Build: 
  python3.6 -m da.compiler <filename>
 Run: python3.6 -m da -n <node name> <da file> <configuration file name>
@@ -102,7 +102,7 @@ Run: python3.6 -m da -n <node name> <da file> <configuration file name>
 In above command, replace <node name> with node process, <dafile> with da file containing main method and <configfilename> with config file name
 
 
-### RUNNING DISTALGO
+### Running DistAlgo
 
 RunSystem.da is the main file for running the whole distalgo project Byzantine chain replication project. The file RunSystem is run as “main” node. Example of commands
 
@@ -127,7 +127,7 @@ Commands 1 to 6 are used for running a sample program using config file system.c
 	
 	-i parameter helps to define the particular config file. It contains properties specific to retransmission, lik sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
 	
-####Description:
+#### Description:
 	* __Config file__ = system.config
 	* __t byzantine failure__= 1
 	* __client__ = 2
@@ -146,11 +146,11 @@ Commands 1 to 6 are used for running a sample program using config file system.c
 * __testing.txt__
 
 
-### PSEUDORANDOM WORKLOAD
+### Pseudorandom Workload
 We used python random module. Given 2 numbers (seed, n) where n is the total number of operations and seed is the initial seed number accepted by random module. The random number given by the random module is again seed back for generating the next random number. We made a pool of all the 4 operations [ get, append, slice, put]. The pool is configurable by any given number. The random number generated picks the operation from pool and generates a sequence of n operations.
 
 
-### MULTIHOST 
+### MultiHost 
 Running the program on two host adityatomer and 'vagarwal'. Starting with the 'onode' on host adityatomer, listening on interfaces:
 
 adityatomer> python3.6 -m da -H 0.0.0.0 -n onode RunSystem.da ../config/system.config
@@ -170,12 +170,12 @@ Starting 'client0' on host 'adityatomer', and connecting to the node on 'vagarwa
 adityatomer> python3 -m da -H 0.0.0.0 -R vagarwal -n client_0 -D RunSystem.da ../config/system.config
 
 
-### ASSUMPTIONS:
+### Assumptions:
 There wont be any kind of failures in failure scenarios itself. (failure scenarios should work as expected)
 
 
 
-### BUGS AND LIMITATIONS
+### Bugs and Limitations
 In case of retransmission by a client. If all the replicas send the request to the head in this  case if the response is not found in cache. The head never sends the request from the cache.
 In order to mock the retransmission, the tail replica sleeps for more time than the client timeout. The client send the retransmission request at all the replicas, the replica forward the request to head and head start the protocol from scratch, the retransmission request again timeout.
 In case of multiple client, the verification of dictionary object at client side is not supported, Hence their can be concurrency issues.
