@@ -128,7 +128,9 @@ Commands 1 to 6 are used for running a sample program using config file system.c
 	6.) python3 -m da --message-buffer-size 20000  -n replica_2 -D RunSystem.da 
 	
 	-i parameter helps to define the particular config file. It contains properties specific to retransmission, lik sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
-	
+
+![alt text](client.gif)
+
 #### Description:
 	Config file = system.config
 	t byzantine failure = 1
