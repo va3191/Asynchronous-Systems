@@ -96,18 +96,20 @@ The following command installs DistAlgo as system-wide package:
 
 ### Instructions
 #### How to Build: 
+```
  python3.6 -m da.compiler <filename>
 Run: python3.6 -m da -n <node name> <da file> <configuration file name>
 	
 In above command, replace <node name> with node process, <dafile> with da file containing main method and <configfilename> with config file name
+```
 
 
 ### Running DistAlgo
 
 RunSystem.da is the main file for running the whole distalgo project Byzantine chain replication project. The file RunSystem is run as “main” node. Example of commands
-
+```
 python3 -m da -n main RunSystem.da -i system.config 
-
+```
 * __-m :__ argument for providing the option to run Distalgo files.
 * __-n :__ name of the node
 * __RunSystem.da :__ name of the file
@@ -153,11 +155,11 @@ We used python random module. Given 2 numbers (seed, n) where n is the total num
 ### MultiHost 
 Running the program on two host adityatomer and 'vagarwal'. Starting with the 'onode' on host adityatomer, listening on interfaces:
 
+```
 adityatomer> python3.6 -m da -H 0.0.0.0 -n onode RunSystem.da ../config/system.config
 
 Starting 'replica_0', 'replica_1', 'replica_2' on host vagarwal, connecting the node on adityatomer  one by one
 
-```
 adityatomer$ python3.6 -m da  --message-buffer-size 20000 -H 172.24.225.182 -n onode RunSystem.da -i ../config/system.config
 adityatomer$ python3 -m da  --message-buffer-size 20000 -H 172.24.225.182 -n client_0 -D RunSystem.da
 adityatomer$ python3 -m da  --message-buffer-size 20000  -H 172.24.225.182 -n client_1 -D RunSystem.da
