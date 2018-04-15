@@ -129,7 +129,18 @@ Commands 1 to 6 are used for running a sample program using config file system.c
 	
 	-i parameter helps to define the particular config file. It contains properties specific to retransmission, lik sleep time at replica, retransmission counter, client timeout specific to retransmission, which will trigger retransmission.
 
+##### Running Olympus
+To run olympus open terminal and run the given command
 ![alt text](olympus.gif)
+
+##### Running Client
+To run client open a new terminal and make sure that the olympus is running
+![alt text](olympus.gif)
+
+##### Running Replicas
+to run replicas open a new terminal for each replicas and make sure that the client and olympus are running.
+![alt text](olympus.gif)
+
 
 #### Description:
 	Config file = system.config
