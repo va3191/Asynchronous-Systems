@@ -181,5 +181,6 @@ There wont be any kind of failures in failure scenarios itself. (failure scenari
  * In case of retransmission by a client. If all the replicas send the request to the head in this  case if the response is not found in cache. The head never sends the request from the cache.
  * In order to mock the retransmission, the tail replica sleeps for more time than the client timeout. The client send the retransmission request at all the replicas, the replica forward the request to head and head start the protocol from scratch, the retransmission request again timeout.
  * In case of multiple client, the verification of dictionary object at client side is not supported, Hence their can be concurrency issues.
+ 
 
 
