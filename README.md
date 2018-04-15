@@ -3,19 +3,96 @@
 ### Replication of data in Byzantine environment to enhance fault tolerance
 
 ### What is Byzantine Chain Replication? 
+Byzantine-tolerant State Machine Replication (BSMR) is the only known generic
+approach to making applications tolerate arbitrary faults beyond crash failures
+in an asynchronous environment.
 
-System Requirements:	
-DistAlgo - 
-pyDistAlgo. Version: 1.0.9
+### Features
 
-Python
-Version 3.4 or above
-Python pynacl module
+* __Fault_Tolerance :-__ System can bear up to t faulty nodes, still function smoothly
+* __Reconfigurable_protocols :-__ protocols that are easily reconfigurable, do not require accurate failure detection, and
+are able to tolerate Byzantine failures.
+* __Shuttle_Protocol :-__ two simple implementations of Shuttle: one that can
+tolerate Byzantine failures in their full generality, and one that tolerates
+“accidental failures” such as crashes, bit flips, concurrency bugs
+
+### Why I built this ? 
+As part of my course work under Asynchronous Systems (CSE-535)
+
+### System Requirements:	
 
 
-OS
-MacOS Yosemite - 10.10.4
+#### Python
 
+   DistAlgo requires Python version 3.5 or higher, which can be obtained
+   from http://www.python.org. This document assumes that your installation
+   uses the default name `python` for the Python executable.
+
+   NOTE: If your system has both Python 2.x and Python 3.x installed, your
+   Python executable is likely Python 2. In that case, you should replace
+   `python` with `python3` (or `pythonX.Y` where 'X.Y' is the exact Python
+   version you want to use) in all following command line examples. To find
+   out which version of Python is installed on your system, type:
+
+      python --version
+
+#### Operating system
+
+   DistAlgo has been tested on GNU/Linux and Microsoft Windows. The command
+   line instructions given in this document use GNU Bash syntax. If you are
+   using a different shell (e.g., Windows 'cmd.exe' shell), please adjust the
+   commands accordingly.
+
+
+#### DistAlgo Installation
+
+  Download Distalgo codebase from <https://github.com/DistAlgo/distalgo>. 
+  Installation of DistAlgo is entirely optional. The installation process
+  consists of copying or extracting the DistAlgo files to a path in the
+  local filesystem (designated as `<DAROOT>` in the following texts), then
+  adding `<DAROOT>` to `PYTHONPATH` so that Python can load the `da` module.
+  You can accomplish this through either one of the following options:
+
+##### Option 1: Using `pip` to install DistAlgo
+
+   `pip` is a command line utility for installing Python packages from the
+   Python Package Index(PyPI). `pip` is the recommended method of installing
+   DistAlgo. Using `pip`, you do not need to manually download the DistAlgo
+   distribution package or setup environment variables, as `pip` will manage
+   all of that for you. The name of the DistAlgo package on PyPI is
+   'pyDistAlgo'.
+   
+   To install DistAlgo as a system-wide package:
+   
+     pip install pyDistAlgo
+    
+##### Option 2: Using `setup.py`
+
+   If you have already downloaded a DistAlgo distribution package, you can
+   install it using the included `setup.py` file. To see full usage
+   description, type:
+
+      cd <DAROOT>; python setup.py --help
+
+The following command installs DistAlgo as system-wide package:
+
+      cd <DAROOT>; python setup.py install
+
+##### Option 3: Manually adding the DistAlgo root directory to `PYTHONPATH`
+
+   If you have downloaded and extracted the DistAlgo files to `<DAROOT>`,
+   you can simply add the DistAlgo root directory to your `PYTHONPATH`
+   environment variable by running the following command in your shell:
+
+      export PYTHONPATH=<DAROOT>:${PYTHONPATH}
+
+   Afterwards, the `da` module will be available in all `python` instances
+   launched from this shell. You can add the above command to the
+   initialization scripts for your shell to avoid typing this command in
+   each new shell instance.
+
+   The `<DAROOT>` directory installed using this method takes precedence
+   over any DistAlgo packages installed by `pip` or `setup.py`.
 
 Installing of Software:
 The following command installs DistAlgo as system-wide package:
